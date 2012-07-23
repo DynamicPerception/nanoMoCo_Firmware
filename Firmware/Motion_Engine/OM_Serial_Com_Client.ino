@@ -325,57 +325,7 @@ Author: C.A. Church
       
                   motor steps value           
              
-           18 (camera keyframe)
 
-              Byte 2: keyframe index
-     
-              indicates keyframe at current index
-              (0 if not set/already triggered)
-   
-              RESPONSE:
-   
-                 8 bytes:
-      
-                  keyframe value
-                  
-           19 (time keyframe)
-
-              Byte 2: keyframe index
-     
-              indicates keyframe at current index
-              (0 if not set/already triggered)
-   
-              RESPONSE:
-   
-                 8 bytes:
-      
-                  keyframe value
-
-           20 (motor keyframe)
-
-              Byte 2: keyframe index
-     
-              indicates keyframe at current index
-              (0 if not set/already triggered)
-   
-              RESPONSE:
-   
-                 4 bytes:
-      
-                  keyframe value
-
-           21 (action)
-
-              Byte 2: action index
-     
-              indicates action data at current index
-              (0 if not set)
-   
-              RESPONSE:
-   
-                 4 bytes:
-      
-                  action value
                   
            22 (timing master)
              
@@ -406,7 +356,7 @@ Author: C.A. Church
         
              1 (cycle delay)
              
-               Bytes 2-3 : delay time
+               Bytes 2-5 : delay time
                
              2 (exposure time)
              
@@ -814,7 +764,7 @@ boolean serProgramCamera(byte* input_serial_buffer) {
      
        case 1:
                // interval
-             camera_delay = Node.ntoui(input_serial_buffer);
+             camera_delay = Node.ntoul(input_serial_buffer);
              break;
              
        case 2:
@@ -1101,27 +1051,8 @@ void serStatusRequest(byte* input_serial_buffer) {
       
       Node.response( true, Motor.steps() );      
       break;
-
-    case 18:                
-
-      Node.response(false);      
-      break;
-
-    case 19:                
-
-      Node.response(false);      
-      break;
-
-    case 20:                
-
-      Node.response(false);      
-      break;
-
-
-    case 21:                
-
-      Node.response(false);      
-      break;
+      
+      // note gap from removed status commands
 
     case 22:
     

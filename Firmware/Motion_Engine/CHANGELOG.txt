@@ -2,3 +2,9 @@
 
 First public release
 
+# 1.0.4
+
+ - Interval time expressed in milliseconds
+ - Fixed issue where interval was ignored if camera disabled
+ - Fixed state of debug and pbt pins in setup
+

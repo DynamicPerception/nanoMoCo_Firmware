@@ -5,7 +5,7 @@ OpenMoco
 
 Time-lapse Core Engine
 
-See www.openmoco.org for more information
+See dynamicperception.com for more information
 
 
 (c) 2008-2012 C.A. Church / Dynamic Perception LLC
@@ -144,6 +144,11 @@ OMMoCoNode Node   = OMMoCoNode(Serial, DE_PIN, device_address, SERIAL_VERSION, S
 void setup() {
 
 
+  pinMode(DEBUG_PIN, OUTPUT);
+  pinMode(PBT_PIN, INPUT);
+  
+  digitalWrite(PBT_PIN, HIGH);
+  
   if( eeprom_saved() == true )
     restore_eeprom_memory();
 

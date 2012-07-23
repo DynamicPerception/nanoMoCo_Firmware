@@ -38,9 +38,9 @@ See www.openmoco.org for more information
 
 
 
-unsigned long camera_tm        = 0;
-unsigned int  camera_delay     = 1;
-boolean camera_on = false;
+unsigned long  camera_tm        = 0;
+unsigned long  camera_delay     = 1;
+boolean        camera_on        = false;
 
 
 void setupControlCycle() {
@@ -64,17 +64,21 @@ void cycleCamera() {
       return;
   }
   
-    // skip camera actions if camera disabled  
-  if( ! camera_on ) {
-    Engine.state(ST_MOVE);
-    return;
-  }
 
 
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
   
-  if( ComMgr.master() == false || ( ( millis() - camera_tm ) >= ( camera_delay * 1000 ) ) ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= camera_delay  ) {
+    
+    
+            // skip camera actions if camera disabled  
+      if( ! camera_on ) {
+        Engine.state(ST_MOVE);
+        camera_tm = millis();  
+        return;
+      }
+
       // trigger focus, if needed, which will set off the chain of
       // callback executions that will walk us through the complete exposure cycle.
       // -- if no focus is configured, nothing will happen but trigger

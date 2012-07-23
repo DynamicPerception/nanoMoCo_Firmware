@@ -656,7 +656,7 @@ unsigned int OMMoCoBus::ntoui(uint8_t* p_dat) {
  */
 
 unsigned long OMMoCoBus::ntoul(uint8_t* p_dat) {
-	unsigned int ret  = (unsigned long) ( ((unsigned long) p_dat[0] << 8) + (unsigned long) p_dat[1] ) << 16;
+	unsigned long ret  = (unsigned long) ( ((unsigned long) p_dat[0] << 24) + (unsigned long) p_dat[1] ) << 16;
     ret |= (unsigned long) ( ( (unsigned long) p_dat[2] << 8 ) + ( (unsigned long) p_dat[3] ) );
 	return(ret);
 }
@@ -671,7 +671,7 @@ unsigned long OMMoCoBus::ntoul(uint8_t* p_dat) {
  */
 
 long OMMoCoBus::ntol(uint8_t* p_dat) {
-	unsigned int ret  = (long) ( ((long) p_dat[0] << 8) + (long) p_dat[1] ) << 16;
+	unsigned long ret  = (long) ( ((long) p_dat[0] << 24) + (long) p_dat[1] ) << 16;
     ret |= (long) ( ( (long) p_dat[2] << 8 ) + ( (long) p_dat[3] ) );
 	return(ret);
 }
@@ -688,7 +688,7 @@ long OMMoCoBus::ntol(uint8_t* p_dat) {
 float OMMoCoBus::ntof(uint8_t* p_dat) {
 	float ret;
 	unsigned long * _fl = (unsigned long *) (&ret);
-	*_fl  = (unsigned long) ( ((unsigned long) p_dat[0] << 8) + (unsigned long) p_dat[1] ) << 16;
+	*_fl  = (unsigned long) ( ((unsigned long) p_dat[0] << 24) + (unsigned long) p_dat[1] ) << 16;
 	*_fl |= (unsigned long) ( ( (unsigned long) p_dat[2] << 8 ) + ( (unsigned long) p_dat[3] ) );
 	return(ret);
 }
