@@ -41,6 +41,8 @@ See www.openmoco.org for more information
 unsigned long  camera_tm        = 0;
 unsigned long  camera_delay     = 1;
 boolean        camera_on        = false;
+unsigned long  motor_delay      = 0;
+
 
 
 void setupControlCycle() {
@@ -100,6 +102,12 @@ void cycleClearToMove() {
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();
        
+       // do not move if a motor delay is programmed...
+      if( motor_delay > 0 && run_time < motor_delay ) {
+        Engine.state(ST_CLEAR);
+        return;
+      }        
+      
          // ok to run motors, if needed
       move_motor(); 
 }
@@ -108,8 +116,8 @@ void cycleClearToMove() {
 void cycleCheckMotor() {
          // still running
      
-     // do not block on continuous motion    
-      if( Motor.continuous() == false && Motor.running() == true )
+     // do not block on continuous motion of any sort
+      if( Motor.continuous() == false && mtpc == false && Motor.running() == true )
         return;
 
 

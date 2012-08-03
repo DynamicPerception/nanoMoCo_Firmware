@@ -427,6 +427,10 @@ Author: C.A. Church
             
               Byte 2   : type (1 = linear, 2 = quad, 3 = quadinv)
               
+           11 (enable continuous motion)
+           
+             Byte 2 : on or off
+              
               
 
 
@@ -619,13 +623,7 @@ void serProgramAction(byte* input_serial_buffer) {
                Motor.maxSpeed( Node.ntoui(input_serial_buffer) );
                break;
 
-           case 12:
-               // execute a down-ramp immediately -- removed from protocol
-               break;
-              
-           case 13:
-               // set exposure action mod -- removed from protocol
-               break;
+              // note gap from removed commands
                
            case 15:
                // set debug led state (on/off)
@@ -690,8 +688,10 @@ void serProgramAction(byte* input_serial_buffer) {
              // plan a move to occur across a specified number of shots in SMS mode
              {
                    byte dir = input_serial_buffer[0];
-                   input_serial_buffer++;
-                   
+                     // continuous or sms? 0 = continuous, 1 = sms
+                   byte which = input_serial_buffer[1];
+                     // one padding byte added
+                   input_serial_buffer += 3;
                    
                    unsigned long steps  = Node.ntoul(input_serial_buffer);
                    input_serial_buffer += 5; // one padding byte added
@@ -703,15 +703,25 @@ void serProgramAction(byte* input_serial_buffer) {
                    input_serial_buffer += 5; // one padding byte added
                    
                    unsigned long decel  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-
-                   Motor.plan(shots, dir, steps, accel, decel);
-                   
-                   mt_plan = true;
-                     // always override shots here - we don't want to try to move further than planned, or waste time
-                   camera_max_shots = shots;
-                   
+   
+                   if( which ) {
+                       // planned SMS move
+                     Motor.plan(shots, dir, steps, accel, decel);
+                     mt_plan = true;
+                       // always override shots here - we don't want to try to move further than planned, or waste time
+                       // camera_max_shots = shots;
+                     mtpc = false;
+                   }
+                   else {
+                       // planned continuous move
+                     mtpc = true;
+                     mt_plan = false;
+                     mtpc_dir   = dir;
+                     mtpc_accel = accel;
+                     mtpc_decel = decel;
+                     mtpc_arrive = shots;
+                     mtpc_steps  = steps;
+                   }
              }
              
              break;
@@ -720,6 +730,7 @@ void serProgramAction(byte* input_serial_buffer) {
              // clear current plan (also clears motor history, except distance from home!)
              
              Motor.clear();
+             mtpc = false;
              mt_plan = false;
              break;
              
@@ -893,6 +904,14 @@ boolean serProgramMotor(byte* input_serial_buffer) {
           Motor.continuous( input_serial_buffer[0] );             
           break;
                        
+      case 12:
+        
+          // delay motor start
+          
+          motor_delay = Node.ntoul(input_serial_buffer);
+          break;
+
+
       default:
         
           fail = true;

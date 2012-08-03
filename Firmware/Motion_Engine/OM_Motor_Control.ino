@@ -43,6 +43,13 @@ See www.openmoco.org for more information
 unsigned long motor_steps_max   = 0;
 boolean mt_plan = false;
 
+unsigned long mtpc_steps  = 0;
+boolean       mtpc_dir    = false;
+unsigned long mtpc_arrive = 0;
+unsigned long mtpc_accel  = 0;
+unsigned long mtpc_decel  = 0;
+
+
 void move_motor() {
 
     // do we revert back to "ready" or "waiting" if there
@@ -50,44 +57,46 @@ void move_motor() {
     
    byte continue_state = (ComMgr.master() == true) ? ST_CLEAR : ST_BLOCK;
    
+     // motor disabled? Do nothing.
    if( ! Motor.enable() ) {
      Engine.state(continue_state);
      return;
    }
  
-   static unsigned int motor_cont_spd_was = 0;
-   
-  
-   if( Motor.continuous() ) {
-       // continuous motion mode
-    if( ! Motor.running() ) {
-       Motor.move( Motor.dir(), 0 );
-    }
-    Engine.state(continue_state);
-    return;
-   }
-   
  
-    // not in continuous motion mode
-
-   if( mt_plan == true ) {
-       // planned move
+   if( Motor.continuous() ) {
+         // continuous motion mode
+      if( ! Motor.running() ) {
+         Motor.move( Motor.dir(), 0 );
+      }
+      Engine.state(continue_state);
+   }
+   else if( mt_plan == true ) {
+       // planned SMS move
      Motor.planRun();
        // block camera while motor is moving
      Engine.state(ST_RUN);
-     return;
    }
-     
-   if( Motor.steps() == 0 ) {
+   else if( mtpc == true ) {
+       // planned continuous move
+     if( mtpc_start == false ) {
+       // a planned continuous move has not been started...
+       mtpc_start = true;
+       Motor.move(mtpc_dir, mtpc_steps, mtpc_arrive, mtpc_accel, mtpc_decel);
+     }
+     Engine.state(continue_state);
+   }
+   else if( Motor.steps() == 0 ) {
      // not a planned move and nothing to do
      Engine.state(continue_state);
-     return;
    }
-     
-     // move using Motor.steps() and Motor.dir()
-   Motor.move();
-     // we need to block the camera while the motor is running
-   Engine.state(ST_RUN);
+   else {  
+       // move using Motor.steps() and Motor.dir()
+     Motor.move();
+       // we need to block the camera while the motor is running
+     Engine.state(ST_RUN);
+   }
+   
 }
 
 

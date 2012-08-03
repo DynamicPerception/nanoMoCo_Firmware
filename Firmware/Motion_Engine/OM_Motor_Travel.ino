@@ -34,7 +34,8 @@ See www.openmoco.org for more information
  Motor traveling functions
  =========================================
 
- TODO
  
  */
+ 
+ 
  

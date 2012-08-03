@@ -99,6 +99,9 @@ byte device_address = 2;
  
 unsigned int  camera_fired     = 0;
 
+ // motor planned continuous move variables
+boolean mtpc       = false;
+boolean mtpc_start  = false;
 
 
 OMComHandler ComMgr = OMComHandler();
@@ -180,7 +183,8 @@ void setup() {
  
   
   // defaults for motor
- Motor.enable(false);
+ Motor.enable(true);
+ Motor.continuous(false);
  Motor.maxStepRate(5000);
  Motor.maxSpeed(800);
  Motor.sleep(true);
@@ -238,9 +242,11 @@ void pauseProgram() {
 void stopProgram() {
               
    // stop/clear program
-  running = false;
+  running      = false;
   run_time     = 0;
   camera_fired = 0;
+  mtpc_start   = false;
+  
     // clear out motor moved data
     // and stop motor  
   Motor.clear();
