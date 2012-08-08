@@ -660,70 +660,13 @@ void serProgramAction(byte* input_serial_buffer) {
          
              // move distance with specified arrival, accel, and decel times
            
-             {
-             
-                   byte dir = input_serial_buffer[0];
-                   input_serial_buffer++;
-                   
-                   unsigned long dist  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-                   unsigned long arrive  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-                   unsigned long accel  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-                   unsigned long decel  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-
-                                 
-                   Motor.move(dir, dist, arrive, accel, decel);
-             }
-             
+             serialComplexMove(input_serial_buffer);             
              break;
              
            case 20:
            
              // plan a move to occur across a specified number of shots in SMS mode
-             {
-                   byte dir = input_serial_buffer[0];
-                     // continuous or sms? 0 = continuous, 1 = sms
-                   byte which = input_serial_buffer[1];
-                     // one padding byte added
-                   input_serial_buffer += 3;
-                   
-                   unsigned long steps  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-                   unsigned long shots  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-
-                   unsigned long accel  = Node.ntoul(input_serial_buffer);
-                   input_serial_buffer += 5; // one padding byte added
-                   
-                   unsigned long decel  = Node.ntoul(input_serial_buffer);
-   
-                   if( which ) {
-                       // planned SMS move
-                     Motor.plan(shots, dir, steps, accel, decel);
-                     mt_plan = true;
-                       // always override shots here - we don't want to try to move further than planned, or waste time
-                       // camera_max_shots = shots;
-                     mtpc = false;
-                   }
-                   else {
-                       // planned continuous move
-                     mtpc = true;
-                     mt_plan = false;
-                     mtpc_dir   = dir;
-                     mtpc_accel = accel;
-                     mtpc_decel = decel;
-                     mtpc_arrive = shots;
-                     mtpc_steps  = steps;
-                   }
-             }
-             
+             serialComplexPlan(input_serial_buffer);
              break;
              
            case 21:
@@ -1025,8 +968,7 @@ void serStatusRequest(byte* input_serial_buffer) {
     
       // motor steps moved
       
-      Node.response( true, Motor.stepsMoved() );
-      
+     Node.response( true, Motor.stepsMoved() );
       break;
 
     case 12:
@@ -1047,8 +989,7 @@ void serStatusRequest(byte* input_serial_buffer) {
 
       // motor max step
       
-      Node.response( true, Motor.maxSteps() );
-      
+       Node.response( true, Motor.maxSteps() );      
       break;
 
     case 15:                
@@ -1087,4 +1028,62 @@ void serStatusRequest(byte* input_serial_buffer) {
   } // end switch for current status req type
 
 
+}
+
+void serialComplexMove(byte* buf) {
+   byte dir = buf[0];
+   buf++;
+   
+   unsigned long dist  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+   
+   unsigned long arrive  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+   
+   unsigned long accel  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+   
+   unsigned long decel  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+
+   Motor.move(dir, dist, arrive, accel, decel); 
+}
+
+void serialComplexPlan(byte* buf) {
+  
+   byte dir = buf[0];
+     // continuous or sms? 0 = continuous, 1 = sms
+   byte which = buf[1];
+     // one padding byte added
+   buf += 3;
+   
+   unsigned long steps  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+   
+   unsigned long shots  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+
+   unsigned long accel  = Node.ntoul(buf);
+   buf += 5; // one padding byte added
+   
+   unsigned long decel  = Node.ntoul(buf);
+ 
+   if( which ) {
+       // planned SMS move
+     Motor.plan(shots, dir, steps, accel, decel);
+     mt_plan = true;
+       // always override shots here - we don't want to try to move further than planned, or waste time
+       // camera_max_shots = shots;
+     mtpc = false;
+   }
+   else {
+       // planned continuous move
+     mtpc = true;
+     mt_plan = false;
+     mtpc_dir   = dir;
+     mtpc_accel = accel;
+     mtpc_decel = decel;
+     mtpc_arrive = shots;
+     mtpc_steps  = steps;
+   }
 }

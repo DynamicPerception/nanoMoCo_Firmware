@@ -65,6 +65,7 @@ bool OMMotor::m_motCont = false;
 bool OMMotor::m_motSleep = false;	
 bool OMMotor::m_isRun = false;
 bool OMMotor::m_clearISR = false;
+bool OMMotor::m_refresh = false;
 
 uint8_t OMMotor::m_curMs = 1;
 uint8_t OMMotor::m_backAdj = 0;
@@ -519,10 +520,10 @@ void OMMotor::contSpeed(float p_Speed) {
 	float curSpd = m_contSpd / 1000;
 	
 	     // figure out how many cycles we delay after each step
-        float off_time = m_cyclesPerSpline / curSpd;
+    float off_time = m_cyclesPerSpline / curSpd;
        
-     	m_curOffCycles = (unsigned long) off_time;
-     	m_curCycleErr = off_time - (unsigned long) off_time;
+    m_curOffCycles = (unsigned long) off_time;
+    m_curCycleErr = off_time - (unsigned long) off_time;
 }
 
 /** Get Continuous Motion Speed
@@ -1104,45 +1105,46 @@ void OMMotor::move(bool p_Dir, unsigned long p_Steps) {
    
    if( ! m_calcMove ) {
 
-	// this move was not specified with a time to accomplish, so accomplish
-	// in minimal amount of time possible
-	
-	 // determine how far we'd move in our acceleration and deceleration
-	 // times for moves that must operate at maximum speed. We accelerate
-	 // and decel over 200 steps each, or 1/4 of the total steps, whichever is less 
+        // this move was not specified with a time to accomplish, so accomplish
+        // in minimal amount of time possible
+        
+         // determine how far we'd move in our acceleration and deceleration
+         // times for moves that must operate at maximum speed. We accelerate
+         // and decel over 200 steps each, or 1/4 of the total steps, whichever is less 
 
-		// set travel const (.travel) here before attempting to use it	 
+            // set travel const (.travel) here before attempting to use it	 
+           
         _setTravelConst(&m_splineOne);
 
-	unsigned int mSpeed = ( maxStepRate() > maxSpeed() )? maxSpeed() : maxStepRate();
+        unsigned int mSpeed = ( maxStepRate() > maxSpeed() ) ? maxSpeed() : maxStepRate();
 
-	float rampSteps = (200 > (p_Steps / 4)) ? (p_Steps / 4) : 200;
-	
-	rampSteps *= 2;
-	
-	float crTm = ((p_Steps - rampSteps) / mSpeed) * 1000;
-	float adTm = ((rampSteps / mSpeed) * 1000) * m_splineOne.travel;
-	
-	float mvMS = (crTm + adTm) + 1.0;
-	
-		// take a minimum of 50ms to make the move - to prevent over-speeding
-		// and getting goofy.
-	if( mvMS < 50.0 ) {
-		mvMS = 50.0;
-	}
-		
-	
-		// one spline point per ms, like normal.
-	m_totalSplines = (unsigned long) mvMS;
-	
-		// prep spline variables
-	_initSpline(false, p_Steps, mvMS, adTm/2, adTm/2);
-	
-		// we need to initialize the first spline point
-	m_curSpline = 1;
-	float tmPos = (float) m_curSpline / (float) m_totalSplines;
-		// calculate the first running speed
-	f_easeFunc(false, tmPos);
+        float rampSteps = (200 > (p_Steps / 4)) ? (p_Steps / 4) : 200;
+        
+        rampSteps *= 2;
+        
+        float crTm = ((p_Steps - rampSteps) / mSpeed) * 1000;
+        float adTm = ((rampSteps / mSpeed) * 1000) * m_splineOne.travel;
+        
+        float mvMS = (crTm + adTm) + 1.0;
+        
+            // take a minimum of 50ms to make the move - to prevent over-speeding
+            // and getting goofy.
+        if( mvMS < 50.0 ) {
+            mvMS = 50.0;
+        }
+            
+        
+            // one spline point per ms, like normal.
+        m_totalSplines = (unsigned long) mvMS;
+        
+            // prep spline variables
+        _initSpline(false, p_Steps, mvMS, adTm/2, adTm/2);
+        
+            // we need to initialize the first spline point
+        m_curSpline = 1;
+        float tmPos = (float) m_curSpline / (float) m_totalSplines;
+            // calculate the first running speed
+        f_easeFunc(false, tmPos);
    }
 
 	// limit step cycle using this control
@@ -1170,7 +1172,8 @@ void OMMotor::stop() {
 
         // set motors not moving in async mode
       m_isRun = false;
-      
+      m_refresh = true;
+    
         // set sleep state for drivers if needed
       if( sleep() )  
         digitalWrite(OM_MOT_DSLP, OM_MOT_SSTATE);
@@ -1261,18 +1264,14 @@ void OMMotor::clear() {
 	m_curPlanSpline = 0;
 }
 
+
  // execute an async move, when specifying a direction
 void OMMotor::_stepsAsync( bool p_Dir, unsigned long p_Steps ) {
   
     // save currently set motor direction
    m_asyncWasdir = dir();
    dir( p_Dir );
-   _stepsAsync(p_Steps);
-}
-
- // execute an async move, specifying only steps
-void OMMotor::_stepsAsync( unsigned long p_Steps ) {
-
+    
 	 // is async control not already running?
 	 if( ! running() ) {
 	 	 
@@ -1283,8 +1282,8 @@ void OMMotor::_stepsAsync( unsigned long p_Steps ) {
 	    
 	    if( sleep() )   {
 	      digitalWrite(OM_MOT_DSLP, !OM_MOT_SSTATE);
-		// we don't want to start moving before its safe
-		// to do so
+            // we don't want to start moving before its safe
+            // to do so
 	      delay(OM_MOT_SAFE);
 	    }	    
 	     
@@ -1313,7 +1312,13 @@ void OMMotor::_runISR() {
   static unsigned long stepsTaken = 0;
   static unsigned long totalCyclesTaken = 0;
 
- 
+  if( m_refresh ) {
+      cyclesLow = 0;
+      stepsTaken = 0;
+      totalCyclesTaken = 0;
+      m_refresh = false;
+  }
+    
   if( m_asyncSteps > 0 && totalCyclesTaken >= m_cyclesPerSpline ) {
   	  // we are ready for the next point in the spline,
   	  // run speed calculations
@@ -1372,7 +1377,7 @@ void OMMotor::_runISR() {
     	// we don't stop here, as we still need to check the off-time
     	// between steps, based on our current spline point
     	
-  } // end if( totalCyclesTaken...
+  } // end if( m_asyncSteps > 0 && totalCyclesTaken...
 
   
   totalCyclesTaken++;
@@ -1417,10 +1422,10 @@ void OMMotor::_runISR() {
     	// or if we have hit the maximum stepping point, 
     	// stop now - don't overshoot
       if( (m_totalSteps > 0 && m_stepsMoved >= m_totalSteps) || (m_asyncSteps > 0 && stepsTaken >= m_asyncSteps) ) {
-	 stepsTaken = 0;
-	 cycleErrAccumulated = 0.0;
-	 cyclesLow = 0;
- 	 stop();
+          stepsTaken = 0;
+          cycleErrAccumulated = 0.0;
+          cyclesLow = 0;
+          stop();
       } 
       
        // bring step pin low again, the driver will register
@@ -1492,15 +1497,11 @@ long OMMotor::homeDistance() {
  */
  
 void OMMotor::home() {
- // we don't want to be in continuous mode when
- // performing a send to home, so that the logic 
- // will make one (busy) move.
 
- bool wasCont = continuous();
+ if( homeDistance() == 0 )
+     return;
+    
  bool thsDir  = false;
-
- continuous(false);
-
  long goToPos = m_homePos;
     
 	// negative value means move in
@@ -1511,13 +1512,12 @@ void OMMotor::home() {
 	thsDir = true;
  }
  
+    
  	// there is no need to re-set m_homePos, as travelling in the
  	// specified direction will correct the recorded steps
  	
  move(thsDir, goToPos);
- 
- continuous(wasCont);
-	
+ 	
 }
 
 /* 

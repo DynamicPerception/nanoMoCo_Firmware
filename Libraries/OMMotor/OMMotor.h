@@ -460,7 +460,7 @@ public:
 	void homeSet();
 		
 	static void easing(uint8_t);
-	
+	    
 	long homeDistance();
 	
 	
@@ -479,8 +479,7 @@ private:
 	
 	static s_splineCal m_splineOne;
 	static s_splineCal m_splinePlanned;
-
-	void _stepsAsync(unsigned long);
+    
 	void _stepsAsync(bool, unsigned long);
 	
 	static void _runISR();
@@ -505,6 +504,7 @@ private:
 	static bool m_isRun;
 	static bool m_asyncWasdir;
 	static bool m_curDir;
+    static bool m_refresh;
 
 	static unsigned long m_asyncSteps;
 	static unsigned long m_asyncDo;

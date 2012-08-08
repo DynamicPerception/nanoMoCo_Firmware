@@ -201,7 +201,6 @@ void loop() {
    // check to see if we have any commands waiting      
   Node.check();
      
-   
       // if our program is currently running...
       
    if( running ) {
