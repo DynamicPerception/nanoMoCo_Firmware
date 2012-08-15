@@ -103,6 +103,8 @@ unsigned int  camera_fired     = 0;
 boolean mtpc       = false;
 boolean mtpc_start  = false;
 
+ // maximum run time
+unsigned long max_time = 0;
 
 OMComHandler ComMgr = OMComHandler();
   
@@ -210,6 +212,10 @@ void loop() {
      run_time += millis() - last_time;
      last_time = millis();
      
+       // hit max runtime? done!
+     if( ComMgr.master() && max_time > 0 && run_time > max_time )
+       stopProgram();
+       
        // if we're the slave and a interrupt has been triggered by the master,
        // set to clear to fire mode (for multi-node sync)
      if( ComMgr.master() == false && ComMgr.slaveClear() == true ) 

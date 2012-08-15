@@ -677,6 +677,11 @@ void serProgramAction(byte* input_serial_buffer) {
              mt_plan = false;
              break;
              
+           case 22:
+             // max run time
+             max_time = Node.ntoul(input_serial_buffer);
+             break;
+             
            case 100:
 
               // handling status requests
