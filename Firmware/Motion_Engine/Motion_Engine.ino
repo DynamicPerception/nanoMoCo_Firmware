@@ -41,7 +41,7 @@ See dynamicperception.com for more information
 
   // serial api version
   
-#define SERIAL_VERSION  3
+#define SERIAL_VERSION  4
 
 #define SERIAL_TYPE  "OMAXISVX"
 
@@ -208,10 +208,10 @@ void loop() {
    if( running ) {
      
             // update run timer
-  
-     run_time += millis() - last_time;
-     last_time = millis();
-     
+     unsigned long cur_time = millis();  
+     run_time += cur_time - last_time;
+     last_time = cur_time;
+
        // hit max runtime? done!
      if( ComMgr.master() && max_time > 0 && run_time > max_time )
        stopProgram();
