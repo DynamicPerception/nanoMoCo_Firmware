@@ -407,8 +407,8 @@ public:
 
 	OMMotor();
 	
-	void ms(uint8_t);
-	uint8_t ms();
+	static void ms(uint8_t);
+	static uint8_t ms();
 	
 	static void dir(bool);
 	static bool dir();

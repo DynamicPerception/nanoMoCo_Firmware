@@ -35,18 +35,11 @@ See www.openmoco.org for more information
   
 */
 
-
-// TODO: Add Repeat Cycle
-
-  // how many actions do we allow for camera repeat?
-#define CAMERA_REPEAT_ACTIONS 4
   
 
  // necessary camera control variables
 
 unsigned int  camera_max_shots = 0;
-unsigned int  camera_exp_mod   = 1;
-
 byte  camera_repeat = 0;
 
 

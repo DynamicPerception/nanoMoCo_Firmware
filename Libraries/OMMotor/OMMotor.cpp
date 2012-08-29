@@ -129,9 +129,10 @@ void OMMotor::ms( uint8_t p_Div ) {
   bool s2 = false;
   bool s3 = false;
   
-  this->m_curMs = p_Div;
+  uint8_t wasMs = m_curMs;
+  m_curMs       = p_Div;
   
-  switch( p_Div ) {
+  switch( p_Div ) {          
     case 2:
       s1 = true;
       break;
@@ -154,6 +155,16 @@ void OMMotor::ms( uint8_t p_Div ) {
   digitalWrite(OM_MOT_DMS1, s1);
   digitalWrite(OM_MOT_DMS2, s2);
   digitalWrite(OM_MOT_DMS3, s3);
+    
+        // adjust marker for home!
+    
+    if( wasMs != m_curMs ) {
+        if( wasMs > m_curMs )
+            m_homePos /= (wasMs / m_curMs);
+        else
+            m_homePos *= (m_curMs / wasMs);
+    }
+    
 }
       
 /** Get Current Direction
