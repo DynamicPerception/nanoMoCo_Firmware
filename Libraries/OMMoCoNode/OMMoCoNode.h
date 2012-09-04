@@ -32,7 +32,7 @@ See www.openmoco.org for more information
  // must load before wconstants to prevent issues
 #include <math.h>
 #include "Arduino.h"
-#include <HardwareSerial.h>;
+#include <HardwareSerial.h>
 
 #include "OMMoCoBus.h"
 
