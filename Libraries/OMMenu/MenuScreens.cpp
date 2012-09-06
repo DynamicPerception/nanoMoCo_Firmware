@@ -62,99 +62,65 @@ const Screen Resources::screens[] PROGMEM = {
 		{ 2, //0-INITIAL_DISPLAY=4 lines
 		  0, //
 		  { //array
-			{ 0, 0, MENU_LEVEL_ENTRY, MAIN_MENU_SCREEN, 0, 0 }, //1
-			{ 1, 0, MENU_LEVEL_ENTRY, MAIN_MENU_SCREEN, 0, 0 }, //2
+			{ 0, 0, MENU_LEVEL_ENTRY, MENU_SCREEN, 0, 0 }, //1
+			{ 1, 0, MENU_LEVEL_ENTRY, MENU_SCREEN, 0, 0 }, //2
 		  }
 		},
-
-
-		//MAIN_MENU_SCREEN-> Screen[1]
+		//MENU_SCREEN-> Screen[1]
 		{
 		 4,							//
 		 1,							//arrows required
 		 {
 		    {24,0,STATIC_ITEM_ENTRY, 0,0,0},	//1
-		    {17,0,MENU_LEVEL_ENTRY, EASY_MOVIE_SCREEN,0,0},	//2
-		    {18,0,MENU_LEVEL_ENTRY, MANAGE_DEVICES_SCREEN},	//3
-		    {19,0,MENU_LEVEL_ENTRY, SETUP_SCREEN},	//4
+		    {17,0,MENU_LEVEL_ENTRY, CREATE_FILM_WIZARD,0,0},	//2
+		    {18,0,MENU_LEVEL_ENTRY, RESCAN_DEVICES},	//3
+		    {19,0,MENU_LEVEL_ENTRY, SETTINGS_SCREEN},	//4
 		  }
 		},
-		//REAL_TIME_MOTION_SCREEN-> Screen[2]
+		//CREATE_FILM_WIZARD-> Screen[2]
 		{
-				 4,							//=4 lines
-				 0,                         //arrows not required
-				{
-				   {16,0,STATIC_ITEM_ENTRY,0,0,0},	//1
-				   {BLANK,0,PARAM_ITEM_ENTRY, 0 , PARAM_TYPE_LIST, &vec},	//2
-				 }
+		 4,							//=4 lines
+		 1,
+		  {
+			 {12,0,STATIC_ITEM_ENTRY,0,0,0},	//1
+			 {13,0,WIZARD_LEVEL_ENTRY,RESCAN_DEVICES,3,0},	//2
+			 {14,0,WIZARD_LEVEL_ENTRY,0,4,0},	//3
+			 {15,0,WIZARD_LEVEL_ENTRY,0,0,0}	//4
+		  }
 		},
-		//EASY_MOVIE_SCREEN
-
+		//RESCAN_DEVICES
 		{
-				 4,							//=4 lines
-				 0,                         //arrows not required
-				{
-				   {17,0,STATIC_ITEM_ENTRY,STATIC_TEMPLATE,0,0},//1
-				   {4,0,STATIC_ITEM_ENTRY,STATIC_TEMPLATE,0,0},	//2
-				   {5,0,STATIC_ITEM_ENTRY,STATIC_TEMPLATE,0,0},	//3
-				   {6,0,STATIC_ITEM_ENTRY,STATIC_TEMPLATE,0,0}	//4
-				 }
+		  2,							//=4 lines
+		  0,                         //arrows not required
+		  {
+			{16,0,STATIC_ITEM_ENTRY,0,0,0},	//1
+			{BLANK_MESSAGE, OP_EXPAND_LIST, PARAM_ITEM_ENTRY, 0, 0},	//2
+		  }
 		},
-		//MANAGE_DEVICES_SCREEN
-		{
-				 4,							//=4 lines
-				 1,
-				{
-				   {12,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,2,0},	//1
-				   {13,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,3,0},	//2
-				   {14,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,4,0},	//3
-				   {15,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0}	//4
-
-				 }
-		},
-		//SETUP_SCREEN
-		{
-				 2,							//=2 lines
-				 1,
-				{
-				   {12,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//1
-				   {13,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//2
-				   {14,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//3
-				   {15,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0}	//4
-				 }
-		},
-		//DUMMY_SCREEN
+		//SETTINGS_SCREEN
 		{
 				 4,							//=4 lines
 				 1,
 				{
-				   {20,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//1
-				   {20,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//2
-				   {20,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0},	//3
-				   {20,0,PARAM_ITEM_ENTRY,PARAM_TEMPLATE,0,0}	//4
+				   {12,0,PARAM_ITEM_ENTRY,0,2,0},	//1
+				   {13,0,PARAM_ITEM_ENTRY,0,3,0},	//2
+				   {14,0,PARAM_ITEM_ENTRY,0,4,0},	//3
+				   {15,0,PARAM_ITEM_ENTRY,0,0,0}	//4
+
 				 }
 		},
-		//
-		//STATIC_TEMPLATE
+
+		//SUB_WIZARD
 		{
-						 2,							//=4 lines
-						 0,
-
-						{
-						   {23,0,PARAM_ITEM_ENTRY, 0,0,0},	//1
-						   {24,0,PARAM_ITEM_ENTRY, 0,0,0}	//2
-
-						 }
-				},
-		//    PARAM_TEMPLATE
-				{
-					 1,		//=4 lines
-					 0,
-					 {
-					   {21,0,PARAM_ITEM_ENTRY, PARAM_TEMPLATE,0,0}	// self!!
-   					 }
-				}
-
+		  4,							//=4 lines
+		  1,
+			{
+			   {12,0,PARAM_ITEM_ENTRY,0,2,0},	//1
+			   {13,0,PARAM_ITEM_ENTRY,0,3,0},	//2
+			   {14,0,PARAM_ITEM_ENTRY,0,4,0},	//3
+			   {15,0,PARAM_ITEM_ENTRY,0,0,0}	//4
+			 }
+		}
 };
 
 

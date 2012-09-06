@@ -70,8 +70,8 @@ protected:
 	void InvalidAction(void){};
     //
 	void ProcessLine (unsigned char LineProcess, unsigned char LineNumber);
-	void IncreaseParameter (void);
-	void DecreaseParameter (void);
+	void IncreaseParameter (void){};
+	void DecreaseParameter (void){};
 
 //inner interface
 protected:
