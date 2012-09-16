@@ -10,57 +10,18 @@
 /**
  * Non-virtual destructor, change if wants to grow
  * */
-UserInput::UserInput(uint8_t up, uint8_t down, uint8_t enter, uint8_t menu)
+UserInput::UserInput()
 {
 	cPB[0]=cPB[1]=cPB[2]=0;
-	cScanCode = 0x55;
-	_up_pin = up; //
-	_down_pin = down; //
-	_enter_pin = enter; //
-	_menu_pin = menu; //
-	//
-	pinMode(_up_pin, INPUT);
-	pinMode(_down_pin, INPUT);
-	pinMode(_enter_pin, INPUT);
-	pinMode(_menu_pin, INPUT);
-
-	pinMode(13, OUTPUT);
-
-	// enable internal pull-up resistors
-	digitalWrite(_up_pin, HIGH);
-	digitalWrite(_down_pin, HIGH);
-	digitalWrite(_enter_pin, HIGH);
-	digitalWrite(_menu_pin, HIGH);
-
-	digitalWrite(13,HIGH);
+	cScanCode = 0xFF;
 }
 
 /**
- * For better portability. Use digitalRead instead of
- * N.B. Read is skew i.e. not all pins at same time
- * return zero bits for pressed buttons
+ * inline not good for GCC
  * */
-uint8_t UserInput::sampleBtnPins()
-{
-  uint8_t scan = 0;
+UserInput::~UserInput(){
 
-  if (digitalRead(_up_pin)) {
-	  bitSet(scan, 3); //match K_UP;
-  }
-
-  if (digitalRead(_down_pin)) {
-	  bitSet(scan, 2);// |= K_DOWN;
-  }
-
-  if (digitalRead(_enter_pin)) {
-	 bitSet(scan, 0); // match K_ENTER;
-  }
-
-  if (digitalRead(_menu_pin)) {
-	  bitSet(scan, 1); //match K_MENU;
-  }
-  return scan;
-}
+};
 
 /***
  *
@@ -68,10 +29,10 @@ uint8_t UserInput::sampleBtnPins()
  * */
 uint8_t UserInput::KeyboardRead(MenuContext& status)
 {
-	//shunt last readings
+	//shift last readings
 	cPB[0]=cPB[1];
 	cPB[1]=cPB[2];
-	cPB[2]= ~sampleBtnPins();
+	cPB[2]= sampleButtons(&sample);
 	//3 scans for debounce
 	if ((cPB[0]==cPB[1]) && (cPB[0]==cPB[2]))
 	{
@@ -83,7 +44,7 @@ uint8_t UserInput::KeyboardRead(MenuContext& status)
 	}
 
 	if (status.getContext() & PB_DELTA)
-	{//here there is a keyboard input
+	{//here there is a key press
 		status.clrContextBits(PB_DELTA);
 		//clear the calling flag
 		//and start the timer with the initial period, i.e. for the 1st 1 sec nothing happens
@@ -98,13 +59,17 @@ uint8_t UserInput::KeyboardRead(MenuContext& status)
 
 		//table defined scanCode to KeyCode translation
 		if (bitRead(cScanCode,0)) {
-			cKeyboardCode = K_ENTER;
+			cKeyboardCode = K_NOUSE;
 		} else if (bitRead(cScanCode,1)) {
-			cKeyboardCode = K_MENU;
+			cKeyboardCode = K_OK;
 		} else if (bitRead(cScanCode,2)) {
 			cKeyboardCode = K_UP;
 		} else if (bitRead(cScanCode,3)) {
 			cKeyboardCode = K_DOWN;
+		} else if (bitRead(cScanCode,4)) {
+			cKeyboardCode = K_RIGHT;
+		} else if (bitRead(cScanCode,5)) {
+			cKeyboardCode = K_LEFT;
 		} else {
 			cKeyboardCode = 0x00;
 			status.clrContextBits(KEYBOARD_VALID);
@@ -112,7 +77,7 @@ uint8_t UserInput::KeyboardRead(MenuContext& status)
 		}
 
 	} else {
-	//no keyboard input, check for typematic increases
+	//key hold, check for typematic increases
 		if (((cKeyboardCode==K_UP) || (cKeyboardCode==K_DOWN)) && (cScanCode !=0xf8))
 		{//only if up or down
 			if (status.getTimer(T_KEYBOARD_REPEAT) == 0)

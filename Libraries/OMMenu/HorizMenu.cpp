@@ -11,6 +11,7 @@ HorizMenu::HorizMenu(LiquidCrystal& lcd)
  : disp(lcd)
 {
 	cUpdateViewPhase = 0;
+	memset(load, 0, sizeof(loadCB) * OPER_MAX);
 }
 
 /**
@@ -19,9 +20,9 @@ HorizMenu::HorizMenu(LiquidCrystal& lcd)
  * */
 void HorizMenu::ResetDisplay(){
 	disp.begin(LCD_WIDTH, LCD_LINES);
-    Resources::readGlyph(0,cLineBuf2);
+    Resources::readGlyph(3,cLineBuf2);
 	disp.createChar(LEFT_ARROW_GLYPH,cLineBuf2);
-	Resources::readGlyph(1,cLineBuf2);
+	Resources::readGlyph(2,cLineBuf2);
 	disp.createChar(RIGHT_ARROW_GLYPH,cLineBuf2);
     disp.clear();
     disp.home();
@@ -88,28 +89,43 @@ void HorizMenu::TransferMenu(void)
 		//clear so doesn't continuously execute
 		//every time it is called
 
-		//copy the associated message across PGM space
 		uint8_t msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, cPointerPos);
-		Resources::readMsgToBuf(msgNum, cLineBuf2);
+		if (displayBuffer.cScreenType == MENU_LEVEL_ENTRY) {
+		   //copy the associated message across PGM space
+		   Resources::readMsgToBuf(msgNum, cLineBuf2);
+		} else {
+			Resources::readMsgToBuf(msgNum, cLineBuf1);
+			// load parameter value to second line
+			// cFocusParameter set in GoToDisplaySelected()
+			uint8_t paramNum = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
+			ReadParameter(paramNum);
+		}
 
 		cLineBuf1[LCD_WIDTH] = 0;
 		cLineBuf2[LCD_WIDTH] = 0;
 
-		//
+		//decoration with arrows or another glyph
 		if (displayBuffer.cArrowsRequired)
 		{
-			//left - right arrows
-			if (cItemsLimit > LCD_LINES)
+			uint8_t* p_left = 0;
+			uint8_t* p_right = 0;
+			if (displayBuffer.cScreenType == MENU_LEVEL_ENTRY) {
+				p_left = &cLineBuf2[0];
+				p_right = &cLineBuf2[LCD_WIDTH - 1];
+			} else if (displayBuffer.cScreenType == WIZARD_LEVEL_ENTRY) {
+				p_left = &cLineBuf1[0];
+				p_right = &cLineBuf1[LCD_WIDTH - 1];
+			}
+			//left - right arrows,
+			// position 0 is for menu header
+			if (cPointerPos > 1)
 			{
-				if (cPointerPos != 0)
-				{
-					cLineBuf2[0] = LEFT_ARROW_GLYPH;
+				 *p_left = LEFT_ARROW_GLYPH;
+			}
+			if (cPointerPos < cItemsLimit - 1)
+			{
+				*p_right = RIGHT_ARROW_GLYPH;
 
-				}
-				if (cPointerPos < cItemsLimit)
-				{
-					cLineBuf2[LCD_WIDTH - 1] = RIGHT_ARROW_GLYPH;
-				}
 			}
 		}
 		status.setContextBits(WRITE_LINE1 | WRITE_LINE2 );
@@ -122,26 +138,18 @@ void HorizMenu::TransferMenu(void)
  **/
 void HorizMenu::CreateMenu (uint8_t In_msgNum)
 {
-	// clearing the parameter type- 0xff
-	//indicates that the line is to be blanked
-	for (unsigned char i=0; i < MAX_SCREEN_SEL; i++) {
-		displayBuffer.cParamNum[i] = UNUSED_PARAMETER;
-		//set up for unused line
-	}
 	//transferring all relevant information from the screen
 	//to the display buffer
 	displayBuffer.cArrowsRequired = Resources::readArrowsReq(In_msgNum);
 	displayBuffer.cCurrentScreen = In_msgNum;
     //uint8_t msgNum[4] = {0,1,2,3};
 	uint8_t cActualNumberOfItems = Resources::readNumberOfItems(In_msgNum);
+	displayBuffer.cScreenType = Resources::readMenuType(In_msgNum);
 	for (uint8_t i=0; i < cActualNumberOfItems; i++)
 	{//do for number of lines in the particular display
-		displayBuffer.cNextAction[i] = Resources::readNextType(In_msgNum,i);
 		//so we know what to do next
-		displayBuffer.cAssociatedDisplay[i] = Resources::readNextScreen(In_msgNum,i);
+		displayBuffer.cNextScreenNum[i] = Resources::readNextScreen(In_msgNum,i);
 		//so we know what and display
-		displayBuffer.cParamNum[i] = Resources::readParamNum(In_msgNum,i);
-		//save the parameter
 	}
 
 	//copy the 0th message across PGM space as menu header
@@ -149,7 +157,7 @@ void HorizMenu::CreateMenu (uint8_t In_msgNum)
 	Resources::readMsgToBuf(msgNum, cLineBuf1);
 
 	//do not count header
-	cItemsLimit = cActualNumberOfItems - 1;
+	cItemsLimit = cActualNumberOfItems;
 
 	//and force update when transfer message next seen
 	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
@@ -173,8 +181,7 @@ void HorizMenu::PositionMoveLeft (void)
  * */
 void HorizMenu::PositionMoveRight (void)
 {
-	if ((cPointerPos < (cItemsLimit-1)) &&
-		(displayBuffer.cParamNum[cPointerPos+1] != UNUSED_PARAMETER)) {
+	if (cPointerPos < cItemsLimit-1) {
 		cPointerPos++;
 	}
 	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
@@ -182,16 +189,17 @@ void HorizMenu::PositionMoveRight (void)
 
 /**
  * Open menu item.
+ * Set cFocusParameter
  * */
 uint8_t HorizMenu::GoToDisplaySelected(void)
 {
-    unsigned int phase = displayBuffer.cNextAction[cPointerPos];
+    uint8_t phase = displayBuffer.cScreenType;
 	//in this case all lines point to the same target
-	cFocusParameter = displayBuffer.cParamNum[cPointerPos];
+	cFocusParameter = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
 	//take the parameter to use later.
 	//if this is not a parameter entry, then no harm is done.
 	status.openParameter(cFocusParameter);
-	cNextScreen = displayBuffer.cAssociatedDisplay[cPointerPos];
+	uint8_t cNextScreen = displayBuffer.cNextScreenNum[cPointerPos];
 	CreateMenu(cNextScreen);
 	clearPointerPos();
 	//must be done separately to allow correct display creation
@@ -207,6 +215,18 @@ void HorizMenu::clearPointerPos(void)
 	cPointerPos = 1;
 	status.setContextBits(TIME_DISABLE);
 	//prevent any further time update at deeper levels
+}
+
+/**
+ *
+ * */
+void HorizMenu::ReadParameter(uint8_t idx)
+{
+	//fill blank as no parameter set
+	Resources::readMsgToBuf(25, cLineBuf2);
+	status.formatParameterText(idx, &cLineBuf2[7]);
+	cLineBuf2[0] = '[';
+	cLineBuf2[LCD_WIDTH -1 ] = ']';
 }
 
 /**

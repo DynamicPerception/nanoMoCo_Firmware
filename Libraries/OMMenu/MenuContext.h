@@ -36,6 +36,7 @@
 
 #define INVALID_IDX 0xFF
 
+
 const unsigned int iMaximumParameters[NUMBER_OF_PARAMETERS]= {
 	1,1,1,1,1,1,1,65535,65535,65535,500,65535,65535,100,100,2, //0-15
 	3000,400,0x2459,50,1,100,100,100,100,100,100,100,0,0,0,0 //16-31
@@ -60,7 +61,9 @@ class MenuContext {
 	uint16_t iStatus;
 	//status byte with the following bit allocations
 
-	uint16_t iParameter[NUMBER_OF_PARAMETERS]; //parameters value array to edit
+	uint16_t iParamValue[NUMBER_OF_PARAMETERS]; //parameters value array to edit
+
+
 
 	uint16_t periodTimers[NUMBER_OF_TIMERS];
 
@@ -91,6 +94,7 @@ public:
 	void incParameter();
 	void decParameter();
 	unsigned int closeParameter(bool saveFlag);
+	void formatParameterText(uint8_t idx, uint8_t* cLineBuf2);
 };
 
 #endif /* MENUCONTEXT_H_ */

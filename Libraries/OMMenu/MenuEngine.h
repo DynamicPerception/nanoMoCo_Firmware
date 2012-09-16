@@ -9,7 +9,7 @@
 #define MENUENGINE_H_
 
 #include <inttypes.h>
-#include "UserInput.h"
+#include "AnlgBtnInput.h"
 #include "HorizMenu.h"
 #include "MenuContext.h"
 
@@ -42,7 +42,7 @@ protected:
 	uint8_t _led;
 
 	StackType ProcessStack;
-    UserInput keyboard;
+    AnlgBtnInput keyboard;
 
     //time stamps to calculate time
     unsigned long mSTimer0;
@@ -70,7 +70,6 @@ protected:
 	void DisplayInterfaceManager(void);
 	void TimeoutNoKeyEntry (void);
 	void DisplaySelectedItem(void);
-
 };
 
 #endif /* MENUENGINE_H_ */

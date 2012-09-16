@@ -16,6 +16,8 @@
 
 #define LEFT_ARROW_GLYPH 3
 #define RIGHT_ARROW_GLYPH 4
+#define OPER_MAX 2
+#define LIST_ITEMS_MAX 6
 
 class HorizMenu {
 
@@ -24,31 +26,30 @@ class HorizMenu {
 		//for the maximum number of rows
 		uint8_t cArrowsRequired;	//need to display selection arrows
 		uint8_t cCurrentScreen; //in order to recreate later
-		uint8_t cParamNum[MAX_SCREEN_SEL];	//parameter associated with line
-		uint8_t cNextAction[MAX_SCREEN_SEL];	//where to go when enter is pressed
-		uint8_t cAssociatedDisplay[MAX_SCREEN_SEL];	//display to invoke when enter is pressed
-		//this can carry a number associated with the line, so that the lines can be packed
-		//and still correctly identified (it could be eeprom address when the line is actually a parameter
-		//uint8_t cLineBuf[MAX_SCREEN_SEL][LCD_WIDTH + 1];
+		uint8_t cScreenType;
+		//uint8_t cParamNum[MAX_SCREEN_SEL];	//parameter associated with item
+		uint8_t cNextScreenNum[MAX_SCREEN_SEL];	//screen to draw when enter is pressed
 	};
+
+    /*callbacks for special actions, like load menu items*/
+	typedef void (*loadCB)(void);
+	loadCB load[OPER_MAX];
+
+	uint8_t cListBuf[LIST_ITEMS_MAX][LCD_WIDTH + 1];
 
 	uint8_t cLineBuf1[LCD_WIDTH + 1];
 	uint8_t cLineBuf2[LCD_WIDTH + 1];
-
-	uint8_t cNextScreen;
+    /* */
 	uint8_t cItemsLimit;
-		//for displays < 4 lines
+    /* */
 	unsigned int iLatchedStatus;
-	//to allow display write to complete
-	uint8_t cUpdateViewPhase;	//send all 4 lines to display as necessary
+	/* reduce flicker by performing per-line update*/
+	uint8_t cUpdateViewPhase;
 
 protected:
 	uint8_t cPointerPos; // active menu item
-
+    /* valid only in edit mode if you press Enter on parma item*/
 	uint8_t cFocusParameter;
-	//when the parameter is finally selected, the address is carried on this
-	//variable- modified every time the Enter is pressed on a menu selection
-
 	//
 	MenuBufferType displayBuffer;
 	//
@@ -72,12 +73,15 @@ protected:
 	void ProcessLine (unsigned char LineProcess, unsigned char LineNumber);
 	void IncreaseParameter (void){};
 	void DecreaseParameter (void){};
+	void ReadParameter(uint8_t idx);
 
 //inner interface
 protected:
 	void clearPointerPos(void);
 	void setPointerPos(uint8_t lineNum){cPointerPos = lineNum;};
 	void ResetDisplay();
+	void setHandler(uint8_t, void (*) (void));
+
 
 protected:
 	int WriteLine (const uint8_t *bufferStart, uint8_t startLine, uint8_t lineOffset);

@@ -8,16 +8,14 @@
 #include "MenuEngine.h"
 
 
-#define BUT1 54 + 12
-#define BUT2 54 + 13
-#define BUT3 54 + 14
-#define BUT4 54 + 15
+// which input is our button
+#define BUT_PIN 14
 
 /**
  * top level class may have normal constructor
  * */
 MenuEngine::MenuEngine(LiquidCrystal& lcd)
-: HorizMenu(lcd), keyboard(BUT1,BUT2,BUT3,BUT4)
+: HorizMenu(lcd), keyboard(BUT_PIN)
 {
 	InitialiseDisplay();
 
@@ -84,23 +82,24 @@ void MenuEngine::DisplayInterfaceManager() {
 
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
-			if (status.getKeyboardCode() == K_MENU) {//only in Menu input
+			if (status.getKeyboardCode() == K_OK) {//only in Menu input
 				DisplaySelectedItem();
 			}
 		}
 		break;
 	case MENU_LEVEL_ENTRY:
+	case PARAM_ITEM_ENTRY:
 		TransferMenu();
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
 			uint8_t keyCode = status.getKeyboardCode();
-			if  (keyCode == K_ENTER) {
+			if  (keyCode == K_OK) {
 				DisplaySelectedItem();
-			} else if (keyCode == K_MENU) {
+			} else if (keyCode == K_UP) {
 				PopStack();
-			} else if  (keyCode == K_UP) {
+			} else if  (keyCode == K_LEFT) {
 				PositionMoveLeft();
-			} else if (keyCode == K_DOWN) {
+			} else if (keyCode == K_RIGHT) {
 				PositionMoveRight();
 			}
 
@@ -115,14 +114,14 @@ void MenuEngine::DisplayInterfaceManager() {
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
 			uint8_t keyCode = status.getKeyboardCode();
-			if  (keyCode == K_ENTER) {
+			if  (keyCode == K_OK) {
 				DisplaySelectedItem();
-			} else if (keyCode == K_MENU) {
+			} else if (keyCode == K_UP) {
 				PopStack();
-			} else if  (keyCode == K_UP) {
-				InvalidAction();
-			} else if (keyCode == K_DOWN) {
+			} else if  (keyCode == K_LEFT) {
 				PositionMoveLeft();
+			} else if (keyCode == K_RIGHT) {
+				PositionMoveRight();
 			}
 		} else {//check timeout
 			TimeoutNoKeyEntry();
@@ -130,23 +129,23 @@ void MenuEngine::DisplayInterfaceManager() {
 		break;
 
 		//TYPICAL PARAMTER CHANGE
-	case PARAM_ITEM_ENTRY:
+	case PARAM_ITEM_EDIT:
 		TransferMenu();
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
 
 			uint8_t keyCode = status.getKeyboardCode();
-			if  (keyCode == K_ENTER) {
+			if  (keyCode == K_OK) {
 				status.closeParameter(true);
 				//update the parameter
 				PopStack();
-			} else if (keyCode == K_MENU) {
+			} else if (keyCode == K_UP) {
 				status.closeParameter(false);
 				PopStack();
 				//no update of the parameter
-			} else if  (keyCode == K_UP) {
+			} else if  (keyCode == K_RIGHT) {
 				IncreaseParameter();
-			} else if (keyCode == K_DOWN) {
+			} else if (keyCode == K_LEFT) {
 				DecreaseParameter();
 			}
 

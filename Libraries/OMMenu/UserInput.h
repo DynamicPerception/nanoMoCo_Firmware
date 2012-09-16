@@ -18,10 +18,12 @@
 #define TYPEMATIC_STEP 10		//10 increments before going up a multiplier
 
 //bit masks for keys
-#define K_ENTER 1				//Keyboard Code associated with a key
-#define K_MENU 2				//Keyboard Code associated with a key
+#define K_NOUSE 1		  	    //(not used) Keyboard Code associated with a key
+#define K_OK 2				    //Keyboard Code associated with a key
 #define K_UP 4					//Keyboard Code associated with a key
 #define K_DOWN 8				//Keyboard Code associated with a key
+#define K_LEFT 16               //Keyboard Code associated with a key
+#define K_RIGHT 32              //Keyboard Code associated with a key
 
 #define KEYBOARD_TIMEOUT 1200	//2 minutes for keyboad before timeout
 /**
@@ -29,24 +31,24 @@
  * Debounce reading and sets flag on ready.
  * */
 class UserInput {
-	uint8_t _up_pin; //
-	uint8_t _down_pin; //
-	uint8_t _enter_pin; //
-	uint8_t _menu_pin; //
-
 	uint8_t cScanCode;
 	uint8_t iKeyboardIncrement;
 	uint8_t cKeyboardLoopCounter;
-	uint8_t cPB[3];	//for debounce of pushbuttons
-
 	uint8_t cKeyboardCode;
+	uint8_t cPB[3];	//for debounce of scancodes
+	int sample; //low-level value for debug
 
 protected:
-	uint8_t sampleBtnPins(void);
+	/* return scancode regardless of acquiring method*/
+	virtual uint8_t sampleButtons(int* buf) = 0;
 
 public:
-	UserInput(uint8_t up, uint8_t down, uint8_t enter, uint8_t menu);
+	UserInput();
+	virtual ~UserInput();
+	/* key press/depress logic and repeat */
 	uint8_t KeyboardRead(MenuContext& status);
+	/* mostly for debug*/
+	int GetSample() const {return sample;}
 };
 
 #endif /* USERINPUT_H_ */

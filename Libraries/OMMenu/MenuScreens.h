@@ -20,13 +20,14 @@ enum {INITIATE_LEVEL= 1,
 	  MENU_LEVEL_ENTRY = 3,
 	  WIZARD_LEVEL_ENTRY,
 	  PARAM_ITEM_ENTRY,
-	  STATIC_ITEM_ENTRY
+	  STATIC_ITEM_ENTRY,
+	  PARAM_ITEM_EDIT
 };
 
 /* operations with menu*/
 enum {
 	OP_NONE,
-	OP_EXPAND_LIST
+	OP_FILL_ITEM_LIST
 };
 
 
@@ -37,7 +38,9 @@ enum {
 	CREATE_FILM_WIZARD,
 	RESCAN_DEVICES,
 	SETTINGS_SCREEN,
-	SUB_WIZARD,
+	LIST_SELECTOR,
+	AXIS_WIZARD,
+	MAIN_WIZARD_2,
 	MAX_SCREENS
 };
 
@@ -46,11 +49,14 @@ enum {
  * */
 class Resources {
 	protected:
-	  const static Screen screens[MAX_SCREENS];
+	  const static MenuScreen screens[MAX_SCREENS];
 	  const static char glyphs[8][8];
+	  const static char fixedList1[3][7];//None,Camera,Bulb
+	  const static char fixedList2[2][12];//Begin,StartOver
+	  const static char fixedList3[2][5];//Yes,No
+	  const static char fixedList4[2][5];//
 	  //string index maintained manually
 	  const static char resources[NUMBER_OF_STRINGS][LCD_WIDTH+1];
-      static vector vec;
 public:
  /**
   * buffer must be 8 bytes long
@@ -71,12 +77,9 @@ public:
 	 return (pgm_read_byte(&Resources::screens[screen].items[item].cProcNum));
  };
 
- static uint8_t readNextType(uint8_t screen, uint8_t item){
-	 return (pgm_read_byte(&Resources::screens[screen].items[item].cNextType));
- };
 
  static uint8_t readNextScreen(uint8_t screen, uint8_t item) {
-	 return (pgm_read_byte(&Resources::screens[screen].items[item].cNextScreen));
+	 return (pgm_read_byte(&Resources::screens[screen].items[item].cNextMenu));
  };
 
  static uint8_t readParamNum(uint8_t screen, uint8_t item) {
@@ -90,6 +93,14 @@ public:
  static uint8_t readArrowsReq(uint8_t screen) {
      return (pgm_read_byte(&Resources::screens[screen].cArrowsRequired));
  };
+
+ static uint8_t readMenuType(uint8_t screen){
+ 	 return (pgm_read_byte(&Resources::screens[screen].cMenuType));
+  };
+
+ static uint8_t readLoadProc(uint8_t screen, uint8_t item){
+  	 return (pgm_read_byte(&Resources::screens[screen].cLoadProcess));
+   };
 
  /**
   * Transfer message from FLASH stored resource to normal memory.
