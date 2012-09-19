@@ -37,42 +37,44 @@
 #define INVALID_IDX 0xFF
 
 
-const unsigned int iMaximumParameters[NUMBER_OF_PARAMETERS]= {
-	1,1,1,1,1,1,1,65535,65535,65535,500,65535,65535,100,100,2, //0-15
-	3000,400,0x2459,50,1,100,100,100,100,100,100,100,0,0,0,0 //16-31
-	};
 
-const unsigned int iMinimumParameters[NUMBER_OF_PARAMETERS]= {
-	0,0,0,0,0,0,0,0,0,0,100,0,0,0,0,0, //0-15
-	0,0,0x0000,5,0,0,0,0,0,25,0,0,0,0,0,0 //16-31
-
-	};
-
-const unsigned int iStepParameters[NUMBER_OF_PARAMETERS]= {
-    1,1,1,1,1,1,1,1,1,110,10,1,1,1,1,1, //0-15
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 //16-31
-};
 
 /**
  * Contains timers and most important stateful  variables.
  * Support parameter edit protocol.
  * */
 class MenuContext {
-	uint16_t iStatus;
-	//status byte with the following bit allocations
+
 
 	uint16_t iParamValue[NUMBER_OF_PARAMETERS]; //parameters value array to edit
+	//
+	const static unsigned int iParamMaxValue[NUMBER_OF_PARAMETERS];
+	const static unsigned int iParamMinValue[NUMBER_OF_PARAMETERS];
+	const static unsigned int iStepParameters[NUMBER_OF_PARAMETERS];
 
+	char dynList[6][17];
 
+    //ToDo define sizes
+	const static char fixedList1[3][7];//None,Camera,Bulb
+    const static char fixedList2[2][12];//Begin,StartOver
+	const static char fixedList3[2][5];//Yes,No
+	const static char fixedList4[8][3];//
+	const static char fixedList5[2][17];//
 
 	uint16_t periodTimers[NUMBER_OF_TIMERS];
 
+	uint8_t iKeyboardIncrement;
 	uint8_t cFocusParameter;
 	uint16_t iModifiableValue;
+	uint16_t iStatus;
+		//status byte with the following bit allocations
+
 		//parameter stored to allow parameter to be modified
 		//or cancelled by just pressing menu and not enter
     uint8_t keyCode;
-    uint8_t iKeyboardIncrement;
+
+protected:
+    uint8_t checkParamRange(uint8_t idx, uint16_t* pParam);
 public:
 	MenuContext();
 
@@ -90,11 +92,13 @@ public:
     void setKeyboardCode(uint8_t);
 
 //parameter interface
+    bool isParamEdit();
 	void openParameter(uint8_t idx);
 	void incParameter();
 	void decParameter();
 	unsigned int closeParameter(bool saveFlag);
-	void formatParameterText(uint8_t idx, uint8_t* cLineBuf2);
+	/* return last position in string*/
+	uint8_t formatParameterText(uint8_t idx, uint8_t* cLineBuf);
 };
 
 #endif /* MENUCONTEXT_H_ */

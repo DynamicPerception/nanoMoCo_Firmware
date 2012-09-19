@@ -51,10 +51,6 @@ class Resources {
 	protected:
 	  const static MenuScreen screens[MAX_SCREENS];
 	  const static char glyphs[8][8];
-	  const static char fixedList1[3][7];//None,Camera,Bulb
-	  const static char fixedList2[2][12];//Begin,StartOver
-	  const static char fixedList3[2][5];//Yes,No
-	  const static char fixedList4[2][5];//
 	  //string index maintained manually
 	  const static char resources[NUMBER_OF_STRINGS][LCD_WIDTH+1];
 public:

@@ -71,8 +71,8 @@ protected:
 	void InvalidAction(void){};
     //
 	void ProcessLine (unsigned char LineProcess, unsigned char LineNumber);
-	void IncreaseParameter (void){};
-	void DecreaseParameter (void){};
+	void IncreaseParameter (void);
+	void DecreaseParameter (void);
 	void ReadParameter(uint8_t idx);
 
 //inner interface

@@ -24,6 +24,8 @@ const char Resources::glyphs[8][8] PROGMEM = {
   {} //7
 };
 
+
+
 const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 //1234567890123456
 {"   Hello Demo!! "},//0
@@ -111,8 +113,8 @@ const MenuScreen Resources::screens[] PROGMEM = {
 			0,
 			{
 			   {0,0,0,0},               //dummy header
-			   {4,0,LIST_SELECTOR, 3},	//1
-			   {21,0,LIST_SELECTOR,4}	//2
+			   {4,0,SETTINGS_SCREEN, 23},	//1 Frames/sec
+			   {21,0,SETTINGS_SCREEN,4}	//2
 		    }
 		},
 		//LIST_SELECTOR
@@ -129,18 +131,20 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		},
 		//AXIS_WIZARD
 		{
-			7,							//=items
+			8,							//=items
 			1,
 			WIZARD_LEVEL_ENTRY,
 			0,
 			  {
-				 {0,0,0,0}, //dummy header
-				 {6,0,0,1},
-				 {7,0,0,2},	//2
-				 {8,0,0,3},	//3
-				 {9,0,0,4},
-				 {10,0,0,5},
-				 {11,0,0,6}
+				 {0,0,AXIS_WIZARD,0}, //dummy header
+				 {6,0,AXIS_WIZARD,1},
+				 {7,0,AXIS_WIZARD,20},	//2
+				 {8,0,AXIS_WIZARD,21},	//3
+				 {9,0,AXIS_WIZARD,11},
+				 {10,0,AXIS_WIZARD,12},
+				 {11,0,AXIS_WIZARD,23},
+				 {17,0,CREATE_FILM_WIZARD,22}
+
 			  }
 		},
 
@@ -152,12 +156,12 @@ const MenuScreen Resources::screens[] PROGMEM = {
 					0,
 					{
 						 {0,0,0,0}, //dummy header
-						 {12,0,0,1},
-						 {13,0,0,2},
-						 {14,0,0,3},
-						 {15,0,0,4},
-						 {16,0,0,5},
-						 {17,0,0,6}
+						 {12,0,0,1}, //
+						 {13,0,0,20}, //
+						 {14,0,0,21}, //
+						 {15,0,0,22}, //
+						 {16,0,0,23}, //
+						 {17,0,0,6}  //
 					}
 		},
 

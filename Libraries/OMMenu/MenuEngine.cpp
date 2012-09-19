@@ -79,7 +79,6 @@ void MenuEngine::DisplayInterfaceManager() {
 		TransferMenu();
 		//not internal flag prevents refresh
 		//every time it is called
-
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
 			if (status.getKeyboardCode() == K_OK) {//only in Menu input

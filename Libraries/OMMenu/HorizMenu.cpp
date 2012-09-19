@@ -187,22 +187,39 @@ void HorizMenu::PositionMoveRight (void)
 	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
 }
 
+
+void HorizMenu::IncreaseParameter (void)
+{
+	status.incParameter();
+	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
+}
+
+
+void HorizMenu::DecreaseParameter (void)
+{
+	status.decParameter();
+	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
+}
 /**
  * Open menu item.
  * Set cFocusParameter
  * */
 uint8_t HorizMenu::GoToDisplaySelected(void)
 {
-    uint8_t phase = displayBuffer.cScreenType;
-	//in this case all lines point to the same target
-	cFocusParameter = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
-	//take the parameter to use later.
-	//if this is not a parameter entry, then no harm is done.
-	status.openParameter(cFocusParameter);
+	uint8_t phase = INITIATE_LEVEL;
 	uint8_t cNextScreen = displayBuffer.cNextScreenNum[cPointerPos];
-	CreateMenu(cNextScreen);
-	clearPointerPos();
-	//must be done separately to allow correct display creation
+	if (cNextScreen != displayBuffer.cCurrentScreen){
+	    CreateMenu(cNextScreen);
+	    //must be done separately to allow correct display creation
+	    clearPointerPos();
+	    phase = displayBuffer.cScreenType;
+	} else {
+		//take the parameter to use later.
+		//if this is not a parameter entry, then no harm is done.
+		cFocusParameter = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
+		status.openParameter(cFocusParameter);
+		phase = PARAM_ITEM_EDIT;
+	}
 	return phase;
 }
 
@@ -222,11 +239,16 @@ void HorizMenu::clearPointerPos(void)
  * */
 void HorizMenu::ReadParameter(uint8_t idx)
 {
-	//fill blank as no parameter set
-	Resources::readMsgToBuf(25, cLineBuf2);
-	status.formatParameterText(idx, &cLineBuf2[7]);
+	uint8_t len = status.formatParameterText(idx, &cLineBuf2[0]);
+	//fill blanks to the end
+	memset(&cLineBuf2[len], ' ', LCD_WIDTH - len );
 	cLineBuf2[0] = '[';
-	cLineBuf2[LCD_WIDTH -1 ] = ']';
+	if (status.isParamEdit()) {
+	  cLineBuf2[1] = '*';
+	} else {
+	  cLineBuf2[1] = '=';
+	}
+	cLineBuf2[LCD_WIDTH - 1 ] = ']';
 }
 
 /**
