@@ -164,6 +164,7 @@ void HorizMenu::CreateMenu (uint8_t In_msgNum)
 }
 
 
+
 /**
  * Navigate menu items up direction
  * 0th element is header
@@ -208,7 +209,7 @@ uint8_t HorizMenu::GoToDisplaySelected(void)
 {
 	uint8_t phase = INITIATE_LEVEL;
 	uint8_t cNextScreen = displayBuffer.cNextScreenNum[cPointerPos];
-	if (cNextScreen != displayBuffer.cCurrentScreen){
+	if (cNextScreen != OPEN_EDIT){
 	    CreateMenu(cNextScreen);
 	    //must be done separately to allow correct display creation
 	    clearPointerPos();
@@ -216,8 +217,9 @@ uint8_t HorizMenu::GoToDisplaySelected(void)
 	} else {
 		//take the parameter to use later.
 		//if this is not a parameter entry, then no harm is done.
-		cFocusParameter = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
-		status.openParameter(cFocusParameter);
+		uint8_t focusParam = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
+		status.openParameter(focusParam);
+		status.setContextBits(TRANSFER_DISPLAY_ENABLE);
 		phase = PARAM_ITEM_EDIT;
 	}
 	return phase;

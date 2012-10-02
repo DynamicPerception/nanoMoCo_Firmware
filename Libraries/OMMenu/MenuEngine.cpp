@@ -7,7 +7,6 @@
 
 #include "MenuEngine.h"
 
-
 // which input is our button
 #define BUT_PIN 14
 
@@ -87,7 +86,6 @@ void MenuEngine::DisplayInterfaceManager() {
 		}
 		break;
 	case MENU_LEVEL_ENTRY:
-	case PARAM_ITEM_ENTRY:
 		TransferMenu();
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
@@ -116,11 +114,11 @@ void MenuEngine::DisplayInterfaceManager() {
 			if  (keyCode == K_OK) {
 				DisplaySelectedItem();
 			} else if (keyCode == K_UP) {
-				PopStack();
+				InvalidAction();
 			} else if  (keyCode == K_LEFT) {
-				PositionMoveLeft();
-			} else if (keyCode == K_RIGHT) {
-				PositionMoveRight();
+				InvalidAction();
+			} else if (keyCode == K_DOWN) {
+				NavigateNext();
 			}
 		} else {//check timeout
 			TimeoutNoKeyEntry();
@@ -238,7 +236,7 @@ void MenuEngine::PushStack (void)
 	ProcessStack.cScreenCreatedToGetHere[ProcessStack.cStackPointer]=
 		displayBuffer.cCurrentScreen;
 	//ProcessStack.cTopLine[ProcessStack.cStackPointer]=cTopLine;
-	ProcessStack.cPointerLine[ProcessStack.cStackPointer]=cPointerPos;
+	ProcessStack.cPointerLine[ProcessStack.cStackPointer] = getPointerPos();
 	ProcessStack.iCallingInterPhase[ProcessStack.cStackPointer]=iInterPhase;
 	ProcessStack.cStackPointer++;
 	//increment the pointer so ready for next push
@@ -253,6 +251,29 @@ void MenuEngine::DisplaySelectedItem(void)
 	iInterPhase = GoToDisplaySelected();
 }
 
+/**
+ * Navigate in wizard mode
+ * */
+void MenuEngine::NavigateNext(void) {
+	//take selected value
+	    uint8_t item = status.getJumpItem();
+	    uint8_t level = status.getJumpLevel();
+
+		//same level or another level
+	    if ((level != displayBuffer.cCurrentScreen)&&(level != 0)) {
+	    	//PopStack();
+	    	CreateMenu(level);
+	    	iInterPhase = displayBuffer.cScreenType;
+	    }
+
+	    if (item == 0){
+	    	PositionMoveRight();
+	    }else {
+	    	setPointerPos(item);
+	    }
+
+		status.setContextBits(TRANSFER_DISPLAY_ENABLE);
+}
 
 // -------------------------------------------------
 void MenuEngine::TimeoutNoKeyEntry (void)

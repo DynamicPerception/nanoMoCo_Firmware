@@ -5,6 +5,7 @@
  *      Author: perepelitsa
  */
 #include <inttypes.h>
+#include "MenuScreens.h"
 
 #ifndef MENUCONTEXT_H_
 #define MENUCONTEXT_H_
@@ -36,7 +37,12 @@
 
 #define INVALID_IDX 0xFF
 
-
+//
+struct fixListEntry {
+  const char caption [LCD_WIDTH];
+  uint8_t jumpLevel;
+  uint8_t jumpItem;
+};
 
 
 /**
@@ -44,20 +50,20 @@
  * Support parameter edit protocol.
  * */
 class MenuContext {
-
-
+    //
 	uint16_t iParamValue[NUMBER_OF_PARAMETERS]; //parameters value array to edit
 	//
-	const static unsigned int iParamMaxValue[NUMBER_OF_PARAMETERS];
-	const static unsigned int iParamMinValue[NUMBER_OF_PARAMETERS];
-	const static unsigned int iStepParameters[NUMBER_OF_PARAMETERS];
+	const static uint16_t iParamMaxValue[NUMBER_OF_PARAMETERS];
+	const static uint16_t iParamMinValue[NUMBER_OF_PARAMETERS];
+	const static uint16_t iStepParameters[NUMBER_OF_PARAMETERS];
 
-	char dynList[6][17];
+	char dynList[7][17];
+	uint8_t dynListSize;
 
     //ToDo define sizes
-	const static char fixedList1[3][7];//None,Camera,Bulb
-    const static char fixedList2[2][12];//Begin,StartOver
-	const static char fixedList3[2][5];//Yes,No
+	const static fixListEntry fixedList1[3];//None,Camera,Bulb
+    const static fixListEntry fixedList2[2];//Begin,StartOver
+	const static fixListEntry fixedList3[2];//Yes,No
 	const static char fixedList4[8][3];//
 	const static char fixedList5[2][17];//
 
@@ -72,6 +78,9 @@ class MenuContext {
 		//parameter stored to allow parameter to be modified
 		//or cancelled by just pressing menu and not enter
     uint8_t keyCode;
+
+    uint8_t jumpItem;
+    uint8_t jumpLevel;
 
 protected:
     uint8_t checkParamRange(uint8_t idx, uint16_t* pParam);
@@ -96,9 +105,14 @@ public:
 	void openParameter(uint8_t idx);
 	void incParameter();
 	void decParameter();
-	unsigned int closeParameter(bool saveFlag);
+	void closeParameter(bool saveFlag);
 	/* return last position in string*/
 	uint8_t formatParameterText(uint8_t idx, uint8_t* cLineBuf);
+
+//navigation support
+	uint8_t getJumpLevel() const {return jumpLevel;};
+	uint8_t getJumpItem() const {return jumpItem;};
+
 };
 
 #endif /* MENUCONTEXT_H_ */

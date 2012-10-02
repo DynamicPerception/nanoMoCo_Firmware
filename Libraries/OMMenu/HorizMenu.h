@@ -19,6 +19,9 @@
 #define OPER_MAX 2
 #define LIST_ITEMS_MAX 6
 
+/****
+ *
+ * */
 class HorizMenu {
 
 	struct MenuBufferType {
@@ -39,22 +42,25 @@ class HorizMenu {
 
 	uint8_t cLineBuf1[LCD_WIDTH + 1];
 	uint8_t cLineBuf2[LCD_WIDTH + 1];
-    /* */
+
+	/* */
 	uint8_t cItemsLimit;
-    /* */
+
+	/* */
 	unsigned int iLatchedStatus;
+
 	/* reduce flicker by performing per-line update*/
 	uint8_t cUpdateViewPhase;
 
+	/* active menu item */
+	uint8_t cPointerPos;
+
 protected:
-	uint8_t cPointerPos; // active menu item
-    /* valid only in edit mode if you press Enter on parma item*/
-	uint8_t cFocusParameter;
 	//
 	MenuBufferType displayBuffer;
 	//
 	MenuContext status;
-
+    //
 	LiquidCrystal& disp;
 
 protected:
@@ -79,9 +85,9 @@ protected:
 protected:
 	void clearPointerPos(void);
 	void setPointerPos(uint8_t lineNum){cPointerPos = lineNum;};
+	uint8_t getPointerPos(void) const {return cPointerPos;};
 	void ResetDisplay();
 	void setHandler(uint8_t, void (*) (void));
-
 
 protected:
 	int WriteLine (const uint8_t *bufferStart, uint8_t startLine, uint8_t lineOffset);

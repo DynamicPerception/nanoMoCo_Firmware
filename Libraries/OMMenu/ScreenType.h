@@ -8,26 +8,17 @@
 #ifndef SCREENTYPE_H_
 #define SCREENTYPE_H_
 
-#define MAX_SCREEN_SEL 10 // max of menu items per menu
-
 #define LCD_WIDTH 16 // max width of LCD screen
 #define LCD_LINES 2
 
-//
-struct Param
-{
-  uint8_t type;
-
-  uint8_t cLine[5][5];
-};
+#define MAX_SCREEN_SEL 10 // max of menu items per menu
 
 //represents one line on screen, including menu header
 struct menuItem
 {
   uint8_t cMsgNum;      //message to be displayed from resource
-  uint8_t cProcNum;     //process to be done on message
+  uint8_t cProcNum;     //process to be done on item
   uint8_t cNextMenu;	//what to display when enter is pressed (not used for param entry)
-                        //(this can carry a number associated with the line, say EEPROM address for param )
   uint8_t cParamNum;	//parameter associated with item
 };
 

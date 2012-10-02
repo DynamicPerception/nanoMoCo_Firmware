@@ -9,6 +9,7 @@
 #define MENUENGINE_H_
 
 #include <inttypes.h>
+
 #include "AnlgBtnInput.h"
 #include "HorizMenu.h"
 #include "MenuContext.h"
@@ -69,7 +70,10 @@ protected:
 	uint8_t Keyboard(void);
 	void DisplayInterfaceManager(void);
 	void TimeoutNoKeyEntry (void);
+
+	//
 	void DisplaySelectedItem(void);
+	void NavigateNext(void);
 };
 
 #endif /* MENUENGINE_H_ */

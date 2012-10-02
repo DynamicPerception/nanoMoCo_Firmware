@@ -16,11 +16,10 @@
 #define NUMBER_OF_STRINGS 26
 
 
+/* menu processing levels */
 enum {INITIATE_LEVEL= 1,
 	  MENU_LEVEL_ENTRY = 3,
 	  WIZARD_LEVEL_ENTRY,
-	  PARAM_ITEM_ENTRY,
-	  STATIC_ITEM_ENTRY,
 	  PARAM_ITEM_EDIT
 };
 
@@ -30,7 +29,6 @@ enum {
 	OP_FILL_ITEM_LIST
 };
 
-
 /** enumeration with screen names */
 enum {
 	INITIAL_DISPLAY_SCREEN,
@@ -38,10 +36,9 @@ enum {
 	CREATE_FILM_WIZARD,
 	RESCAN_DEVICES,
 	SETTINGS_SCREEN,
-	LIST_SELECTOR,
 	AXIS_WIZARD,
-	MAIN_WIZARD_2,
-	MAX_SCREENS
+	MAX_SCREENS, /* end of real entries */
+	OPEN_EDIT    /* fake entry: opens parameter edit */
 };
 
 /**

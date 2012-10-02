@@ -25,7 +25,6 @@ const char Resources::glyphs[8][8] PROGMEM = {
 };
 
 
-
 const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 //1234567890123456
 {"   Hello Demo!! "},//0
@@ -56,6 +55,7 @@ const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 {"                "}//25!!blanc
 };
 
+
 /**
  *
  * */
@@ -77,21 +77,27 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		 MENU_LEVEL_ENTRY,
 		 0,
 		 {
-		    {24,0,0,0},	//1
-		    {18,0,CREATE_FILM_WIZARD,0},	//2
-		    {20,0,RESCAN_DEVICES,0},	//3
-		    {19,0,SETTINGS_SCREEN,0},	//4
+		    {24, 0, 0, 0},	//1
+		    {18, 0, CREATE_FILM_WIZARD, 0},	//2
+		    {20, 0, RESCAN_DEVICES, 0},	//3
+		    {19, 0, SETTINGS_SCREEN, 0},	//4
 		  }
 		},
 		//CREATE_FILM_WIZARD-> Screen[2]
 		{
-		 2,							//=4 lines
+		 9,							//=4 lines
 		 1,
 		 WIZARD_LEVEL_ENTRY,
 		 0,
 		  {//items
 			 {0,0,0,0}, //dummy header
-			 {5, LIST_SELECTOR, AXIS_WIZARD, 10}  //
+			 {5, 0,OPEN_EDIT, 10},  //1.Select Axis to move
+			 {12,0,OPEN_EDIT,1}, //2. Enter "real time" of film
+			 {13,0,OPEN_EDIT,20}, //3. Select exposure control
+			 {14,0,OPEN_EDIT,2}, //4. Input exposure time in mS
+			 {15,0,OPEN_EDIT,24}, //5. Select Motion Mode
+			 {16,0,OPEN_EDIT,3}, //6. Enter "film length" of film
+			 {17,0,OPEN_EDIT,21}  //7. Begin Film or Start Over?
 		  }
 		},
 		//RESCAN_DEVICES
@@ -109,24 +115,12 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		{
 			3,							//=4 lines
 			1,
-			PARAM_ITEM_ENTRY,
-			0,
-			{
-			   {0,0,0,0},               //dummy header
-			   {4,0,SETTINGS_SCREEN, 23},	//1 Frames/sec
-			   {21,0,SETTINGS_SCREEN,4}	//2
-		    }
-		},
-		//LIST_SELECTOR
-		{
-			3,							//=4 lines
-			1,
 			PARAM_ITEM_EDIT,
 			0,
 			  {
 				 {0,0,0,0},
-				 {4,0,LIST_SELECTOR, 3},	//2
-				 {21,0,LIST_SELECTOR,4}	//3
+				 {4,0,OPEN_EDIT, 3},	//2
+				 {21,0,OPEN_EDIT,4}	//3
 			  }
 		},
 		//AXIS_WIZARD
@@ -136,34 +130,18 @@ const MenuScreen Resources::screens[] PROGMEM = {
 			WIZARD_LEVEL_ENTRY,
 			0,
 			  {
-				 {0,0,AXIS_WIZARD,0}, //dummy header
-				 {6,0,AXIS_WIZARD,1},
-				 {7,0,AXIS_WIZARD,20},	//2
-				 {8,0,AXIS_WIZARD,21},	//3
-				 {9,0,AXIS_WIZARD,11},
-				 {10,0,AXIS_WIZARD,12},
-				 {11,0,AXIS_WIZARD,23},
-				 {17,0,CREATE_FILM_WIZARD,22}
-
+				 {0,0,0,0}, //dummy header
+				 {6,0,OPEN_EDIT,4},     //1.1 Move axis to start point
+				 {7,0,OPEN_EDIT,5},	    //1.2 Move axis to end point
+				 {8,0,OPEN_EDIT,6},	    //1.3 Lead-in time
+				 {9,0,OPEN_EDIT,7},     //1.4 Lead-out time
+				 {10,0,OPEN_EDIT,8},    //1.5 Acceleration time
+				 {11,0,OPEN_EDIT,9},    //1.6 Deceleration time
+				 {17,0,OPEN_EDIT,22}    //More?
 			  }
 		},
 
-		//MAIN_WIZARD_2
-		{
-					7,							//=items
-					1,
-					WIZARD_LEVEL_ENTRY,
-					0,
-					{
-						 {0,0,0,0}, //dummy header
-						 {12,0,0,1}, //
-						 {13,0,0,20}, //
-						 {14,0,0,21}, //
-						 {15,0,0,22}, //
-						 {16,0,0,23}, //
-						 {17,0,0,6}  //
-					}
-		},
+
 
 
 };
