@@ -8,10 +8,10 @@
 #include "HorizMenu.h"
 
 HorizMenu::HorizMenu(LiquidCrystal& lcd)
- : disp(lcd)
+ : disp(lcd), actionScr(status)
 {
 	cUpdateViewPhase = 0;
-	memset(load, 0, sizeof(loadCB) * OPER_MAX);
+	memset(operations, 0, sizeof(loadCB) * OPER_MAX);
 }
 
 /**
@@ -85,21 +85,41 @@ void HorizMenu::TransferMenu(void)
 {//starting at the top line
   if (status.getContext() & TRANSFER_DISPLAY_ENABLE)
 	{
-		status.clrContextBits(TRANSFER_DISPLAY_ENABLE);
-		//clear so doesn't continuously execute
-		//every time it is called
+	  //clear so doesn't continuously execute
+	  //every time it is called
+	  status.clrContextBits(TRANSFER_DISPLAY_ENABLE);
 
-		uint8_t msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, cPointerPos);
-		if (displayBuffer.cScreenType == MENU_LEVEL_ENTRY) {
+	  //set navigation goes normal way
+	  levelToJump = 0;
+	  itemToJump = 0;
+	  uint8_t msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, cPointerPos);
+	  uint8_t paramNum = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
+	  if (displayBuffer.cScreenType == MENU_LEVEL_ENTRY) {
 		   //copy the associated message across PGM space
 		   Resources::readMsgToBuf(msgNum, cLineBuf2);
-		} else {
+	  } else if (displayBuffer.cScreenType == DIALOG_LEVEL_ENTRY) {
+		  //copy two lines together
+		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, 0);
+		  Resources::readMsgToBuf(msgNum, cLineBuf1);
+		  uint8_t procNum = Resources::readProcNum(displayBuffer.cCurrentScreen, 0);
+
+		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, 1);
+		  Resources::readMsgToBuf(msgNum, cLineBuf2);
+	  } else {
 			Resources::readMsgToBuf(msgNum, cLineBuf1);
 			// load parameter value to second line
 			// cFocusParameter set in GoToDisplaySelected()
-			uint8_t paramNum = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
-			ReadParameter(paramNum);
-		}
+			//uint8_t procNum = Resources::readProcNum(displayBuffer.cCurrentScreen, cPointerPos);
+			if (displayBuffer.cNextScreenNum[cPointerPos] == OPEN_EDIT) {
+			    //may affect navigation
+				ReadParameter(paramNum);
+			} else if (displayBuffer.cNextScreenNum[cPointerPos] == OPEN_ACTION) {
+			  AnimateAction();
+			} else {
+			  //not
+			}
+
+	  }
 
 		cLineBuf1[LCD_WIDTH] = 0;
 		cLineBuf2[LCD_WIDTH] = 0;
@@ -209,18 +229,28 @@ uint8_t HorizMenu::GoToDisplaySelected(void)
 {
 	uint8_t phase = INITIATE_LEVEL;
 	uint8_t cNextScreen = displayBuffer.cNextScreenNum[cPointerPos];
-	if (cNextScreen != OPEN_EDIT){
-	    CreateMenu(cNextScreen);
-	    //must be done separately to allow correct display creation
-	    clearPointerPos();
-	    phase = displayBuffer.cScreenType;
-	} else {
-		//take the parameter to use later.
-		//if this is not a parameter entry, then no harm is done.
-		uint8_t focusParam = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
-		status.openParameter(focusParam);
-		status.setContextBits(TRANSFER_DISPLAY_ENABLE);
-		phase = PARAM_ITEM_EDIT;
+	uint8_t focusParam = Resources::readParamNum(displayBuffer.cCurrentScreen, cPointerPos);
+
+	switch (cNextScreen) {
+	case OPEN_EDIT:
+	case OPEN_ACTION:
+		 //take the parameter to use later.
+		 //if this is not a parameter entry, then no harm is done.
+		 status.openParameter(focusParam);
+		 status.setContextBits(TRANSFER_DISPLAY_ENABLE);
+		 if (cNextScreen == OPEN_EDIT) {
+		  phase = PARAM_ITEM_EDIT;
+		 } else {
+		  phase = ACTION_SCREEN;
+		 }
+	    break;
+
+	default:
+		 CreateMenu(cNextScreen);
+	     //must be done separately to allow correct display creation
+		 clearPointerPos();
+		 phase = displayBuffer.cScreenType;
+		break;
 	}
 	return phase;
 }
@@ -241,16 +271,48 @@ void HorizMenu::clearPointerPos(void)
  * */
 void HorizMenu::ReadParameter(uint8_t idx)
 {
-	uint8_t len = status.formatParameterText(idx, &cLineBuf2[0]);
+	uint8_t len = status.formatParameterText(idx, &cLineBuf2[0],&levelToJump,&itemToJump);
 	//fill blanks to the end
-	memset(&cLineBuf2[len], ' ', LCD_WIDTH - len );
+	if (LCD_WIDTH - len > 0) {
+	 memset(&cLineBuf2[len+1], ' ', LCD_WIDTH - len );
+	 cLineBuf2[len] = ']';
+	}
 	cLineBuf2[0] = '[';
 	if (status.isParamEdit()) {
 	  cLineBuf2[1] = '*';
 	} else {
 	  cLineBuf2[1] = '=';
 	}
-	cLineBuf2[LCD_WIDTH - 1 ] = ']';
+}
+
+/**
+ * display animations
+ * and call for callback
+ * */
+void HorizMenu::AnimateAction(void)
+{
+	if (actionScr.isAction()) {
+	  //fill blanks to the end
+	  uint8_t pos = actionScr.getMarkerPos();
+	  memset(&cLineBuf2[2], ' ', LCD_WIDTH - 5 );
+	  if (actionScr.getMoveDir()) {
+	   cLineBuf2[0] = '>';
+	   cLineBuf2[1] = '>';
+	   cLineBuf2[pos] = '>';
+	  } else {
+	   cLineBuf2[0] = '<';
+	   cLineBuf2[1] = '<';
+	   cLineBuf2[pos] = '<';
+	  }
+
+	  /* call for operation*/
+	  //if (operations[idxProc]) {
+	  //	operations[idxProc]();
+	  //}
+	} else {
+	  memset(&cLineBuf2[0], '-', LCD_WIDTH );
+	  cLineBuf2[8] = '|';
+	}
 }
 
 /**

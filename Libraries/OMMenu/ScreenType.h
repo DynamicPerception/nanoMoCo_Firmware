@@ -24,10 +24,10 @@ struct menuItem
 
 //represents appearance of menu in per-line (items) basis
 struct MenuScreen {
-uint8_t cNumberOfItems; //
-uint8_t cArrowsRequired;	//need to display selection arrows
-uint8_t cMenuType;//
-uint8_t cLoadProcess;//
+uint8_t cNumberOfItems;    //
+uint8_t cArrowsRequired;   //need to display selection arrows
+uint8_t cMenuType;         //
+uint8_t cLoadProcess;      //specify callback called on enter menu
 const struct menuItem items[MAX_SCREEN_SEL];
 };
 

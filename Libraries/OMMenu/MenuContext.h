@@ -51,9 +51,9 @@ struct fixListEntry {
  * */
 class MenuContext {
     //
-	uint16_t iParamValue[NUMBER_OF_PARAMETERS]; //parameters value array to edit
+	uint32_t iParamValue[NUMBER_OF_PARAMETERS]; //parameters value array to edit
 	//
-	const static uint16_t iParamMaxValue[NUMBER_OF_PARAMETERS];
+	const static uint32_t iParamMaxValue[NUMBER_OF_PARAMETERS];
 	const static uint16_t iParamMinValue[NUMBER_OF_PARAMETERS];
 	const static uint16_t iStepParameters[NUMBER_OF_PARAMETERS];
 
@@ -69,49 +69,54 @@ class MenuContext {
 
 	uint16_t periodTimers[NUMBER_OF_TIMERS];
 
-	uint8_t iKeyboardIncrement;
+	uint16_t iKeyboardIncrement;
 	uint8_t cFocusParameter;
-	uint16_t iModifiableValue;
-	uint16_t iStatus;
-		//status byte with the following bit allocations
+	uint32_t iModifiableValue;
+	uint16_t iStatus; //status byte with the following bit allocations
+
 
 		//parameter stored to allow parameter to be modified
 		//or cancelled by just pressing menu and not enter
     uint8_t keyCode;
 
-    uint8_t jumpItem;
-    uint8_t jumpLevel;
+    //uint8_t jumpItem;
+    //uint8_t jumpLevel;
 
 protected:
-    uint8_t checkParamRange(uint8_t idx, uint16_t* pParam);
+    uint8_t checkParamByIdx(uint8_t idx, uint32_t* pParam);
+    uint8_t checkParamRange(uint32_t min, uint32_t max, uint32_t* pParam);
+
 public:
 	MenuContext();
 
 //context interface
 	unsigned int getContext() const {return iStatus;}
-	void setContextBits(uint16_t mask) { iStatus |= mask;}
-	void clrContextBits(uint16_t mask) { iStatus &= ~(mask);}
+	void setContextBits(const uint16_t mask) { iStatus |= mask;}
+	void clrContextBits(const uint16_t mask) { iStatus &= ~(mask);}
 //timer interface
-	unsigned int getTimer(uint8_t idx)const {return periodTimers[idx];}
-	void setTimer(uint8_t idx, unsigned int value);
-	void decTimer(uint8_t idx);
+	unsigned int getTimer(const uint8_t idx)const {return periodTimers[idx];}
+	void setTimer(const uint8_t idx, unsigned int value);
+	void decTimer(const uint8_t idx);
 
 //keyboard interface
 	uint8_t getKeyboardCode() const {return keyCode;};
-    void setKeyboardCode(uint8_t);
+    void setKeyboardCode(const uint8_t);
+    void raiseKeyboardIncrement();
+    void setKeyboardIncrement(const uint8_t inc) {iKeyboardIncrement = inc;}
 
 //parameter interface
     bool isParamEdit();
-	void openParameter(uint8_t idx);
+	void openParameter(const uint8_t idx);
 	void incParameter();
 	void decParameter();
 	void closeParameter(bool saveFlag);
 	/* return last position in string*/
-	uint8_t formatParameterText(uint8_t idx, uint8_t* cLineBuf);
+	uint8_t formatParameterText(const uint8_t idx, uint8_t* cLineBuf, uint8_t* level, uint8_t* item);
+	uint32_t readLiveParameter(uint8_t idxParam);
 
 //navigation support
-	uint8_t getJumpLevel() const {return jumpLevel;};
-	uint8_t getJumpItem() const {return jumpItem;};
+	//uint8_t getJumpLevel() const {return jumpLevel;};
+	//uint8_t getJumpItem() const {return jumpItem;};
 
 };
 

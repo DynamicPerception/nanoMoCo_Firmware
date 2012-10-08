@@ -17,6 +17,8 @@
 #define TYPEMATIC 2				//200mS for every increment thereafter
 #define TYPEMATIC_STEP 10		//10 increments before going up a multiplier
 
+#define IDLE_SCAN 0x00          //code to return if nothing pressed
+
 //bit masks for keys
 #define K_NOUSE 1		  	    //(not used) Keyboard Code associated with a key
 #define K_OK 2				    //Keyboard Code associated with a key
@@ -32,7 +34,7 @@
  * */
 class UserInput {
 	uint8_t cScanCode;
-	uint8_t iKeyboardIncrement;
+	//uint8_t iKeyboardIncrement;
 	uint8_t cKeyboardLoopCounter;
 	uint8_t cKeyboardCode;
 	uint8_t cPB[3];	//for debounce of scancodes
@@ -47,6 +49,7 @@ public:
 	virtual ~UserInput();
 	/* key press/depress logic and repeat */
 	uint8_t KeyboardRead(MenuContext& status);
+
 	/* mostly for debug*/
 	int GetSample() const {return sample;}
 };

@@ -25,14 +25,13 @@ AnlgBtnInput::~AnlgBtnInput() {
 **/
 uint8_t AnlgBtnInput::sampleButtons(int* read_value)
 {
-	uint8_t scan = 0;
+	uint8_t scan = IDLE_SCAN;
      // read analog input
 	*read_value = analogRead(_an_pin); //they do adjust pin number
 
      // don't let it flip in a single read
     if( abs(last_but_rd - *read_value) > BUT_THRESH ) {
       last_but_rd = *read_value;
-      scan = 0;
       return scan;
     }
 
@@ -53,7 +52,7 @@ uint8_t AnlgBtnInput::sampleButtons(int* read_value)
 	 bitSet(scan, 5);
  }
  else {
-	 scan = 0;
+	 scan = IDLE_SCAN;
  }
 
  return scan;

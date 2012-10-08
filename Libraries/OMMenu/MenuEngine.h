@@ -42,6 +42,8 @@ protected:
 
 	uint8_t _led;
 
+	uint8_t mode;
+
 	StackType ProcessStack;
     AnlgBtnInput keyboard;
 
@@ -74,6 +76,9 @@ protected:
 	//
 	void DisplaySelectedItem(void);
 	void NavigateNext(void);
+
+	//
+	uint8_t ChangeMode();
 };
 
 #endif /* MENUENGINE_H_ */

@@ -72,16 +72,22 @@ void MenuEngine::DisplayInterfaceManager() {
 		break;
 	case INITIATE_LEVEL:
 		CreateMenu(INITIAL_DISPLAY_SCREEN);
+		clearPointerPos();
 		iInterPhase++;
 		break;
-	case INITIATE_LEVEL + 1:
+	case DIALOG_LEVEL_ENTRY:
 		TransferMenu();
 		//not internal flag prevents refresh
 		//every time it is called
 		if (status.getContext() & KEYBOARD_VALID) {
 			status.clrContextBits(KEYBOARD_VALID);
-			if (status.getKeyboardCode() == K_OK) {//only in Menu input
+			uint8_t keyCode = status.getKeyboardCode();
+			if (keyCode == K_OK) {//only in Menu input
 				DisplaySelectedItem();
+			} else if (keyCode == K_DOWN) {
+				//ShowDialog();
+			} else if (keyCode == K_UP) {
+
 			}
 		}
 		break;
@@ -117,7 +123,7 @@ void MenuEngine::DisplayInterfaceManager() {
 				InvalidAction();
 			} else if  (keyCode == K_LEFT) {
 				InvalidAction();
-			} else if (keyCode == K_DOWN) {
+			} else if (keyCode == K_RIGHT) {
 				NavigateNext();
 			}
 		} else {//check timeout
@@ -136,13 +142,14 @@ void MenuEngine::DisplayInterfaceManager() {
 				status.closeParameter(true);
 				//update the parameter
 				PopStack();
-			} else if (keyCode == K_UP) {
+			} else if (keyCode == K_LEFT) {
 				status.closeParameter(false);
 				PopStack();
-				//no update of the parameter
-			} else if  (keyCode == K_RIGHT) {
+			} else if (keyCode == K_RIGHT) {
+				InvalidAction();
+			} else if  (keyCode == K_UP) {
 				IncreaseParameter();
-			} else if (keyCode == K_LEFT) {
+			} else if (keyCode == K_DOWN) {
 				DecreaseParameter();
 			}
 
@@ -151,6 +158,32 @@ void MenuEngine::DisplayInterfaceManager() {
 		}
 		break;
 
+	case ACTION_SCREEN:
+		TransferMenu();
+			if (status.getContext() & KEYBOARD_VALID) {
+				status.clrContextBits(KEYBOARD_VALID);
+
+				uint8_t keyCode = status.getKeyboardCode();
+				if  (keyCode == K_OK) {
+					actionScr.closeAction(true);
+					//update the parameter
+					PopStack();
+				} else if (keyCode == K_LEFT) {
+					actionScr.Left();
+					//no update of the parameter
+				} else if (keyCode == K_RIGHT) {
+					actionScr.Right();
+				} else if  (keyCode == K_UP) {
+					actionScr.closeAction(false);
+					PopStack();
+				} else if (keyCode == K_DOWN) {
+					InvalidAction();
+				}
+
+			} else {//check timeout
+				TimeoutNoKeyEntry();
+			}
+			break;
 
 	default:
 		iInterPhase = INITIATE_LEVEL;
@@ -256,8 +289,8 @@ void MenuEngine::DisplaySelectedItem(void)
  * */
 void MenuEngine::NavigateNext(void) {
 	//take selected value
-	    uint8_t item = status.getJumpItem();
-	    uint8_t level = status.getJumpLevel();
+	    uint8_t item = getJumpItem();
+	    uint8_t level = getJumpLevel();
 
 		//same level or another level
 	    if ((level != displayBuffer.cCurrentScreen)&&(level != 0)) {

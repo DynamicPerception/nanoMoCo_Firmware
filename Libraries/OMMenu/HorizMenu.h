@@ -12,6 +12,7 @@
 
 #include "MenuContext.h"
 #include "MenuScreens.h"
+#include "ActionScreen.h"
 #include "LiquidCrystal.h"
 
 #define LEFT_ARROW_GLYPH 3
@@ -36,7 +37,7 @@ class HorizMenu {
 
     /*callbacks for special actions, like load menu items*/
 	typedef void (*loadCB)(void);
-	loadCB load[OPER_MAX];
+	loadCB operations[OPER_MAX];
 
 	uint8_t cListBuf[LIST_ITEMS_MAX][LCD_WIDTH + 1];
 
@@ -46,6 +47,8 @@ class HorizMenu {
 	/* */
 	uint8_t cItemsLimit;
 
+	uint8_t levelToJump;
+	uint8_t itemToJump;
 	/* */
 	unsigned int iLatchedStatus;
 
@@ -55,13 +58,16 @@ class HorizMenu {
 	/* active menu item */
 	uint8_t cPointerPos;
 
+
 protected:
+	//
+	LiquidCrystal& disp;
 	//
 	MenuBufferType displayBuffer;
 	//
 	MenuContext status;
-    //
-	LiquidCrystal& disp;
+	//
+	ActionScreen actionScr;
 
 protected:
 	HorizMenu(LiquidCrystal& lcd);
@@ -70,16 +76,19 @@ protected:
 	void CreateMenu (uint8_t menuIndex);
 	void UpdateView (void);
 	void TransferMenu(void);
+
 	//navigation
 	void PositionMoveLeft (void);
 	void PositionMoveRight (void);
 	uint8_t GoToDisplaySelected(void);
 	void InvalidAction(void){};
-    //
-	void ProcessLine (unsigned char LineProcess, unsigned char LineNumber);
+
 	void IncreaseParameter (void);
 	void DecreaseParameter (void);
+
+	//
 	void ReadParameter(uint8_t idx);
+	void AnimateAction (void);
 
 //inner interface
 protected:
@@ -88,6 +97,10 @@ protected:
 	uint8_t getPointerPos(void) const {return cPointerPos;};
 	void ResetDisplay();
 	void setHandler(uint8_t, void (*) (void));
+
+	//navigation support
+	uint8_t getJumpLevel() const {return levelToJump;}
+	uint8_t getJumpItem() const {return itemToJump;}
 
 protected:
 	int WriteLine (const uint8_t *bufferStart, uint8_t startLine, uint8_t lineOffset);

@@ -28,9 +28,9 @@ const char Resources::glyphs[8][8] PROGMEM = {
 const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 //1234567890123456
 {"   Hello Demo!! "},//0
-{" OMMenu idle    "},//1
-{"      is on     "},//2
-{" Time: @t       "},//3
+{" <OK> for Menu  "},//1
+{"   Stopped..    "},//2
+{" Running [%d/%d]"},//3
 {"  Frames/sec    "},//4
 {"  Axis to move? "},//5
 {" Move to Start  "},//6
@@ -44,7 +44,7 @@ const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 {" Exposure time  "},//14
 {" Motion mode    "},//15
 {" Film length    "},//16
-{" Begin or Again "},//17
+{" Begin / Again? "},//17
 {"  Create Film   "},//18
 {"  Settings      "},//19
 {"  Re-scan bus   "},//20
@@ -63,7 +63,7 @@ const MenuScreen Resources::screens[] PROGMEM = {
 //INITIAL_DISPLAY_SCREEN
 		{ 2, //0-INITIAL_DISPLAY=4 lines
 		  0, //
-		  MENU_LEVEL_ENTRY,
+		  DIALOG_LEVEL_ENTRY,
 		  0,
 		  { //array
 			{ 0, 0, MENU_SCREEN, 0 }, //1
@@ -92,7 +92,7 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		  {//items
 			 {0,0,0,0}, //dummy header
 			 {5, 0,OPEN_EDIT, 10},  //1.Select Axis to move
-			 {12,0,OPEN_EDIT,1}, //2. Enter "real time" of film
+			 {12,0,OPEN_EDIT,11}, //2. Enter "real time" of film
 			 {13,0,OPEN_EDIT,20}, //3. Select exposure control
 			 {14,0,OPEN_EDIT,2}, //4. Input exposure time in mS
 			 {15,0,OPEN_EDIT,24}, //5. Select Motion Mode
@@ -115,7 +115,7 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		{
 			3,							//=4 lines
 			1,
-			PARAM_ITEM_EDIT,
+			WIZARD_LEVEL_ENTRY,
 			0,
 			  {
 				 {0,0,0,0},
@@ -131,8 +131,8 @@ const MenuScreen Resources::screens[] PROGMEM = {
 			0,
 			  {
 				 {0,0,0,0}, //dummy header
-				 {6,0,OPEN_EDIT,4},     //1.1 Move axis to start point
-				 {7,0,OPEN_EDIT,5},	    //1.2 Move axis to end point
+				 {6,1,OPEN_ACTION,4},   //1.1 Move axis to start point
+				 {7,1,OPEN_ACTION,5},	//1.2 Move axis to end point
 				 {8,0,OPEN_EDIT,6},	    //1.3 Lead-in time
 				 {9,0,OPEN_EDIT,7},     //1.4 Lead-out time
 				 {10,0,OPEN_EDIT,8},    //1.5 Acceleration time

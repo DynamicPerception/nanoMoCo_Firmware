@@ -16,8 +16,8 @@
 #define PROGMEM __attribute__((section(".progmem.data")))
 
 
-const uint16_t MenuContext::iParamMaxValue[NUMBER_OF_PARAMETERS] PROGMEM = {
-	0,1,1,1,1, //0-4
+const uint32_t MenuContext::iParamMaxValue[NUMBER_OF_PARAMETERS] PROGMEM = {
+	0,16,16,1,1, //0-4
 	1,99999,65535,65535,65535, //5-9
 	7,0,0,0,1, //10 - 14
 	2,3000,400,0x2459,50, //15-19
@@ -28,10 +28,10 @@ const uint16_t MenuContext::iParamMaxValue[NUMBER_OF_PARAMETERS] PROGMEM = {
 const uint16_t MenuContext::iParamMinValue[NUMBER_OF_PARAMETERS] PROGMEM = {
 		0,0,0,0,0, //0-4
 		0,0,0,0,0, //5-9
-		1,0,0,0,0, //10 - 14
-		2,3000,400,0x2459,50, //15-19
+		1,0,0,0,0, //10-14
+		0,0,0,0,0, //15-19
 		0,0,0,0,0, //20-24
-		100,100,100,0,0,0,0 //25-31
+		0,0,0,0,0,0,0 //25-31
 
 	};
 
@@ -46,19 +46,20 @@ const uint16_t MenuContext::iStepParameters[NUMBER_OF_PARAMETERS] PROGMEM = {
 
 //--param20
 const fixListEntry MenuContext::fixedList1[3] PROGMEM = {
-		{"None", 0, 0},
-		{"Camera", 0, 0},
-		{"Bulb", 0, 0}
+		{"None", CREATE_FILM_WIZARD, 7},
+		{"Camera", CREATE_FILM_WIZARD, 5},
+		{"Bulb", CREATE_FILM_WIZARD, 4}
 };//
 //--param21
 const fixListEntry MenuContext::fixedList2[2] PROGMEM = {
-		{"Begin", 0, 0},
-		{"StartOver", 0, 0}
+	  //1234567890123456
+		{"Begin Film",INITIAL_DISPLAY_SCREEN , 1},
+		{"Again", CREATE_FILM_WIZARD, 1}
 };//
 //--param22
 const fixListEntry MenuContext::fixedList3[2] PROGMEM = {
-		{"Yes", 0, 0},
-		{"No", 0, 0}
+		{"Yes", CREATE_FILM_WIZARD, 1},
+		{"No", CREATE_FILM_WIZARD, 2}
 };//
 //param23
 const char MenuContext::fixedList4[8][3] PROGMEM = {
@@ -73,8 +74,8 @@ const char MenuContext::fixedList4[8][3] PROGMEM = {
 };//
 //param24
 const char MenuContext::fixedList5[2][17] PROGMEM = {
-		//1234567890123456
-		{"Shoot-move-Shoot"},
+	  //1234567890123456
+		{"Shoot-mov-Sho"},
 		{"Continuous"}
 };
 
@@ -119,18 +120,11 @@ MenuContext::MenuContext()
  *   Lists:
  *   20
  * */
-uint8_t MenuContext::formatParameterText(uint8_t idx, uint8_t* cLineBuf)
+uint8_t MenuContext::formatParameterText(const uint8_t idx, uint8_t* cLineBuf, uint8_t* level, uint8_t* item )
 {
-   uint16_t value = 0;
-   jumpItem = 0;
-   jumpLevel = 0;
-
-   /* take stored parameter or working copy*/
-	if (cFocusParameter == INVALID_IDX) {
-	   value = iParamValue[idx];
-   } else {
-	   value = iModifiableValue;
-   }
+   uint32_t value = readLiveParameter(idx);
+   *level = 0;
+   *item = 0;
 
    uint8_t len = 0;
    //temporary init as
@@ -139,51 +133,53 @@ uint8_t MenuContext::formatParameterText(uint8_t idx, uint8_t* cLineBuf)
    char* ptrStart = (char*)&cLineBuf[2];
 	if ((idx > 0) && (idx < 10))  {
 	//integer type
-	   sprintf(ptrStart, "%d", value );
+	   sprintf(ptrStart, "%lu", value );
    }
    /*dynamic list, very special case*/
    if (idx == 10) {
-	   uint16_t listIdx = value;
-	   checkParamRange(idx, &listIdx);
+	   uint32_t listIdx = value;
+	   checkParamByIdx(idx, &listIdx);
 	   sprintf(ptrStart, "%s", &dynList[listIdx-1][0] );
 	   if (listIdx == dynListSize) {
-	     jumpItem = 2;
-	     jumpLevel = CREATE_FILM_WIZARD;
+	     *item = 2;
+	     *level = CREATE_FILM_WIZARD;
 	   } else {
-		 jumpItem = 1;
-		 jumpLevel = AXIS_WIZARD;
+		 *item = 1;
+		 *level = AXIS_WIZARD;
 	   }
    }
   /* magic 11(12)(13) or 14:15:16 is time type*/
    if ((idx == 11) || (idx == 14)){
-	   sprintf(ptrStart, "%02d:%02d:%02d", iParamValue[idx], iParamValue[idx+1], iParamValue[idx+2]);
+	   uint8_t hour = ((iParamValue[idx] >> 16) & 0xFF);
+	   uint8_t minutes = ((iParamValue[idx] >> 8) & 0xFF);
+	   uint8_t secs = (iParamValue[idx] & 0xFF);
+	   sprintf(ptrStart, "%02d:%02d:%02d", hour, minutes, secs);
    }
    /*magic 20,21... is list type*/
    if ((idx >= 20) && (idx < NUMBER_OF_PARAMETERS))
    {
-	   uint16_t listIdx = value;
-	   checkParamRange(idx, &listIdx);
+	   uint32_t listIdx = value;
+	   checkParamByIdx(idx, &listIdx);
        if (idx == 20){
          strcpy_P(ptrStart, &fixedList1[listIdx].caption[0]);
-         jumpItem = pgm_read_byte(&fixedList1[listIdx].jumpItem);
-         jumpLevel = pgm_read_byte(&fixedList1[listIdx].jumpLevel);
+         *item = pgm_read_byte(&fixedList1[listIdx].jumpItem);
+         *level = pgm_read_byte(&fixedList1[listIdx].jumpLevel);
 
        } else if (idx == 21){
     	 strcpy_P(ptrStart, &fixedList2[listIdx].caption[0]);
-    	 jumpItem = pgm_read_byte(&fixedList2[listIdx].jumpItem);
-    	 jumpLevel = pgm_read_byte(&fixedList2[listIdx].jumpLevel);
+    	 *item = pgm_read_byte(&fixedList2[listIdx].jumpItem);
+    	 *level = pgm_read_byte(&fixedList2[listIdx].jumpLevel);
 
        } else if (idx == 22){
       	 strcpy_P(ptrStart, &fixedList3[listIdx].caption[0]);
-      	 jumpItem = pgm_read_byte(&fixedList3[listIdx].jumpItem);
-      	 jumpLevel = pgm_read_byte(&fixedList3[listIdx].jumpLevel);
+      	 *item = pgm_read_byte(&fixedList3[listIdx].jumpItem);
+      	 *level = pgm_read_byte(&fixedList3[listIdx].jumpLevel);
 
        } else if (idx == 23){
    	     strcpy_P(ptrStart, &fixedList4[listIdx][0]);
 
        } else if (idx == 24){
       	 strcpy_P(ptrStart, &fixedList5[listIdx][0]);
-
        } else {
     	 //strcpy_P((char*)cLineBuf, PSTR("--noList--"));
        }
@@ -195,7 +191,19 @@ uint8_t MenuContext::formatParameterText(uint8_t idx, uint8_t* cLineBuf)
 /**
  *
  * */
-void  MenuContext::setKeyboardCode(uint8_t key)
+uint32_t MenuContext::readLiveParameter(uint8_t idxParam)
+{
+/* take stored parameter or working copy*/
+	if (cFocusParameter == INVALID_IDX) {
+	   return iParamValue[idxParam];
+   } else {
+	   return iModifiableValue;
+   }
+}
+/**
+ *
+ * */
+void  MenuContext::setKeyboardCode(const uint8_t key)
 {
 	keyCode = key;
 }
@@ -203,7 +211,7 @@ void  MenuContext::setKeyboardCode(uint8_t key)
 /**
  *
  * */
-void MenuContext::openParameter(uint8_t idx){
+void MenuContext::openParameter(const uint8_t idx){
 	cFocusParameter = idx;
 	iModifiableValue = iParamValue[idx];
 }
@@ -220,11 +228,11 @@ bool MenuContext::isParamEdit()
  *
  * */
 void MenuContext::incParameter(){
-
+	//we have gap so we can just increment and check after
 	uint16_t step;
 	memcpy_P(&step, &iStepParameters[cFocusParameter], sizeof(step));
 	iModifiableValue += step*iKeyboardIncrement;
-	checkParamRange(cFocusParameter, &iModifiableValue);
+	checkParamByIdx(cFocusParameter, &iModifiableValue);
 }
 
 /****
@@ -233,8 +241,12 @@ void MenuContext::incParameter(){
 void MenuContext::decParameter(){
 	uint16_t step;
 	memcpy_P(&step, &iStepParameters[cFocusParameter], sizeof(step));
-	iModifiableValue -= step*iKeyboardIncrement;
-	checkParamRange(cFocusParameter, &iModifiableValue);
+	//check for roll over zero
+	uint32_t tmp = iModifiableValue;
+	tmp -= step*iKeyboardIncrement;
+	if (checkParamByIdx(cFocusParameter, &tmp)) {
+	  iModifiableValue -= step*iKeyboardIncrement;
+	}
 }
 /***
  *
@@ -249,34 +261,52 @@ void MenuContext::closeParameter(bool saveFlag){
 /**
  *
  * */
-void MenuContext::setTimer(uint8_t idx, unsigned int value){
+void MenuContext::setTimer(const uint8_t idx, const uint16_t value){
 	periodTimers[idx] = value;
 }
 
 /**
  *
  * */
-void MenuContext::decTimer(uint8_t idx){
+void MenuContext::decTimer(const uint8_t idx){
 	periodTimers[idx]--;
 }
 
 
-uint8_t MenuContext::checkParamRange(uint8_t idx, uint16_t* pParam)
+uint8_t MenuContext::checkParamByIdx(const uint8_t idx, uint32_t* pParam)
 {
-	uint8_t result = 0;
 	uint16_t paramMinValue;
-	uint16_t paramMaxValue;
+	uint32_t paramMaxValue;
 	//copy across FLASH space
 	memcpy_P(&paramMinValue, &iParamMinValue[idx], sizeof(paramMinValue));
 	memcpy_P(&paramMaxValue, &iParamMaxValue[idx], sizeof(paramMaxValue));
 
-	if (*pParam < paramMinValue) {
-		*pParam = paramMinValue;
-	} else if (*pParam > paramMaxValue) {
-		*pParam = paramMaxValue;
-	} else {
-		result = 1;
-	}
+	return checkParamRange(paramMinValue, paramMaxValue, pParam);
+}
+
+/**
+ *
+ * */
+uint8_t MenuContext::checkParamRange(uint32_t min, uint32_t max, uint32_t* pParam)
+{
+	uint8_t result = 0;
+	if (*pParam < min) {
+			*pParam = min;
+		} else if (*pParam > max) {
+			*pParam = max;
+		} else {
+			result = 1;
+		}
 	return result;
 }
 
+/**
+ *
+ * */
+void MenuContext::raiseKeyboardIncrement()
+{
+    if (iKeyboardIncrement < 10000)
+	 {
+		iKeyboardIncrement *=10;
+	}
+}

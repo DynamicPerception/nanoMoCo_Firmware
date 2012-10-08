@@ -16,11 +16,15 @@
 #define NUMBER_OF_STRINGS 26
 
 
-/* menu processing levels */
+/* menu processing levels (states)
+ * defines how to display screen from resources
+ * */
 enum {INITIATE_LEVEL= 1,
-	  MENU_LEVEL_ENTRY = 3,
-	  WIZARD_LEVEL_ENTRY,
-	  PARAM_ITEM_EDIT
+	  DIALOG_LEVEL_ENTRY, /* allowed, individual lines from resources, position have no mean*/
+	  MENU_LEVEL_ENTRY, /* allowed, first item as header */
+	  WIZARD_LEVEL_ENTRY, /* allowed, no header, derivative states from here */
+	  PARAM_ITEM_EDIT, /* derivative state, not allowed for resource*/
+	  ACTION_SCREEN  /* derivative state, not allowed for resource */
 };
 
 /* operations with menu*/
@@ -29,7 +33,7 @@ enum {
 	OP_FILL_ITEM_LIST
 };
 
-/** enumeration with screen names */
+/** enumeration with screen numbers in array */
 enum {
 	INITIAL_DISPLAY_SCREEN,
 	MENU_SCREEN,
@@ -38,7 +42,8 @@ enum {
 	SETTINGS_SCREEN,
 	AXIS_WIZARD,
 	MAX_SCREENS, /* end of real entries */
-	OPEN_EDIT    /* fake entry: opens parameter edit */
+	OPEN_EDIT,    /* fake entry: opens parameter edit */
+	OPEN_ACTION
 };
 
 /**

@@ -43,13 +43,14 @@ uint8_t UserInput::KeyboardRead(MenuContext& status)
 		}
 	}
 
+	//here there is a key press or key release
 	if (status.getContext() & PB_DELTA)
-	{//here there is a key press
+	{
 		status.clrContextBits(PB_DELTA);
 		//clear the calling flag
 		//and start the timer with the initial period, i.e. for the 1st 1 sec nothing happens
 		status.setTimer(T_KEYBOARD_REPEAT, TYPEMATIC_INITIAL);
-		iKeyboardIncrement = 1;		//inititlise the increment
+		status.setKeyboardIncrement(1);		//inititlise the increment
 		//(it can be 1, 10, 100, & 1000 & 10000)
 		cKeyboardLoopCounter = 1;
 		//number of loops before the KeyboardIncrement is incremented
@@ -78,18 +79,15 @@ uint8_t UserInput::KeyboardRead(MenuContext& status)
 
 	} else {
 	//key hold, check for typematic increases
-		if (((cKeyboardCode==K_UP) || (cKeyboardCode==K_DOWN)) && (cScanCode !=0xf8))
+		if (((cKeyboardCode==K_UP) || (cKeyboardCode==K_DOWN)) && (cScanCode != IDLE_SCAN))
 		{//only if up or down
 			if (status.getTimer(T_KEYBOARD_REPEAT) == 0)
 			{// only when time is up
 				cKeyboardLoopCounter++;
 				if (cKeyboardLoopCounter > TYPEMATIC_STEP)
 				{
-					cKeyboardLoopCounter=1;
-					if (iKeyboardIncrement < 10000)
-					{
-						iKeyboardIncrement *=10;
-					}
+					cKeyboardLoopCounter = 1;
+					status.raiseKeyboardIncrement();
 				}
 				status.setTimer(T_KEYBOARD_REPEAT, TYPEMATIC);
 				status.setContextBits(KEYBOARD_VALID);
