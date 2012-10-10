@@ -98,12 +98,12 @@ void HorizMenu::TransferMenu(void)
 		   //copy the associated message across PGM space
 		   Resources::readMsgToBuf(msgNum, cLineBuf2);
 	  } else if (displayBuffer.cScreenType == DIALOG_LEVEL_ENTRY) {
+		  uint8_t procNum = Resources::readSharedParam(displayBuffer.cCurrentScreen);
+		  uint32_t idx = status.readLiveParameter(procNum);
 		  //copy two lines together
-		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, 0);
+		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, idx);
 		  Resources::readMsgToBuf(msgNum, cLineBuf1);
-		  uint8_t procNum = Resources::readProcNum(displayBuffer.cCurrentScreen, 0);
-
-		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, 1);
+		  msgNum = Resources::readMsgNum(displayBuffer.cCurrentScreen, idx+1);
 		  Resources::readMsgToBuf(msgNum, cLineBuf2);
 	  } else {
 			Resources::readMsgToBuf(msgNum, cLineBuf1);
@@ -132,15 +132,21 @@ void HorizMenu::TransferMenu(void)
 			if (displayBuffer.cScreenType == MENU_LEVEL_ENTRY) {
 				p_left = &cLineBuf2[0];
 				p_right = &cLineBuf2[LCD_WIDTH - 1];
-			} else if (displayBuffer.cScreenType == WIZARD_LEVEL_ENTRY) {
+			} else if ((displayBuffer.cScreenType == WIZARD_LEVEL_ENTRY)||
+					   (displayBuffer.cScreenType == PAGES_LEVEL_ENTRY))
+			  {
 				p_left = &cLineBuf1[0];
 				p_right = &cLineBuf1[LCD_WIDTH - 1];
-			}
+			  }
 			//left - right arrows,
 			// position 0 is for menu header
 			if (cPointerPos > 1)
 			{
-				 *p_left = LEFT_ARROW_GLYPH;
+				if (displayBuffer.cScreenType == WIZARD_LEVEL_ENTRY) {
+					*p_left = '#';
+				} else {
+				    *p_left = LEFT_ARROW_GLYPH;
+				}
 			}
 			if (cPointerPos < cItemsLimit - 1)
 			{

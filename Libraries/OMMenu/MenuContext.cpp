@@ -17,18 +17,18 @@
 
 
 const uint32_t MenuContext::iParamMaxValue[NUMBER_OF_PARAMETERS] PROGMEM = {
-	0,16,16,1,1, //0-4
+	0,16,16,(99*3600UL+59*60UL+59UL),1, //0-4
 	1,99999,65535,65535,65535, //5-9
-	7,0,0,0,1, //10 - 14
+	7,(99*3600UL+59*60UL+59UL),0,0,1, //10 - 14
 	2,3000,400,0x2459,50, //15-19
 	2,1,1,7,1, //20-24
-	100,100,100,0,0,0,0 //25-31
+	1,100,100,0,0,0,0 //25-31
 	};
 
 const uint16_t MenuContext::iParamMinValue[NUMBER_OF_PARAMETERS] PROGMEM = {
 		0,0,0,0,0, //0-4
 		0,0,0,0,0, //5-9
-		1,0,0,0,0, //10-14
+		1,60,0,0,0, //10-14
 		0,0,0,0,0, //15-19
 		0,0,0,0,0, //20-24
 		0,0,0,0,0,0,0 //25-31
@@ -91,17 +91,21 @@ MenuContext::MenuContext()
 	}
 
 	for (uint8_t i=0; i < NUMBER_OF_PARAMETERS; i++) {
+
 		iParamValue[i] = i;
 		}
+
+	iParamValue[11] = (18*3600UL + 59*60UL + 59UL);
+	iParamValue[25] = 0;
 
     //init it here
 	dynListSize = 0;
 	for (uint8_t i=0; i < 6; i++) {
-			sprintf(&dynList[i][0], "entry_%d", i+1);
-			dynListSize++;
-		}
+		sprintf(&dynList[i][0], "entry_%d", i+1);
+		dynListSize++;
+	}
 
-	sprintf(&dynList[6][0], "NEXT");
+	sprintf(&dynList[dynListSize][0], "NEXT");
 	dynListSize++;
 
 }
@@ -116,6 +120,8 @@ MenuContext::MenuContext()
  *   6. "film length" of film
  *   Time:
  *   11. time1
+ *   12.
+ *   13.
  *   14. time2
  *   Lists:
  *   20
@@ -150,9 +156,14 @@ uint8_t MenuContext::formatParameterText(const uint8_t idx, uint8_t* cLineBuf, u
    }
   /* magic 11(12)(13) or 14:15:16 is time type*/
    if ((idx == 11) || (idx == 14)){
-	   uint8_t hour = ((iParamValue[idx] >> 16) & 0xFF);
-	   uint8_t minutes = ((iParamValue[idx] >> 8) & 0xFF);
-	   uint8_t secs = (iParamValue[idx] & 0xFF);
+	   uint32_t tmp = value;
+	   uint8_t hour = tmp/3600;
+	   //tmp = tmp - ((uint32_t)hour * 3600UL); // may be
+	   tmp = tmp%3600;
+	   uint8_t minutes = tmp/60;
+	   //tmp = tmp - ((uint32_t)minutes * 60UL); //
+	   tmp = tmp%60;
+	   uint8_t secs = tmp;
 	   sprintf(ptrStart, "%02d:%02d:%02d", hour, minutes, secs);
    }
    /*magic 20,21... is list type*/

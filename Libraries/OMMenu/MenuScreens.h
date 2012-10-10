@@ -22,6 +22,7 @@
 enum {INITIATE_LEVEL= 1,
 	  DIALOG_LEVEL_ENTRY, /* allowed, individual lines from resources, position have no mean*/
 	  MENU_LEVEL_ENTRY, /* allowed, first item as header */
+	  PAGES_LEVEL_ENTRY, /* wizard - like two side and escape*/
 	  WIZARD_LEVEL_ENTRY, /* allowed, no header, derivative states from here */
 	  PARAM_ITEM_EDIT, /* derivative state, not allowed for resource*/
 	  ACTION_SCREEN  /* derivative state, not allowed for resource */
@@ -96,7 +97,7 @@ public:
  	 return (pgm_read_byte(&Resources::screens[screen].cMenuType));
   };
 
- static uint8_t readLoadProc(uint8_t screen, uint8_t item){
+ static uint8_t readSharedParam(uint8_t screen){
   	 return (pgm_read_byte(&Resources::screens[screen].cLoadProcess));
    };
 

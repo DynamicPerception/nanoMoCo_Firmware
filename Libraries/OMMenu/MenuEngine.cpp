@@ -22,8 +22,9 @@ MenuEngine::MenuEngine(LiquidCrystal& lcd)
 	pinMode(_led, OUTPUT);
 
 	iEnginePhase = 0;
+
+	/* blink LED counter*/
 	cActivity = 0;
-	iInterPhase = INITIATE_LEVEL;
 
 	FlattenStack();
 
@@ -91,6 +92,7 @@ void MenuEngine::DisplayInterfaceManager() {
 			}
 		}
 		break;
+	case PAGES_LEVEL_ENTRY:
 	case MENU_LEVEL_ENTRY:
 		TransferMenu();
 		if (status.getContext() & KEYBOARD_VALID) {

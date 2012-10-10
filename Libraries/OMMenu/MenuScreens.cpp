@@ -27,10 +27,10 @@ const char Resources::glyphs[8][8] PROGMEM = {
 
 const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 //1234567890123456
-{"   Hello Demo!! "},//0
+{"  Stopped..     "},//0
 {" <OK> for Menu  "},//1
-{"   Stopped..    "},//2
-{" Running [%d/%d]"},//3
+{" Running [%d/%d]"},//2
+{"  More axis?    "},//3
 {"  Frames/sec    "},//4
 {"  Axis to move? "},//5
 {" Move to Start  "},//6
@@ -49,8 +49,8 @@ const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
 {"  Settings      "},//19
 {"  Re-scan bus   "},//20
 {" Camera control "},//21
-{" String 2       "},//22
-{" String 1       "},//23
+{" Scanning..     "},//22
+{" Complete       "},//23
 {"     MENU       "},//24
 {"                "}//25!!blanc
 };
@@ -60,14 +60,16 @@ const char Resources::resources [NUMBER_OF_STRINGS][LCD_WIDTH+1] PROGMEM = {
  *
  * */
 const MenuScreen Resources::screens[] PROGMEM = {
-//INITIAL_DISPLAY_SCREEN
+        //INITIAL_DISPLAY_SCREEN
 		{ 2, //0-INITIAL_DISPLAY=4 lines
 		  0, //
 		  DIALOG_LEVEL_ENTRY,
-		  0,
+		  25, //shared dialog parameter >
 		  { //array
-			{ 0, 0, MENU_SCREEN, 0 }, //1
-			{ 1, 0, MENU_SCREEN, 0 }, //2
+			{ 0, 0, MENU_SCREEN, 0  }, //1
+			{ 1, 0, MENU_SCREEN, 0  }, //2
+			{ 2, 0, MENU_SCREEN, 26 },
+			{ 3, 0, MENU_SCREEN, 0  }
 		  }
 		},
 		//MENU_SCREEN-> Screen[1]
@@ -115,11 +117,11 @@ const MenuScreen Resources::screens[] PROGMEM = {
 		{
 			3,							//=4 lines
 			1,
-			WIZARD_LEVEL_ENTRY,
+			PAGES_LEVEL_ENTRY,
 			0,
 			  {
 				 {0,0,0,0},
-				 {4,0,OPEN_EDIT, 3},	//2
+				 {4,0,OPEN_EDIT, 23},	//2
 				 {21,0,OPEN_EDIT,4}	//3
 			  }
 		},
@@ -137,7 +139,7 @@ const MenuScreen Resources::screens[] PROGMEM = {
 				 {9,0,OPEN_EDIT,7},     //1.4 Lead-out time
 				 {10,0,OPEN_EDIT,8},    //1.5 Acceleration time
 				 {11,0,OPEN_EDIT,9},    //1.6 Deceleration time
-				 {17,0,OPEN_EDIT,22}    //More?
+				 {3,0,OPEN_EDIT,22}    //More?
 			  }
 		},
 

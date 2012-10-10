@@ -27,7 +27,7 @@ struct MenuScreen {
 uint8_t cNumberOfItems;    //
 uint8_t cArrowsRequired;   //need to display selection arrows
 uint8_t cMenuType;         //
-uint8_t cLoadProcess;      //specify callback called on enter menu
+uint8_t cLoadProcess;      //specify callback called on enter menu, or shared param
 const struct menuItem items[MAX_SCREEN_SEL];
 };
 
