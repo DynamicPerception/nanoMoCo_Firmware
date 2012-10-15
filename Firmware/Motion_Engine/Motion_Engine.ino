@@ -106,13 +106,6 @@ boolean mtpc_start  = false;
  // maximum run time
 unsigned long max_time = 0;
 
-OMComHandler ComMgr = OMComHandler();
-  
-    // there are 6 possible states in 
-    // our engine (0-5)
-
-OMState Engine = OMState(6);
-
  /*  state transitions
  
   ST_BLOCK - do not allow any action to occur (some event is in process, block the state engine)
@@ -132,9 +125,13 @@ OMState Engine = OMState(6);
 #define ST_WAIT   5
 
  // initialize core objects
-OMCamera   Camera = OMCamera();
-OMMotor    Motor  = OMMotor();
-OMMoCoNode Node   = OMMoCoNode(Serial, DE_PIN, device_address, SERIAL_VERSION, SERIAL_TYPE);
+OMCamera     Camera = OMCamera();
+OMMotor      Motor  = OMMotor();
+OMMoCoNode   Node   = OMMoCoNode(Serial, DE_PIN, device_address, SERIAL_VERSION, SERIAL_TYPE);
+OMComHandler ComMgr = OMComHandler();
+    // there are 6 possible states in 
+    // our engine (0-5)
+OMState      Engine = OMState(6);
 
 /* 
 
@@ -163,6 +160,8 @@ void setup() {
  
    // default to master timing node
  ComMgr.master(true);
+   // set handler for watched common lines
+ ComMgr.watchHandler(motor_com_line);
  
    // setup camera defaults
    

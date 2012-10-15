@@ -36,6 +36,7 @@ See www.openmoco.org for more information
 #define OM_COM2 3
 #define OM_COM3 19
 
+
 /**
 
   @brief
@@ -114,7 +115,7 @@ See www.openmoco.org for more information
   
   @author C. A. Church
 
-  (c) 2011 C. A. Church / Dynamic Perception
+  (c) 2011-2012 C. A. Church / Dynamic Perception
   
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -137,21 +138,29 @@ class OMComHandler
 private:
 	
 	bool m_isMaster;
-	static bool s_isTripped;
-	
+
+    static bool m_which;
+    volatile static unsigned long m_isrUs;
+    
 	void _masterFollow();
 	void _masterLead();
-	static void _slaveTripped();
+    
+    static void _isrFire();
+    
+    static void(*f_isrCB)(uint16_t);
 	
 public:
 	
 	OMComHandler(); // constructor
 	
 	bool master();
-	void master(bool);
+	void master(bool p_mast);
 	void masterSignal();
 	static bool slaveClear();
-	
+    
+    static void watch(uint8_t p_which);
+    static void watchHandler(void(*p_func)(uint16_t));
+    static void stopWatch();
 	
 	
 };

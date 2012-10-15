@@ -37,6 +37,8 @@ See www.openmoco.org for more information
  
 */
 
+#define MT_COM_DIR1  50
+#define MT_COM_DIR2  100
 
  // max steps to move during program
  
@@ -48,6 +50,7 @@ boolean       mtpc_dir    = false;
 unsigned long mtpc_arrive = 0;
 unsigned long mtpc_accel  = 0;
 unsigned long mtpc_decel  = 0;
+
 
 
 void move_motor() {
@@ -100,6 +103,15 @@ void move_motor() {
 }
 
 
+ // callback handler for OMComHandler class to handle trips on the common line 
+ // (if we're watching a common line for movement trips)
+ 
+void motor_com_line(unsigned int p_time) {
+  if( p_time > MT_COM_DIR1 && p_time < MT_COM_DIR2 )
+    Motor.move(0, 1);
+  else if( p_time > MT_COM_DIR2 )
+    Motor.move(1, 1);
+}
 
 
       

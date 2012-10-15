@@ -310,6 +310,25 @@ void serProgramAction(byte* input_serial_buffer) {
              max_time = Node.ntoul(input_serial_buffer);
              break;
              
+           case 23:
+             // store device name
+             break;
+             
+           case 24: 
+             // set common line for step pulsing
+             
+             if( input_serial_buffer[0] > 2 ) {
+               fail = true;
+             }
+             else {
+               if( input_serial_buffer[0] == 0 )
+                 ComMgr.stopWatch();
+               else
+                 ComMgr.watch(input_serial_buffer[0]);
+             }
+             
+             break;
+             
            case 100:
 
               // handling status requests
