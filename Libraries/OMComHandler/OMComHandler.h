@@ -57,6 +57,11 @@ See www.openmoco.org for more information
   Please note that OMComHandler uses Arduino pins 2, 3, and 19 (analog 5) - it 
   is NOT possible to change this!
   
+  There are three common lines available to the MoCoBus: Common 1 (2), Common 2 (3), and
+  Common 3 (19).  Common 3 is used for the timing signal between nodes, and is implemented
+  in this library using a pin change interrupt.  If Common 1 and 2 are monitored, a hardware
+  interrupt is used for these pins.
+ 
   Master Node Example:
   
    @code
@@ -113,6 +118,53 @@ See www.openmoco.org for more information
   }
   @endcode
   
+ Additionally, it is possible to monitor either Common 1 or Common 2 for a signal.  In this
+ case, a callback handler is required, and this callback handler is called when a signal is
+ brought LOW and then back to HIGH, and is passed an unsigned integer with the number of microseconds
+ the pin was brought low.
+ 
+ For example:
+ 
+ @code
+ 
+ OMComHandler ComMgr;
+ 
+ volatile unsigned int trip_time = 0;
+ 
+ void setup() {
+    ComMgr = OMComHandler();
+        // watch COM1
+    ComMgr.watch(1);
+    ComMgr.watchHandler(tripped);
+ }
+ 
+ void loop() {
+ 
+ 
+    if( trip_time > 0 ) {
+        
+        if( trip_time > 100 ) {
+            digitalWrite(13, HIGH);
+            delay(2000);
+            digitalWrite(13, LOW);
+        }
+        else {
+            digitalWrite(13, HIGH);
+            delay(1000);
+            digitalWrite(13, LOW);
+        }
+    
+        trip_time = 0;
+    }
+  
+ 
+ }
+ 
+ void tripped(unsigned int p_us) {
+    trip_time = p_us;
+ }
+ @endcode
+ 
   @author C. A. Church
 
   (c) 2011-2012 C. A. Church / Dynamic Perception

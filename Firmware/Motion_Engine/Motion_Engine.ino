@@ -142,13 +142,12 @@ OMState      Engine = OMState(6);
 */
 
 
-
 void setup() {
 
 
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(PBT_PIN, INPUT);
-  
+
   digitalWrite(PBT_PIN, HIGH);
   
   if( eeprom_saved() == true )
@@ -190,6 +189,15 @@ void setup() {
  Motor.maxSpeed(800);
  Motor.sleep(true);
  
+ 
+     // startup LED signal
+  for(int i = 1; i <= 5; i++) {
+    digitalWrite(DEBUG_PIN, HIGH);
+    delay(250);
+    digitalWrite(DEBUG_PIN, LOW);
+    delay(250); 
+  }
+  
 }
 
 
