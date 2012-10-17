@@ -10,13 +10,10 @@
  @param c_serObj
  An Arduino HardwareSerial object
 
- @param c_dePin
- The transceiver DE/RE digital I/O pin number
-
  */
 
-OMMoCoMaster::OMMoCoMaster(HardwareSerial& c_serObj, uint8_t c_dePin) :
-		OMMoCoBus(c_serObj, c_dePin, (unsigned int)OM_SER_MASTER_ADDR) {
+OMMoCoMaster::OMMoCoMaster(HardwareSerial& c_serObj) :
+		OMMoCoBus(c_serObj, (unsigned int)OM_SER_MASTER_ADDR) {
 
 }
 

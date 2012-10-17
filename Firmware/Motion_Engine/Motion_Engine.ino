@@ -41,10 +41,22 @@ See dynamicperception.com for more information
 
   // serial api version
   
-#define SERIAL_VERSION  4
+#define SERIAL_VERSION  5
 
 #define SERIAL_TYPE  "OMAXISVX"
 
+  // # of flashes of debug led at startup
+#define START_FLASH_CNT  5
+#define FLASH_DELAY      250
+  // # of milliseconds PBT must be held low to do a factory reset
+#define START_RST_TM     5000
+
+#define CAM_DEFAULT_EXP      120
+#define CAM_DEFAULT_WAIT     0
+#define CAM_DEFAULT_FOCUS    0
+
+#define MOT_DEFAULT_MAX_STEP  5000
+#define MOT_DEFAULT_MAX_SPD   800
 
  // digital I/O line definitions
 
@@ -61,6 +73,15 @@ See dynamicperception.com for more information
 #define MS3_PIN      16
 #define PBT_PIN      7
 
+// These defines are used for the Limit Switch Pin Change Registers
+
+ // for port PCINT32/PD7/AIN1
+#define LIMIT_ENABLE  PCIE2
+#define LIMIT_MASK    PCMSK2
+#define LIMIT_INT     PCINT23
+#define LIMIT_VECT    PCINT2_vect
+#define LIMIT_PREG    PIND
+#define LIMIT_PIN     PIND7
 
 // declare functions that pre-processor can't handle...
 
@@ -75,7 +96,8 @@ void eeprom_read( int pos, int& val );
 void eeprom_read( int pos, unsigned int& val );
 void eeprom_read( int pos, unsigned long& val );
 void eeprom_read( int pos, float& val );
-
+  // predefine this function to declare the default argument
+void stopProgram(boolean force_clear = true);
 
 
  // program timer counters
@@ -85,6 +107,7 @@ unsigned long last_time   = 0;
 
 
 boolean running = false;
+volatile byte force_stop = false;
 
   // do we generate timing for all devices on the network?
   // i.e. -are we the timing master?
@@ -127,7 +150,7 @@ unsigned long max_time = 0;
  // initialize core objects
 OMCamera     Camera = OMCamera();
 OMMotor      Motor  = OMMotor();
-OMMoCoNode   Node   = OMMoCoNode(Serial, DE_PIN, device_address, SERIAL_VERSION, SERIAL_TYPE);
+OMMoCoNode   Node   = OMMoCoNode(Serial, device_address, SERIAL_VERSION, SERIAL_TYPE);
 OMComHandler ComMgr = OMComHandler();
     // there are 6 possible states in 
     // our engine (0-5)
@@ -147,9 +170,16 @@ void setup() {
 
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(PBT_PIN, INPUT);
-
+  pinMode(CAM_SHT_PIN, OUTPUT);
+  
+    // pull PBT up internally
   digitalWrite(PBT_PIN, HIGH);
   
+    // handle reading the PBT pin to see if a factory reset is
+    // required
+  checkReset();
+    
+  // restore eeprom
   if( eeprom_saved() == true )
     restore_eeprom_memory();
 
@@ -163,14 +193,13 @@ void setup() {
  ComMgr.watchHandler(motor_com_line);
  
    // setup camera defaults
-   
- Camera.exposeTime(100);
- Camera.waitTime(0);
- Camera.focusTime(0);
+ Camera.exposeTime(CAM_DEFAULT_EXP);
+ Camera.waitTime(CAM_DEFAULT_WAIT);
+ Camera.focusTime(CAM_DEFAULT_FOCUS);
  
  Camera.setHandler(camCallBack);
 
-  // setup serial connection  
+  // setup serial connection  OM_SER_BPS is defined in OMMoCoBus library
  Serial.begin(OM_SER_BPS);
 
   // setup MoCoBus Node object
@@ -185,18 +214,15 @@ void setup() {
   // defaults for motor
  Motor.enable(true);
  Motor.continuous(false);
- Motor.maxStepRate(5000);
- Motor.maxSpeed(800);
+ Motor.maxStepRate(MOT_DEFAULT_MAX_STEP);
+ Motor.maxSpeed(MOT_DEFAULT_MAX_SPD);
  Motor.sleep(true);
  
+  // enable limit switch handler
+ limitSwitch(true);
  
-     // startup LED signal
-  for(int i = 1; i <= 5; i++) {
-    digitalWrite(DEBUG_PIN, HIGH);
-    delay(250);
-    digitalWrite(DEBUG_PIN, LOW);
-    delay(250); 
-  }
+  // startup LED signal
+ flasher(DEBUG_PIN, START_FLASH_CNT);
   
 }
 
@@ -219,6 +245,10 @@ void loop() {
      run_time += cur_time - last_time;
      last_time = cur_time;
 
+      // Got an external stop somewhere, that wasn't a command?
+     if( force_stop == true )
+       stopProgram(false);
+       
        // hit max runtime? done!
      if( ComMgr.master() && max_time > 0 && run_time > max_time )
        stopProgram();
@@ -251,13 +281,17 @@ void pauseProgram() {
   running = false;
 }
 
-void stopProgram() {
+void stopProgram(boolean force_clear) {
               
    // stop/clear program
+   
+  if( force_clear == true ) {
+    run_time     = 0;
+    camera_fired = 0;
+    mtpc_start   = false;
+  }
+
   running      = false;
-  run_time     = 0;
-  camera_fired = 0;
-  mtpc_start   = false;
   
     // clear out motor moved data
     // and stop motor  
@@ -271,11 +305,56 @@ void startProgram() {
   last_time      = millis();
   running = true;
   
+    // debug pin may have been brought high with a force stop
+  if( force_stop == true ) {
+    digitalWrite(DEBUG_PIN, LOW);
+    force_stop = false;
+  }
+  
     // set ready to check for camera
     // we only do thhis for master nodes, not slaves
     // as slaves get their ok to fire state from OMComHandler
   if( ComMgr.master() == true )
     Engine.state(ST_CLEAR); 
                     
+}
+
+
+void flasher(byte pin, int count) {
+    // flash a pin several times (blink)
+    
+   for(int i = 0; i < count; i++) {
+      digitalWrite(pin, HIGH);
+      delay(250);
+      digitalWrite(pin, LOW);
+      delay(250); 
+   }
+   
+}
+
+
+  // check for factory reset on startup
+void checkReset() {
+  
+  unsigned long rstTm = millis();
+  
+  while( digitalRead(PBT_PIN) == LOW ) {
+    digitalWrite(DEBUG_PIN, HIGH);
+    
+    unsigned long newTm = millis();
+    
+    if( newTm - rstTm > START_RST_TM ) {
+        // set eeprom as unsaved
+      eeprom_saved(false);
+      digitalWrite(DEBUG_PIN, LOW);
+        // indicate memory reset by flashing shutter 10 times
+      flasher(CAM_SHT_PIN, START_FLASH_CNT * 2);
+      
+      break;
+    }
+    
+  }
+
+  digitalWrite(DEBUG_PIN, LOW);
 }
 

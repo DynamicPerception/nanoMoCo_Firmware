@@ -12,7 +12,7 @@
   
 	// default pin assignments (nanomoco)
 #define OM_DEFSHUTTER	13
-#define OM_DEFFOCUS	12
+#define OM_DEFFOCUS     12
 
 	// callback status codes
 	

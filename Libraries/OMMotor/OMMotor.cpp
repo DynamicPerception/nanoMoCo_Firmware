@@ -1352,14 +1352,14 @@ void OMMotor::_runISR() {
           // which is just painful.
           
                	// digital pin 9 on atmega328p
-          PORTB |= B00000010;
+          OM_MOT_STPREG |= OM_MOT_STPFLAG;
           
           totalCyclesTaken--;
           stepsTaken++;
           _updateMotorHome( (uint8_t) 1);
           	// bring step pin low - this allows us to
           	// hit one step per ISR run rate.
-          PORTB &= B11111101;          
+          OM_MOT_STPREG ^= OM_MOT_STPFLAG;          
           return;
       }
       
@@ -1415,7 +1415,7 @@ void OMMotor::_runISR() {
 
         // set pin to trigger step
         // digital pin 9 on atmega328p
-      PORTB |= B00000010;
+      OM_MOT_STPREG |= OM_MOT_STPFLAG;
 
       cyclesLow = 0;
       stepsTaken++;
@@ -1445,7 +1445,7 @@ void OMMotor::_runISR() {
        // allowing us to hit a speed of one step per
        // timing cycle
        
-       PORTB &= B11111101;
+       OM_MOT_STPREG ^= OM_MOT_STPFLAG;
       
   } // end if( cyclesLow...    
       

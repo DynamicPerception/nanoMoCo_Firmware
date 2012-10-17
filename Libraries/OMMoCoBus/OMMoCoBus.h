@@ -2,9 +2,9 @@
 
 MoCoBus Core Library
 
-OpenMoco nanoMoCo Core Engine Libraries 
+OpenMoco MoCoBus Core Libraries 
 
-See www.openmoco.org for more information
+ See www.dynamicperception.com for more information
 
 (c) 2011-2012 C.A. Church / Dynamic Perception LLC
 
@@ -31,6 +31,7 @@ See www.openmoco.org for more information
 #include "HardwareSerial.h"
 #include "OMMoCoDefs.h"
 
+    
 /**
 
  @mainpage
@@ -115,13 +116,31 @@ See www.openmoco.org for more information
   Multiple OMMoCoBus objects may exist at the same time, as long as they use
   different hardware serial objects.
   
-    <b>Please note: at this time, this library only supports the Atmega328p chipset
-  running with the standard UART and with the DE_PIN wired to digital pin 5. Future
-  versions will add support for different chipsets.</b>
 
   This library provides the core protocol handling methods necessary for masters
   or nodes on a MoCoBus network.
   
+  @section ombpinassign Pin Assignments
+ 
+  For porting to other chipsets, or for changing the default DE pin from Arduino 5 on the Atmega328p,
+  you may define any of the following #define's before #include'ing this library.  The following
+  defines are available, with their default values:
+  
+
+  DE Pin Assignments
+ 
+ OMB_DEPIN      5
+ OMB_DEREG      PORTD
+ OMB_DEPFLAG    PORTD5
+ 
+  Serial Handling Registers/Flags
+ 
+ OMB_SRDREG     UDR0
+ OMB_SRRFLAG    UDRE0
+ OMB_SRSREG     UCSR0A
+ OMB_SRTXFLAG   TXC0
+
+ 
   @author C. A. Church
   
   With contributions by Stanislav Perepelitsa
@@ -146,7 +165,7 @@ See www.openmoco.org for more information
 class OMMoCoBus {
 public:
 
-	OMMoCoBus(HardwareSerial& port, uint8_t, unsigned int mode);
+	OMMoCoBus(HardwareSerial& port, unsigned int mode);
 	virtual ~OMMoCoBus(){}
 
 	unsigned int address();
@@ -190,7 +209,6 @@ private:
 
 	uint8_t m_serBuffer[OM_SER_BUFLEN];
 	unsigned int m_devAddr;
-	uint8_t m_dePin;
 	uint8_t m_bufSize;
 	
 	bool m_isBCast;

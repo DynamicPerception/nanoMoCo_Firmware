@@ -82,7 +82,7 @@ class OMMoCoNode : public OMMoCoBus {
 public:
 
 
-	OMMoCoNode(HardwareSerial& c_serObj, uint8_t c_dePin, unsigned int c_addr, unsigned int c_ver, char* c_id);
+	OMMoCoNode(HardwareSerial& c_serObj, unsigned int c_addr, unsigned int c_ver, char* c_id);
 	uint8_t check();
 	
 	void response(bool p_stat);

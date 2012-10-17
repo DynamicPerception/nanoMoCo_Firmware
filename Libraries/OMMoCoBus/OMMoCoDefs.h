@@ -34,6 +34,32 @@ enum {
 	R_BYTE, R_UINT, R_INT, R_LONG, R_ULONG, R_FLOAT, R_STR
 };
 
+
+#ifndef OMB_DEPIN
+    #define OMB_DEPIN 5
+#endif
+#ifndef OMB_DEREG
+    #define OMB_DEREG   PORTD
+#endif
+#ifndef OMB_DEPFLAG
+    #define OMB_DEPFLAG PORTD5
+#endif
+
+#ifndef OMB_SRDREG
+    #define OMB_SRDREG  UDR0
+#endif
+#ifndef OMB_SRRFLAG
+    #define OMB_SRRFLAG UDRE0
+#endif
+#ifndef OMB_SRREG
+    #define OMB_SRSREG   UCSR0A
+#endif
+#ifndef OMB_SRCLRFLAG
+    #define OMB_SRTXFLAG   TXC0
+#endif
+
+
+
 // bus 'master' address, for responses
 #define OM_SER_MASTER_ADDR	0
 // bus 'broadcast' address

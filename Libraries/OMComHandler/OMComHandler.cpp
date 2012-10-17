@@ -2,11 +2,11 @@
 
 Common Line Handler Library
 
-OpenMoco nanoMoCo Core Engine Libraries 
-
-See www.openmoco.org for more information
-
-(c) 2008-2011 C.A. Church / Dynamic Perception LLC
+ OpenMoco MoCoBus Core Libraries 
+ 
+ See www.dynamicperception.com for more information
+ 
+ (c) 2008-2012 C.A. Church / Dynamic Perception LLC
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,14 +37,15 @@ volatile uint8_t omc_slavetrip = 0;
 /** Interrupt Service Routine for Pin Change on COM3
  */
 
-ISR(PCINT1_vect) {
-    uint8_t diffbits = PINC ^ omc_pc_hist;
+ISR(OMC_PCVECT) {
+    uint8_t diffbits = OMC_PCREG ^ omc_pc_hist;
     
-    if( diffbits & (1 << PINC5) && ! (omc_pc_hist & (1 << PINC5)) ) {
+        // returning high after being brought low
+    if( diffbits & (1 << OMC_PCPIN) && ! (omc_pc_hist & (1 << OMC_PCPIN)) ) {
         omc_slavetrip = 1;
     }
 
-    omc_pc_hist = PINC;
+    omc_pc_hist = OMC_PCREG;
 
 }
 
@@ -63,13 +64,13 @@ volatile unsigned long OMComHandler::m_isrUs = 0;
 OMComHandler::OMComHandler() {
 	m_isMaster = false;    
     
-    pinMode(OM_COM1, INPUT);
-    pinMode(OM_COM2, INPUT);
-    pinMode(OM_COM3, INPUT);
+    pinMode(OMC_COM1, INPUT);
+    pinMode(OMC_COM2, INPUT);
+    pinMode(OMC_COM3, INPUT);
     
-    digitalWrite(OM_COM1, HIGH);
-    digitalWrite(OM_COM2, HIGH);
-    digitalWrite(OM_COM3, HIGH);
+    digitalWrite(OMC_COM1, HIGH);
+    digitalWrite(OMC_COM2, HIGH);
+    digitalWrite(OMC_COM3, HIGH);
 
 }
 
@@ -77,13 +78,13 @@ void OMComHandler::_masterFollow() {
       // slave, attach an interrupt to the
       // common line, engage pull-up resistor
 
-    pinMode(OM_COM3, INPUT);
-    digitalWrite(OM_COM3, HIGH);
+    pinMode(OMC_COM3, INPUT);
+    digitalWrite(OMC_COM3, HIGH);
 
     // enable pin change interrupt for slave
     
-    PCICR |= (1 << PCIE1);
-    PCMSK1 |= (1 << PCINT13);
+    OMC_PCFLAG |= (1 << OMC_PCENABLE);
+    OMC_PCMASK |= (1 << OMC_PCINT);
 
 }
 
@@ -91,11 +92,11 @@ void OMComHandler::_masterLead() {
       // master, bring the common line high (bring low to signal slaves)
 
         // disable pcint
-    PCICR ^= (1 << PCIE1);
-    PCMSK1 ^= (1 << PCINT13);
+    OMC_PCFLAG ^= (1 << OMC_PCENABLE);
+    OMC_PCMASK ^= (1 << OMC_PCINT);
     
-    pinMode(OM_COM3, OUTPUT);
-    digitalWrite(OM_COM3, HIGH);
+    pinMode(OMC_COM3, OUTPUT);
+    digitalWrite(OMC_COM3, HIGH);
 }	
 
 /** Watch A Common Input (COM1 or COM2)
@@ -123,7 +124,7 @@ void OMComHandler::watch(uint8_t p_which) {
     
     m_which = p_which;    
     
-    uint8_t pin = p_which == 0 ? OM_COM1 : OM_COM2;
+    uint8_t pin = p_which == 0 ? OMC_COM1 : OMC_COM2;
     
     pinMode(pin, INPUT);
     digitalWrite(pin, HIGH);
@@ -220,9 +221,9 @@ void OMComHandler::masterSignal() {
 	if( this->m_isMaster ) {
 	      // we're the master, send a 5mS low pulse on
 	      // common line
-	    digitalWrite(OM_COM3, LOW);
+	    digitalWrite(OMC_COM3, LOW);
 	    delay(5);
-	    digitalWrite(OM_COM3, HIGH);
+	    digitalWrite(OMC_COM3, HIGH);
     	}
 }
 
@@ -261,9 +262,9 @@ void OMComHandler::_isrFire() {
     uint8_t stat;
     
     if( m_which )
-        stat = PIND & (1 << PIND2);
+        stat = OMC_COM1_REG & (1 << OMC_COM1_PIN);
     else
-        stat = PIND & (1 << PIND3);
+        stat = OMC_COM2_REG & (1 << OMC_COM2_PIN);
     
      // if transitioned from high to low, 
      // record start time

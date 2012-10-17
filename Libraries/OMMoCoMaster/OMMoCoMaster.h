@@ -83,7 +83,7 @@ class OMMoCoMaster: public OMMoCoBus {
 
 public:
 
-	OMMoCoMaster(HardwareSerial& c_serObj, uint8_t c_dePin);
+	OMMoCoMaster(HardwareSerial& c_serObj);
     // 0bytes of data
 	int command(uint8_t p_addr, uint8_t p_cmd);
 	// 1bytes of data

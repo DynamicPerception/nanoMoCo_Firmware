@@ -26,32 +26,36 @@ See dynamicperception.com for more information
 
 */
 
+volatile byte ls_pc_hist = 0xFF;
 
+void limitSwitch(bool p_enable) {
 
-/*
-
-  ========================================
-  Device Addressing functions
-  ========================================
+    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT32
+    
+    if( p_enable ) {
+      PCICR |= (1 << LIMIT_ENABLE);
+      LIMIT_MASK |= (1 << LIMIT_INT);
+    }
+    else {
+      PCICR ^= (1 << LIMIT_ENABLE);
+      LIMIT_MASK ^= (1 << LIMIT_INT);
+    }
+      
   
-*/
-
-
-void generate_addr() {
-  
-  randomSeed(analogRead(0));
-  
-  unsigned int max_addr = 0xFFFF;
-  
-  device_address = random(max_addr);
-  
-  eeprom_write(1, device_address);
 }
 
-void set_addr(unsigned int addr) {
-  
-  device_address = addr;
-  eeprom_write(1, device_address);
+
+ // Our ISR for the pin change
+ 
+ISR(PCINT2_vect) {
+
+    // if we've just switched low (pin was previouslty high, and our current state is LOW)
+  if( ! ( LIMIT_PREG & (1 << LIMIT_PIN))  && (ls_pc_hist & (1 << LIMIT_PIN) ) ) {
+    force_stop = true;
+    digitalWrite(DEBUG_PIN, HIGH);
+  }
+    
+  ls_pc_hist = LIMIT_PREG;
+    
 }
 
-  

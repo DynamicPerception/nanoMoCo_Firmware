@@ -45,8 +45,7 @@ Author: C.A. Church
 /** Constructor
 
  Constructs a new instance of the class. Accepts a hardware serial object,
- the digital pin # of the transceiver DE/RE pin combination, and the
- current device address.  You may change the address later using address()
+ and the current device address.  You may change the address later using address()
 
  Note: for masters, the address will always be 0, and for slaves the address
  must be greater than 1.
@@ -54,24 +53,20 @@ Author: C.A. Church
  @param c_serObj
  An Arduino HardwareSerial object
 
- @param c_dePin
- The transceiver DE/RE digital I/O pin number
-
  @param c_dAddr
  The device address
 
  */
 
-OMMoCoBus::OMMoCoBus(HardwareSerial& c_serObj, uint8_t c_dePin, unsigned int c_dAddr) {
+OMMoCoBus::OMMoCoBus(HardwareSerial& c_serObj, unsigned int c_dAddr) {
 
   m_serObj = &c_serObj;
-  m_dePin = c_dePin;
   m_devAddr = c_dAddr;
   m_bufSize = 0;
   f_newAddr = 0;
 
-  pinMode(m_dePin, OUTPUT);
-  digitalWrite(m_dePin, LOW);
+  pinMode(OMB_DEPIN, OUTPUT);
+  digitalWrite(OMB_DEPIN, LOW);
 
 }
 
@@ -399,24 +394,24 @@ bool OMMoCoBus::isBroadcast() {
  */
 
 void OMMoCoBus::write(uint8_t p_dat) {
+
     
-    // TODO: Abstract for non Atmega328P platforms
+    while (!(OMB_SRSREG & _BV(OMB_SRRFLAG)));
     
-    while (!(UCSR0A & _BV(UDRE0)));
+        // set xmit pin high
+    OMB_DEREG |= _BV(OMB_DEPFLAG);  
+        // clear tx complete flag before write, just incase serial object doesn't
+    OMB_SRSREG |= _BV(OMB_SRTXFLAG);
     
-	// set xmit pin high
-    PORTD |= _BV(PORTD5);  
-    // clear tx complete flag before write, just incase serial object doesn't
-    UCSR0A |= _BV(TXC0);
-    
-    UDR0 = p_dat;		
+        // push out byte
+    OMB_SRDREG = p_dat;		
     
 	
-    while(!(UCSR0A & _BV(TXC0)) );
+    while(!(OMB_SRSREG & _BV(OMB_SRTXFLAG)) );
     
     _delay_us(OM_SER_CLEAR_TM);
     
-    PORTD &= ~_BV(PORTD5);
+    OMB_DEREG &= ~_BV(OMB_DEPFLAG);
     
     
 }

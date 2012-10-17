@@ -5,10 +5,10 @@ OpenMoco
 
 Time-lapse Core Engine
 
-See www.openmoco.org for more information
+See dynamicperception.com for more information
 
 
-(c) 2011 C.A. Church / Dynamic Perception LLC
+(c) 2008-2012 C.A. Church / Dynamic Perception LLC
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ See www.openmoco.org for more information
 
 
 */
-
 /*
 
   ========================================

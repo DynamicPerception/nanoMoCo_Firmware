@@ -25,9 +25,6 @@
  @param c_serObj
  An Arduino HardwareSerial object
 
- @param c_dePin
- The transceiver DE/RE digital I/O pin number
-
  @param c_addr
  The device address
  
@@ -40,7 +37,7 @@
  
  */
  
-OMMoCoNode::OMMoCoNode(HardwareSerial& c_serObj, uint8_t c_dePin, unsigned int c_addr, unsigned int c_ver, char* c_id) : OMMoCoBus(c_serObj, c_dePin, c_addr) {
+OMMoCoNode::OMMoCoNode(HardwareSerial& c_serObj, unsigned int c_addr, unsigned int c_ver, char* c_id) : OMMoCoBus(c_serObj, c_addr) {
 	f_cmdHandler = 0;
 	
 	m_ver = c_ver;

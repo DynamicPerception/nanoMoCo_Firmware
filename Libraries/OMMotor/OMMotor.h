@@ -35,13 +35,31 @@ See www.openmoco.org for more information
 
 
  // DEFAULT PIN ASSIGNMENTS
- 
-#define OM_MOT_DSTEP	9
-#define OM_MOT_DDIR	4
-#define OM_MOT_DSLP	17
-#define OM_MOT_DMS1	14
-#define OM_MOT_DMS2	15
-#define OM_MOT_DMS3	16
+
+#ifndef OM_MOT_DSTEP
+    #define OM_MOT_DSTEP	9
+#endif
+#ifndef OM_MOT_DDIR
+    #define OM_MOT_DDIR	4
+#endif
+#ifndef OM_MOT_DSLP
+    #define OM_MOT_DSLP	17
+#endif
+#ifndef OM_MOT_DMS1
+    #define OM_MOT_DMS1	14
+#endif
+#ifndef OM_MOT_DMS2
+    #define OM_MOT_DMS2	15
+#endif
+#ifndef OM_MOT_DMS3
+    #define OM_MOT_DMS3	16
+#endif
+#ifndef OM_MOT_STPREG
+    #define OM_MOT_STPREG     PORTB
+#endif
+#ifndef OM_MOT_STPFLAG
+    #define OM_MOT_STPFLAG      PORTB1
+#endif
 
 #define OM_MOT_SSTATE	HIGH
 #define OM_MOT_SAFE	10
