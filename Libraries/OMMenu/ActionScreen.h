@@ -10,6 +10,7 @@
 
 #include <inttypes.h>
 #include "MenuContext.h"
+#include "Commander.h"
 
 #define ACTIONS_MAX 2
 
@@ -20,15 +21,15 @@ class ActionScreen {
 
 	uint8_t moveDir;
 	uint8_t markerPos;
-	MenuContext & status;
-
+	Commander& cmd;
+	MenuContext& status;
 	/*callbacks for special actions*/
-	typedef void (*actionCB)(uint8_t param);
-	actionCB actions[ACTIONS_MAX];
-	actionCB action;
+	//typedef void (*actionCB)(uint8_t param);
+	//actionCB actions[ACTIONS_MAX];
+	//actionCB action;
 
 public:
-	ActionScreen(MenuContext & _status);
+	ActionScreen(Commander & _cmd);
 
 	/* */
 	void openAction(const uint8_t idxProc, const uint8_t idxParam);

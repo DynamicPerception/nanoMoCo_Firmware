@@ -98,15 +98,7 @@ MenuContext::MenuContext()
 	iParamValue[11] = (18*3600UL + 59*60UL + 59UL);
 	iParamValue[25] = 0;
 
-    //init it here
-	dynListSize = 0;
-	for (uint8_t i=0; i < 6; i++) {
-		sprintf(&dynList[i][0], "entry_%d", i+1);
-		dynListSize++;
-	}
-
-	sprintf(&dynList[dynListSize][0], "NEXT");
-	dynListSize++;
+    resetList();
 
 }
 
@@ -230,7 +222,7 @@ void MenuContext::openParameter(const uint8_t idx){
 /***
  *
  * */
-bool MenuContext::isParamEdit()
+bool MenuContext::isParamEdit() const
 {
 	return (cFocusParameter != INVALID_IDX);
 }
@@ -321,3 +313,34 @@ void MenuContext::raiseKeyboardIncrement()
 		iKeyboardIncrement *=10;
 	}
 }
+
+/**
+ *
+ * */
+void MenuContext::resetList(void)
+{
+//init it here
+	dynListSize = 0;
+	//--debug
+	//for (uint8_t i=0; i < 6; i++) {
+	//	sprintf(&dynList[i][0], "entry_%d", i+1);
+	//	dynListSize++;
+	//}
+
+	sprintf(&dynList[dynListSize][0], "NEXT");
+	dynListSize++;
+}
+
+
+/**
+ *
+ * */
+void MenuContext::addToList(uint8_t addr, const char* name)
+{
+	if (dynListSize < DYN_LIST_SIZE) {
+	  dynListNode[dynListSize] = addr;
+	  sprintf(&dynList[dynListSize][0], "%d_%s", addr, name);
+	  dynListSize++;
+	}
+}
+

@@ -10,13 +10,12 @@
 /**
  *
  * */
-ActionScreen::ActionScreen(MenuContext & _status)
-: status(_status)
+ActionScreen::ActionScreen(Commander& _cmd)
+: cmd(_cmd), status(_cmd.GetWrContext())
 {
-	memset(actions, 0, sizeof(actionCB) * ACTIONS_MAX);
-	action = 0;
 	markerPos = 0;
 	moveDir = 0;
+
 }
 
 /**
@@ -24,12 +23,7 @@ ActionScreen::ActionScreen(MenuContext & _status)
  **/
 void ActionScreen::openAction(const uint8_t idxProc, const uint8_t idxParam)
 {
-  status.openParameter(idxParam);
-  if (idxProc < ACTIONS_MAX) {
-    action = actions[idxProc];
-  } else {
-    action = 0;
-  }
+	status.openParameter(idxParam);
 }
 
 /**
@@ -39,12 +33,9 @@ void ActionScreen::closeAction(bool closeFlag)
 {
   status.closeParameter(closeFlag);
   if (closeFlag) {
-	  if (action) {
-		  //ToDo
-		  action(2);
-	  }
+	moveDir = 2;
+	cmd.StepMotor(moveDir);
   }
-  action = 0;
 }
 
 /**
@@ -56,9 +47,7 @@ void ActionScreen::Left(void)
 	markerPos--;
 	markerPos = (markerPos & 0x0F);
 	moveDir = 0;
-	if (action) {
-	  action(moveDir);
-	}
+	cmd.StepMotor(moveDir);
 	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
 }
 
@@ -71,9 +60,7 @@ void ActionScreen::Right(void)
 	markerPos++;
 	markerPos = (markerPos & 0x0F);
 	moveDir = 1;
-	if (action) {
-		action(moveDir);
-	}
+	cmd.StepMotor(moveDir);
 	status.setContextBits(TRANSFER_DISPLAY_ENABLE);
 }
 

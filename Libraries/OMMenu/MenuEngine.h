@@ -13,6 +13,7 @@
 #include "AnlgBtnInput.h"
 #include "HorizMenu.h"
 #include "MenuContext.h"
+#include "Commander.h"
 
 #define HUNDRED_MS 100
 
@@ -27,14 +28,9 @@
  * */
 class MenuEngine: public HorizMenu
 {
-protected:
-	struct StackType {
-	unsigned char cStackPointer;
-	unsigned char cScreenCreatedToGetHere[MAX_SCREEN_SEL];
-	unsigned char cTopLine[MAX_SCREEN_SEL];
-	unsigned char cPointerLine[MAX_SCREEN_SEL];
-	unsigned int iCallingInterPhase[MAX_SCREEN_SEL];
-	};
+	//time stamps to calculate time
+	uint32_t mSTimer0;
+	uint32_t mSTimer0_Freeze;
 
 	uint8_t iEnginePhase; //former iPhase
 	uint8_t iInterPhase;
@@ -44,26 +40,33 @@ protected:
 
 	uint8_t mode;
 
+	struct StackType {
+		unsigned char cStackPointer;
+		unsigned char cScreenCreatedToGetHere[MAX_SCREEN_SEL];
+		unsigned char cTopLine[MAX_SCREEN_SEL];
+		unsigned char cPointerLine[MAX_SCREEN_SEL];
+		unsigned int iCallingInterPhase[MAX_SCREEN_SEL];
+		};
+
 	StackType ProcessStack;
+
+protected:
+
     AnlgBtnInput keyboard;
 
-    //time stamps to calculate time
-    unsigned long mSTimer0;
-    unsigned long mSTimer0_Freeze;
-
-
 public:
-	MenuEngine(LiquidCrystal& lcd);
-	//virtual ~MenuEngine();
-    //void init(LiquidCrystal* lcd);
-	void InitialiseDisplay(void) {ResetDisplay();}
-
-	unsigned char mSecTimeup (void *data1,void *data2);
-	void mSecInitialise(void *data1, void *data2, unsigned long timerValue);
+	MenuEngine(LiquidCrystal& _lcd, Commander& _cmd);
 
 	void ProcessUI(void);
 
+	//async functions
+
 protected:
+	void InitialiseDisplay(void) {ResetDisplay();}
+    //
+	unsigned char mSecTimeup (void *data1,void *data2);
+	void mSecInitialise(void *data1, void *data2, unsigned long timerValue);
+	//
 	void PopStack (void);
 	void FlattenStack (void);
 	void PushStack (void);

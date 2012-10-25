@@ -36,8 +36,8 @@ class HorizMenu {
 	};
 
     /*callbacks for special actions, like load menu items*/
-	typedef void (*loadCB)(void);
-	loadCB operations[OPER_MAX];
+	//typedef void (*loadCB)(void);
+	//loadCB operations[OPER_MAX];
 
 	uint8_t cListBuf[LIST_ITEMS_MAX][LCD_WIDTH + 1];
 
@@ -65,12 +65,12 @@ protected:
 	//
 	MenuBufferType displayBuffer;
 	//
-	MenuContext status;
+	MenuContext& status;
 	//
 	ActionScreen actionScr;
 
 protected:
-	HorizMenu(LiquidCrystal& lcd);
+	HorizMenu(LiquidCrystal& _lcd, Commander& _cmd);
 
 protected:
 	void CreateMenu (uint8_t menuIndex);

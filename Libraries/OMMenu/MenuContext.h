@@ -37,6 +37,7 @@
 
 #define INVALID_IDX 0xFF
 
+#define DYN_LIST_SIZE 7
 //
 struct fixListEntry {
   const char caption [LCD_WIDTH];
@@ -57,8 +58,10 @@ class MenuContext {
 	const static uint16_t iParamMinValue[NUMBER_OF_PARAMETERS];
 	const static uint16_t iStepParameters[NUMBER_OF_PARAMETERS];
 
-	char dynList[7][17];
-	uint8_t dynListSize;
+    //dynamic list variables
+	uint8_t dynListNode[DYN_LIST_SIZE]; //store bus_addr
+	char dynList[DYN_LIST_SIZE][LCD_WIDTH + 1]; //store display name
+	uint8_t dynListSize; //list size
 
     //ToDo define sizes
 	const static fixListEntry fixedList1[3];//None,Camera,Bulb
@@ -68,6 +71,7 @@ class MenuContext {
 	const static char fixedList5[2][17];//
 
 	uint16_t periodTimers[NUMBER_OF_TIMERS];
+
 
 	uint16_t iKeyboardIncrement;
 	uint8_t cFocusParameter;
@@ -81,6 +85,8 @@ class MenuContext {
 
     //uint8_t jumpItem;
     //uint8_t jumpLevel;
+
+
 
 protected:
     uint8_t checkParamByIdx(uint8_t idx, uint32_t* pParam);
@@ -105,7 +111,7 @@ public:
     void setKeyboardIncrement(const uint8_t inc) {iKeyboardIncrement = inc;}
 
 //parameter interface
-    bool isParamEdit();
+    bool isParamEdit() const;
 	void openParameter(const uint8_t idx);
 	void incParameter();
 	void decParameter();
@@ -113,6 +119,13 @@ public:
 	/* return last position in string*/
 	uint8_t formatParameterText(const uint8_t idx, uint8_t* cLineBuf, uint8_t* level, uint8_t* item);
 	uint32_t readLiveParameter(uint8_t idxParam);
+
+//list interface
+	void resetList(void);
+	void addToList(uint8_t addr, const char* name);
+	uint8_t getListCount(void) const {return dynListSize;}
+	uint8_t getMaxCount(void) const {return DYN_LIST_SIZE;}
+	uint8_t getNodeAddr(uint8_t idx) {return dynListNode[idx];}
 
 //navigation support
 	//uint8_t getJumpLevel() const {return jumpLevel;};

@@ -7,11 +7,10 @@
 
 #include "HorizMenu.h"
 
-HorizMenu::HorizMenu(LiquidCrystal& lcd)
- : disp(lcd), actionScr(status)
+HorizMenu::HorizMenu(LiquidCrystal& _lcd, Commander& _cmd)
+ : disp(_lcd), status(_cmd.GetWrContext()), actionScr(_cmd)
 {
 	cUpdateViewPhase = 0;
-	memset(operations, 0, sizeof(loadCB) * OPER_MAX);
 }
 
 /**
@@ -310,11 +309,6 @@ void HorizMenu::AnimateAction(void)
 	   cLineBuf2[1] = '<';
 	   cLineBuf2[pos] = '<';
 	  }
-
-	  /* call for operation*/
-	  //if (operations[idxProc]) {
-	  //	operations[idxProc]();
-	  //}
 	} else {
 	  memset(&cLineBuf2[0], '-', LCD_WIDTH );
 	  cLineBuf2[8] = '|';

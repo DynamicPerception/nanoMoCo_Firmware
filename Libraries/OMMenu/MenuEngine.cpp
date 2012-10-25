@@ -13,8 +13,8 @@
 /**
  * top level class may have normal constructor
  * */
-MenuEngine::MenuEngine(LiquidCrystal& lcd)
-: HorizMenu(lcd), keyboard(BUT_PIN)
+MenuEngine::MenuEngine(LiquidCrystal& _lcd, Commander& _cmd)
+: HorizMenu(_lcd, _cmd), keyboard(BUT_PIN)
 {
 	InitialiseDisplay();
 
