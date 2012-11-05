@@ -32,12 +32,12 @@ See dynamicperception.com for more information
 */
 
 
-void debug_on() {
+void debugOn() {
   
   digitalWrite(DEBUG_PIN, HIGH);
 }
 
-void debug_off() {
+void debugOff() {
   
   digitalWrite(DEBUG_PIN, LOW);
 }

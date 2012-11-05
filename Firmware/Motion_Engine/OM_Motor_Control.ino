@@ -33,8 +33,8 @@ See dynamicperception.com for more information
  
 */
 
-#define MT_COM_DIR1  50
-#define MT_COM_DIR2  100
+const byte MT_COM_DIR1 = 50;
+const byte MT_COM_DIR2 = 100;
 
  // max steps to move during program
  

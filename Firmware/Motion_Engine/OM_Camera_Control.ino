@@ -37,7 +37,7 @@ See dynamicperception.com for more information
  // necessary camera control variables
 
 unsigned int  camera_max_shots = 0;
-byte  camera_repeat = 0;
+byte          camera_repeat    = 0;
 
 
 void camExpose() {

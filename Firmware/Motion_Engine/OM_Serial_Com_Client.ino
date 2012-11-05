@@ -256,9 +256,9 @@ void serProgramAction(byte* input_serial_buffer) {
                
                  // turn off led in case it was on an on cycle
                if( ! debug_led_enable )
-                 debug_off();
+                 debugOff();
                else
-                 debug_on();
+                 debugOn();
                  
                break;
                
@@ -323,7 +323,7 @@ void serProgramAction(byte* input_serial_buffer) {
              
                // save to eeprom
                
-             eeprom_write(2, *device_name, 16);
+             OMEEPROM::write(EE_NAME, *device_name, 16);
                
              break;
              

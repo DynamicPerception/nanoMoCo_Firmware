@@ -35,21 +35,11 @@ See dynamicperception.com for more information
 */
 
 
-void generate_addr() {
   
-  randomSeed(analogRead(0));
-  
-  unsigned int max_addr = 0xFFFF;
-  
-  device_address = random(max_addr);
-  
-  eeprom_write(1, device_address);
-}
-
-void set_addr(unsigned int addr) {
-  
+void changeNodeAddr(byte addr) {
+   // handle change device address
+   // command
   device_address = addr;
-  eeprom_write(1, device_address);
+  OMEEPROM::write(EE_ADDR, device_address);
 }
 
-  

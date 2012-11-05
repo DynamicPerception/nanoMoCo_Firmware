@@ -36,64 +36,63 @@ See dynamicperception.com for more information
 #include "OMMotor.h"
 #include "OMMoCoBus.h"
 #include "OMMoCoNode.h"
+#include "OMEEPROM.h"
+
+
+#define SERIAL_TYPE "OMAXISVX"
 
   // serial api version
-  
 #define SERIAL_VERSION  5
 
-#define SERIAL_TYPE  "OMAXISVX"
-
   // # of flashes of debug led at startup
-#define START_FLASH_CNT  5
-#define FLASH_DELAY      250
+const byte START_FLASH_CNT = 5;
+const byte FLASH_DELAY     = 250;
+
   // # of milliseconds PBT must be held low to do a factory reset
-#define START_RST_TM     5000
+const unsigned int START_RST_TM = 5000;
 
-#define CAM_DEFAULT_EXP      120
-#define CAM_DEFAULT_WAIT     0
-#define CAM_DEFAULT_FOCUS    0
+const byte CAM_DEFAULT_EXP      = 120;
+const byte CAM_DEFAULT_WAIT     = 0;
+const byte CAM_DEFAULT_FOCUS    = 0;
 
-#define MOT_DEFAULT_MAX_STEP  5000
-#define MOT_DEFAULT_MAX_SPD   800
+const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
 
  // digital I/O line definitions
 
-  // driver enable pin for RS485 bus
-#define DE_PIN       5
-#define DEBUG_PIN    18
-#define CAM_SHT_PIN  13
-#define CAM_FOC_PIN  12 
-#define AEN_PIN      17
-#define STEP_PIN     9
-#define DIR_PIN      4
-#define MS1_PIN      14
-#define MS2_PIN      15
-#define MS3_PIN      16
-#define PBT_PIN      7
+const byte DE_PIN       = 5;
+const byte DEBUG_PIN    = 18;
+const byte CAM_SHT_PIN  = 13;
+const byte CAM_FOC_PIN  = 12;
+const byte AEN_PIN      = 17;
+const byte STEP_PIN     = 9;
+const byte DIR_PIN      = 4;
+const byte MS1_PIN      = 14;
+const byte MS2_PIN      = 15;
+const byte MS3_PIN      = 16;
+const byte PBT_PIN      = 7;
 
-// These defines are used for the Limit Switch Pin Change Registers
 
- // for port PCINT32/PD7/AIN1
-#define LIMIT_ENABLE  PCIE2
-#define LIMIT_MASK    PCMSK2
-#define LIMIT_INT     PCINT23
-#define LIMIT_VECT    PCINT2_vect
-#define LIMIT_PREG    PIND
-#define LIMIT_PIN     PIND7
+/* 
+ Need to declare these as early as possible
+ 
+ *******************************
+ Mapping of Data Positions in EEPROM memory
+ *******************************
 
-// declare functions that pre-processor can't handle...
+ (position count starts at zero)
+ 
+ flash enabled   = 0
+ dev_addr        = 1
+ 
+ 
+*/
 
-void eeprom_write( int pos, byte& val, byte len );
-void eeprom_write( int pos, unsigned int& val );
-void eeprom_write( int pos, unsigned long& val );
-void eeprom_write( int pos, float& val );
-void eeprom_write( int pos, byte& val );
-void eeprom_read( int pos, byte& val, byte len );
-void eeprom_read( int pos, byte& val );
-void eeprom_read( int pos, int& val );
-void eeprom_read( int pos, unsigned int& val );
-void eeprom_read( int pos, unsigned long& val );
-void eeprom_read( int pos, float& val );
+const int EE_ADDR       = 1; // device_address
+const int EE_NAME       = 3; // device name (16 bytes)
+
+
+
   // predefine this function to declare the default argument
 void stopProgram(boolean force_clear = true);
 
@@ -141,12 +140,12 @@ byte device_name[] = "DEFAULT        ";
   
  */
  
-#define ST_BLOCK  0
-#define ST_CLEAR  1
-#define ST_MOVE   2
-#define ST_RUN    3
-#define ST_EXP    4
-#define ST_WAIT   5
+const byte ST_BLOCK = 0;
+const byte ST_CLEAR = 1;
+const byte ST_MOVE  = 2;
+const byte ST_RUN   = 3;
+const byte ST_EXP   = 4;
+const byte ST_WAIT  = 5;
 
  // initialize core objects
 OMCamera     Camera = OMCamera();
@@ -178,11 +177,10 @@ void setup() {
   
     // handle reading the PBT pin to see if a factory reset is
     // required
-  checkReset();
+ checkReset();
     
-  // restore eeprom
-  if( eeprom_saved() == true )
-    restore_eeprom_memory();
+  // restore/store eeprom memory
+ eepromCheck();
 
   // initalize state engine
  setupControlCycle();
@@ -267,13 +265,6 @@ void loop() {
 }
 
 
-void changeNodeAddr(byte addr) {
-   // handle change device address
-   // command
-  device_address = addr;
-  eeprom_write(1, device_address);
-}
-
 
 void pauseProgram() {
      // pause program
@@ -345,8 +336,8 @@ void checkReset() {
     unsigned long newTm = millis();
     
     if( newTm - rstTm > START_RST_TM ) {
-        // set eeprom as unsaved
-      eeprom_saved(false);
+        // set eeprom back to defaults
+      OMEEPROM::saved(false);
       digitalWrite(DEBUG_PIN, LOW);
         // indicate memory reset by flashing shutter 10 times
       flasher(CAM_SHT_PIN, START_FLASH_CNT * 2);

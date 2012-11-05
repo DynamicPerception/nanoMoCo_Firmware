@@ -24,6 +24,18 @@ See dynamicperception.com for more information
 
 */
 
+
+// These defines are used for the Limit Switch Pin Change Registers
+
+ // for port PCINT32/PD7/AIN1
+#define LIMIT_ENABLE  PCIE2
+#define LIMIT_MASK    PCMSK2
+#define LIMIT_INT     PCINT23
+#define LIMIT_VECT    PCINT2_vect
+#define LIMIT_PREG    PIND
+#define LIMIT_PIN     PIND7
+
+
 volatile byte ls_pc_hist = 0xFF;
 
 void limitSwitch(bool p_enable) {
