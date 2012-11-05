@@ -1,30 +1,28 @@
 /*
-
-
-OpenMoco
-
-Time-lapse Core Engine
-
-See www.openmoco.org for more information
-
-
-(c) 2008-2011 C.A. Church / Dynamic Perception
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-*/
+ 
+ Camera Functionality Library
+ 
+ OpenMoco MoCoBus Core Libraries 
+ 
+ See www.dynamicperception.com for more information
+ 
+ (c) 2008-2012 C.A. Church / Dynamic Perception LLC
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ 
+ */
 
 
 /*
@@ -65,17 +63,17 @@ OMCamera::OMCamera() {
 
  Constructs a new instance of the class, with the specified pin assignments
  
- @param shut
+ @param c_shut
  The arduino digital pin for the shutter line
  
- @param foc
+ @param c_foc
  The arduino digital pin for the focus line
  
  */
 
-OMCamera::OMCamera(uint8_t shut, uint8_t foc) {
-	m_shutter = shut;
-	m_focus   = foc;
+OMCamera::OMCamera(uint8_t c_shut, uint8_t c_foc) {
+	m_shutter = c_shut;
+	m_focus   = c_foc;
 	this->_init();
 }
 
@@ -278,10 +276,10 @@ void OMCamera::expose() {
  
 */
 
-void OMCamera::expose(unsigned long p_Time) {
+void OMCamera::expose(unsigned long p_time) {
 
 	// do not expose if exposure time is zero
-  if( p_Time == 0 ) {
+  if( p_time == 0 ) {
   	  if( f_camSignal != 0 )
   	  	  f_camSignal(OM_CAM_EFIN);
   	  
@@ -302,7 +300,7 @@ void OMCamera::expose(unsigned long p_Time) {
   digitalWrite(m_shutter, HIGH);
   
     // start timer to stop camera exposure  
-  MsTimer2::set(p_Time, OMCamera::stop);
+  MsTimer2::set(p_time, OMCamera::stop);
   MsTimer2::start();
 
 
@@ -342,10 +340,10 @@ void OMCamera::focus() {
  
 */
 
-void OMCamera::focus(unsigned int p_Time) {
+void OMCamera::focus(unsigned int p_time) {
       
 	// do not focus if focus time is 0
-  if( p_Time == 0 ) {
+  if( p_time == 0 ) {
   	  if( f_camSignal != 0 )
   	  	  f_camSignal(OM_CAM_FFIN);
   	  
@@ -358,7 +356,7 @@ void OMCamera::focus(unsigned int p_Time) {
     
   m_curAct = OM_CAM_INFOC;
   
-  MsTimer2::set(p_Time, OMCamera::stop);
+  MsTimer2::set(p_time, OMCamera::stop);
   MsTimer2::start();
     // update camera currently engaged
   m_isBzy = true;
@@ -375,8 +373,8 @@ void OMCamera::focus(unsigned int p_Time) {
  */
  
 
-void OMCamera::focusTime(unsigned int tm) {
-	m_timeFoc = tm;
+void OMCamera::focusTime(unsigned int p_tm) {
+	m_timeFoc = p_tm;
 }
 
 /** Set Default Exposure Time
@@ -385,8 +383,8 @@ void OMCamera::focusTime(unsigned int tm) {
  Exposure time, in milliseconds
  */
 
-void OMCamera::exposeTime(unsigned long tm) {
-	m_timeExp = tm;
+void OMCamera::exposeTime(unsigned long p_tm) {
+	m_timeExp = p_tm;
 }
 
 /** Set Default Delay Time
@@ -395,8 +393,8 @@ void OMCamera::exposeTime(unsigned long tm) {
  Delay time, in milliseconds
  */
 
-void OMCamera::waitTime(unsigned int tm) {
-	m_timeWait = tm;
+void OMCamera::waitTime(unsigned int p_tm) {
+	m_timeWait = p_tm;
 }
 
 /** Get Default Delay Time

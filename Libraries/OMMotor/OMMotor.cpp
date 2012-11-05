@@ -1351,14 +1351,16 @@ void OMMotor::_runISR() {
           // a move that requires a step rate higher than the maximum step rate,
           // which is just painful.
           
-               	// digital pin 9 on atmega328p
+               	// directly access register to bring pin high
           OM_MOT_STPREG |= (1 << OM_MOT_STPFLAG);
           
           totalCyclesTaken--;
           stepsTaken++;
           _updateMotorHome( (uint8_t) 1);
           	// bring step pin low - this allows us to
-          	// hit one step per ISR run rate.
+          	// hit one step per ISR run rate. (Timing is important
+            // we hit minimum high pulse time in the instructions above
+            // this line)
           OM_MOT_STPREG &= (B11111111 ^ (1 << OM_MOT_STPFLAG));          
           return;
       }

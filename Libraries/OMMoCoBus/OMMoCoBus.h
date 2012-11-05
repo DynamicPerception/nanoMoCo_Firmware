@@ -169,18 +169,18 @@ public:
 	virtual ~OMMoCoBus(){}
 
 	unsigned int address();
-	void address(unsigned int);
+	void address(unsigned int p_addr);
 
 	uint8_t* buffer();
 	uint8_t bufferLen();
 
 	void addressCallback(void(*)(uint8_t));
     
-	int ntoi(uint8_t*);
-	unsigned int ntoui(uint8_t*);
-	long ntol(uint8_t*);
-	unsigned long ntoul(uint8_t*);
-	float ntof(uint8_t*);
+	int ntoi(uint8_t* p_dat);
+	unsigned int ntoui(uint8_t* p_dat);
+	long ntol(uint8_t* p_dat);
+	unsigned long ntoul(uint8_t* p_dat);
+	float ntof(uint8_t* p_dat);
     
 protected:
 
@@ -188,14 +188,14 @@ protected:
 	bool isBroadcast();
 	
 	// send to address, response code, data length
-	void sendPacketHeader(unsigned int, uint8_t, uint8_t);
+	void sendPacketHeader(unsigned int p_addr, uint8_t p_code, uint8_t p_dlen);
 
 	// writing raw data (command or response contents)
-	void write(uint8_t);
-	void write(unsigned int);
-	void write(int);
-	void write(unsigned long);
-	void write(long);
+	void write(uint8_t p_dat);
+	void write(unsigned int p_dat);
+	void write(int p_dat);
+	void write(unsigned long p_dat);
+	void write(long p_dat);
 
 private:
 
