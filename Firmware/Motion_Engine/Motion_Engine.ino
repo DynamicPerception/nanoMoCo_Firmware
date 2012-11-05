@@ -1,9 +1,7 @@
 /*
 
 
-OpenMoco
-
-Time-lapse Core Engine
+Motion Engine
 
 See dynamicperception.com for more information
 
@@ -128,6 +126,9 @@ boolean mtpc_start  = false;
 
  // maximum run time
 unsigned long max_time = 0;
+
+ // default device name, exactly 15 characters + null terminator
+byte device_name[] = "DEFAULT        ";
 
  /*  state transitions
  
@@ -320,7 +321,7 @@ void startProgram() {
 }
 
 
-void flasher(byte pin, int count) {
+  void flasher(byte pin, int count) {
     // flash a pin several times (blink)
     
    for(int i = 0; i < count; i++) {

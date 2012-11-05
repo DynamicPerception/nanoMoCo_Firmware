@@ -1,9 +1,7 @@
 /*
 
 
-OpenMoco
-
-Time-lapse Core Engine
+Motion Engine
 
 See dynamicperception.com for more information
 
@@ -60,7 +58,7 @@ See dynamicperception.com for more information
    A successful request will respond with a binary value of 1, 0x01.  A 
    failed request will result in a response of 0, 0x00.
    
-   See the included PDF file with this source distribution for protocol structure.
+   **** See the included PDF file with this source distribution for protocol commands. ****
 
   For all requests that set a value or trigger a command,
   (i.e. not status requests) the response data len will be
@@ -310,6 +308,23 @@ void serProgramAction(byte* input_serial_buffer) {
              
            case 23:
              // store device name
+             
+             // I am not the trusting type, so we'll scan the buffer rather than
+             // assume that it is a null-terminated string...
+             
+             {
+               memset(device_name, 0, 16);
+               
+               for(byte i = 0; i <= 15; i++) {
+                if( input_serial_buffer[i] != 0 ) 
+                   device_name[i] = input_serial_buffer[i];
+               }
+             }
+             
+               // save to eeprom
+               
+             eeprom_write(2, *device_name, 16);
+               
              break;
              
            case 24: 
@@ -326,6 +341,7 @@ void serProgramAction(byte* input_serial_buffer) {
              }
              
              break;
+                          
              
            case 100:
 
@@ -668,6 +684,12 @@ void serStatusRequest(byte* input_serial_buffer) {
     
       // timing master      
       Node.response( true, timing_master );     
+      break;
+      
+    case 23:
+    
+      // device name
+      Node.response(true, (char*)device_name, 16);
       break;
       
     default:

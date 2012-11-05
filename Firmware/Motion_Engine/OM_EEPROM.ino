@@ -1,9 +1,7 @@
 /*
 
 
-OpenMoco
-
-Time-lapse Core Engine
+Motion Engine
 
 See dynamicperception.com for more information
 
@@ -118,6 +116,7 @@ void eeprom_write( int pos, byte& val ) {
 
 
 
+
  // read functions
 
 void eeprom_read( int pos, byte& val, byte len ) {
@@ -156,12 +155,14 @@ void eeprom_read( int pos, float& val ) {
   eeprom_read(pos, *p, sizeof(float));
   
 }
-    
+
+
 void write_all_eeprom_memory() {
 
     // write default values into eeprom
 
   eeprom_write(1, device_address);
+  eeprom_write(2, *device_name, 16);
   
       
 }
@@ -174,6 +175,7 @@ void restore_eeprom_memory() {
     // read eeprom stored values back into RAM
     
     eeprom_read(1, device_address);
+    eeprom_read(2, *device_name, 16);
     
 }
 

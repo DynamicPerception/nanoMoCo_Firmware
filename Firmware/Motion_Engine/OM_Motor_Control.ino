@@ -1,9 +1,7 @@
 /*
 
 
-OpenMoco
-
-Time-lapse Core Engine
+Motion Engine
 
 See dynamicperception.com for more information
 
