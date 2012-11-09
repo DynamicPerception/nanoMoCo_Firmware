@@ -26,6 +26,27 @@
 
 #include "OMMenuMgr.h"
 
+/** Constructor
+ 
+  Constructs an OMMenuMgr instance, with a specified root item, and a
+ specified input type.
+ 
+  @code
+ #include "OMMenuMgr.h"
+ 
+ ...
+ 
+ OMMenuMgr Menu = OMMenuMgr(&rootItem, MENU_ANALOG);
+ @endcode
+ 
+ @param c_first
+ A pointer to an OMMenuItem representing the root of the menu
+ 
+ @param c_type
+ The input type for the menu, either MENU_ANALOG or MENU_DIGITAL
+ 
+ */
+
 OMMenuMgr::OMMenuMgr(OMMenuItem* c_first, uint8_t c_type) {
  
     m_inputType  = c_type;
@@ -38,10 +59,7 @@ OMMenuMgr::OMMenuMgr(OMMenuItem* c_first, uint8_t c_type) {
     m_draw       = 0;
     m_seek       = 0;
     m_exit       = 0;
-    
-           // ensure our history does not have garbage, but instead zero pointers
-  //  memset(m_hist, 0, sizeof(m_hist) * sizeof(OMMenuItem*));
-    
+        
 }
 
 /** Setup Analog Button Input
@@ -58,7 +76,7 @@ OMMenuMgr::OMMenuMgr(OMMenuItem* c_first, uint8_t c_type) {
  shall represent the integer value of analogRead() assigned to that button, and the button type. e.g.:
  
  @code
- int[5][2] myButtons = { {150, BUTTON_FORWARD}, 
+ const int[5][2] myButtons = { {150, BUTTON_FORWARD}, 
                          {250, BUTTON_INCREASE}, 
                          {350, BUTTON_DECREASE}, 
                          {450, BUTTON_BACK}, 
@@ -82,8 +100,7 @@ OMMenuMgr::OMMenuMgr(OMMenuItem* c_first, uint8_t c_type) {
  
  
  */
-
-void OMMenuMgr::setAnalogButtonPin(uint8_t p_pin, int p_values[5][2], int p_thresh) {
+void OMMenuMgr::setAnalogButtonPin(uint8_t p_pin, const int p_values[5][2], int p_thresh) {
     
     if( m_inputType != MENU_ANALOG )
         return;
@@ -94,20 +111,6 @@ void OMMenuMgr::setAnalogButtonPin(uint8_t p_pin, int p_values[5][2], int p_thre
     for(uint8_t i = 0; i < 5; i++) {
         m_butVals[i][0] = p_values[i][0];
         m_butVals[i][1] = p_values[i][1];
-        
-    /*    memset(m_dispBuf, ' ', sizeof(char) * OM_MENU_COLS);
-        itoa(p_values[i][0], m_dispBuf, 10);
-        
-        _display(m_dispBuf, 0, 0, OM_MENU_COLS);
-        
-        
-        memset(m_dispBuf, ' ', sizeof(char) * OM_MENU_COLS);
-        itoa(p_values[i][1], m_dispBuf, 10);
-        
-        _display(m_dispBuf, 1, 0, OM_MENU_COLS);
-        
-        delay(2000);*/
-
     }
     
     pinMode(p_pin, INPUT);
@@ -127,7 +130,7 @@ void OMMenuMgr::setAnalogButtonPin(uint8_t p_pin, int p_values[5][2], int p_thre
  For example:
  
  @code
- int[5][2] myButtons = { {4, BUTTON_FORWARD}, 
+ const int[5][2] myButtons = { {4, BUTTON_FORWARD}, 
                          {5, BUTTON_INCREASE}, 
                          {6, BUTTON_DECREASE}, 
                          {7, BUTTON_BACK}, 
@@ -135,13 +138,13 @@ void OMMenuMgr::setAnalogButtonPin(uint8_t p_pin, int p_values[5][2], int p_thre
                         };
  
  Menu.setDigitalButtonPins(myButtons);
+ @endcode
  
  @param p_values
  The list of button values and functions
   
  */
-
-void OMMenuMgr::setDigitalButtonPins(int p_values[5][2]) {
+void OMMenuMgr::setDigitalButtonPins(const int p_values[5][2]) {
     
     if( m_inputType != MENU_DIGITAL )
         return;
@@ -159,6 +162,15 @@ void OMMenuMgr::setDigitalButtonPins(int p_values[5][2]) {
     
 }
 
+/** Set Draw Handler Callback
+ 
+ Sets the draw handler callback, see \ref menudisplay "Managing Display" for more
+ information
+ 
+ @param p_func
+ A function pointer for the draw handler
+ */
+
 void OMMenuMgr::setDrawHandler(void(*p_func)(char*, int, int, int)) {
     m_draw = p_func;
     
@@ -169,6 +181,14 @@ void OMMenuMgr::setSeekHandler(void(*p_func)(int, int)) {
     
 }
 
+/** Set Exit Handler Callback
+ 
+ Sets the exit handler callback, see \ref menudisplay "Managing Display" for more
+ information
+ 
+ @param p_func
+ A function pointer for the exit handler
+ */
 
 void OMMenuMgr::setExitHandler(void(*p_func)()) {
     m_exit = p_func;
@@ -179,8 +199,9 @@ void OMMenuMgr::setExitHandler(void(*p_func)()) {
  Checks to see if any button has been pressed by the user, and reports back
  the button pressed, or BUTTON_NONE if none are pressed. 
  
- If the menu is enabled, and any button is pressed, normal handling of the
- menu is executed.
+ If the menu is enabled and drawn, and any button is pressed, normal handling of the
+ menu is executed. If the menu is enabled, but not drawn, the menu will be drawn
+ only if BUTTON_SELECT is pressed.  Otherwise, no activity will occur.
  
  @return
  The button pressed, one of: BUTTON_NONE, BUTTON_FORWARD, BUTTON_BACK, BUTTON_INCREASE, BUTTON_DECREASE, BUTTON_SELECT
@@ -264,7 +285,18 @@ bool OMMenuMgr::enable() {
     return m_enable;
 }
 
+/** Set New Root Item
+ 
+ Sets new root item as the base for future calls to checkInput();
+ 
+ @param p_root
+ A pointer to an OMMenuItem
+ */
 
+void OMMenuMgr::setRoot(OMMenuItem* p_root) {
+    m_rootItem = p_root;
+    m_curParent = p_root;
+}
 
 
 
