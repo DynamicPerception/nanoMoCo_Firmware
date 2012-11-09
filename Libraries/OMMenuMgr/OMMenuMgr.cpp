@@ -212,6 +212,13 @@ uint8_t OMMenuMgr::checkInput() {
     static unsigned long lastTm  = millis();
     static uint8_t       lastKey = BUTTON_NONE;
     
+        // returning to list display after being
+        // disabled during an action
+    if( m_forceReturn == true && m_enable ) {
+        m_forceReturn = false;
+        _displayList(m_curParent, m_curTarget);
+    }
+    
         // get which button is pressed
     int key = BUTTON_NONE;
     
@@ -821,7 +828,12 @@ void OMMenuMgr::_activate(OMMenuItem* p_item) {
         if( callback != 0 )
             callback();
         
-        _displayList(m_curParent, m_curTarget);
+        if( m_enable ) {
+            _displayList(m_curParent, m_curTarget);
+        }
+        else {
+            m_forceReturn = true;
+        }
     } 
 }
 

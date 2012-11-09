@@ -861,6 +861,7 @@ private:
     bool           m_enable;
     bool           m_inEdit;
     bool           m_menuActive;
+    bool           m_forceReturn;
     OMMenuItem*    m_curSel;
     OMMenuItem*    m_curParent;
     OMMenuItem*    m_rootItem;
