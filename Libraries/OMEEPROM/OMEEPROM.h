@@ -120,6 +120,7 @@ namespace OMEEPROM {
     
         // 0, 1, and 2 bytes are used for internal data (saved flag, version)
      const unsigned int s_EEPROMfirstUserPos = 3;
+    static bool m_forcePos = true;
     
 };
 

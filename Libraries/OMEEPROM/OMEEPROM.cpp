@@ -35,7 +35,7 @@ bool OMEEPROM::saved() {
     
     // read eeprom saved status
     
-    byte saved = EEPROM.read(0);
+    uint8_t saved = EEPROM.read(0);
     
     // EEPROM memory is by default set to 1, so we
     // set it to zero if we've written data to eeprom
@@ -64,7 +64,10 @@ void OMEEPROM::saved( bool saved ) {
 
 void OMEEPROM::write( int pos, byte& val, byte len ) {
     byte* p = (byte*)(void*)&val;
-    pos += s_EEPROMfirstUserPos;
+    
+    if( m_forcePos)
+        pos += s_EEPROMfirstUserPos;
+
     for( byte i = 0; i < len; i++ )
         EEPROM.write(pos++, *p++);    
     
@@ -94,6 +97,9 @@ void OMEEPROM::write( int pos, float& val ) {
 }
 
 void OMEEPROM::write( int pos, byte& val ) {  
+    if( m_forcePos)
+        pos += s_EEPROMfirstUserPos;
+    
     EEPROM.write(pos, val);
     // indicate that memory has been saved
     saved(true);
@@ -107,12 +113,18 @@ void OMEEPROM::write( int pos, byte& val ) {
 
 void OMEEPROM::read( int pos, byte& val, byte len ) {
     byte* p = (byte*)(void*)&val;
-    pos += s_EEPROMfirstUserPos;
+    
+    if( m_forcePos)
+        pos += s_EEPROMfirstUserPos;
+    
     for(byte i = 0; i < len; i++) 
         *p++ = EEPROM.read(pos++);
 }
 
 void OMEEPROM::read( int pos, byte& val ) {
+    if( m_forcePos)
+        pos += s_EEPROMfirstUserPos;
+    
     val = EEPROM.read(pos);
 }
 
@@ -153,8 +165,9 @@ void OMEEPROM::read( int pos, float& val ) {
 unsigned int OMEEPROM::version() {
     
     unsigned int eeprom_ver = 0;
+    m_forcePos = false;
     read(1, eeprom_ver);
-
+    m_forcePos = true;
     return eeprom_ver;
     
 }
@@ -166,5 +179,7 @@ unsigned int OMEEPROM::version() {
  */
 
 void OMEEPROM::version(unsigned int p_ver) {
+    m_forcePos = false;
     write(1, p_ver);
+    m_forcePos = true;
 }
