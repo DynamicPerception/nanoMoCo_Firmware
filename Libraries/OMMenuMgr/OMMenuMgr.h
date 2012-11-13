@@ -32,9 +32,9 @@
 #include <avr/pgmspace.h>
 #include <stdlib.h>
 
-#ifndef OM_ANALOG_STARTDIG
-    #define OM_ANALOG_STARTDIG 14   
-#endif
+#include "OMEEPROM.h"
+
+
 
 #ifndef OM_MENU_ROWS
     #define OM_MENU_ROWS    2
@@ -49,11 +49,15 @@
 #endif
 
 #ifndef OM_MENU_MAXDEPTH
-    #define OM_MENU_MAXDEPTH    3
+    #define OM_MENU_MAXDEPTH    5
 #endif
 
 #ifndef OM_MENU_DEBOUNCE
     #define OM_MENU_DEBOUNCE 80
+#endif
+
+#ifndef OM_MENU_PRESSDELAY
+    #define OM_MENU_PRESSDELAY 120
 #endif
 
 #ifndef OM_MENU_CURSOR
@@ -64,10 +68,19 @@
     #define OM_MENU_NOCURSOR " "
 #endif
 
+#ifndef OM_MENU_FLAG_ON
+    #define OM_MENU_FLAG_ON "On"
+#endif
+
+#ifndef OM_MENU_FLAG_OFF
+    #define OM_MENU_FLAG_OFF "Off"
+#endif
+
 
 #define MENU_ITEM           PROGMEM OMMenuItem
 #define MENU_LIST           PROGMEM OMMenuItem*
 #define MENU_VALUE          PROGMEM OMMenuValue
+#define MENU_FLAG           PROGMEM OMMenuValueFlag
 #define MENU_SELECT_ITEM    PROGMEM OMMenuSelectListItem
 #define MENU_SELECT_LIST    PROGMEM OMMenuSelectListItem*
 #define MENU_SELECT         PROGMEM OMMenuSelectValue
@@ -99,23 +112,11 @@ struct OMMenuSelectValue {
 };
 
 
-/** Menu Value 
- 
-  A value to be edited by the user.  The type specifies the type of value
-  pointed at by the targetValue pointer.  Min and Max specify a minimum and 
-  maximum value (within the range of a signed long).  These are unused for the
-  TYPE_SELECT types
- 
- */
-struct OMMenuValue {
-    uint8_t type;
-    long    max;
-    long    min;
-    void*   targetValue;
-    
+
+struct OMMenuValueFlag {
+    uint8_t  pos;
+    uint8_t* flag;
 };
-
-
 
 /** Menu Item Type
  
@@ -147,12 +148,33 @@ struct OMMenuItem {
 };
 
 
+/** Menu Value 
+ 
+ A value to be edited by the user.  The type specifies the type of value
+ pointed at by the targetValue pointer.  Min and Max specify a minimum and 
+ maximum value (within the range of a signed long).  These are unused for the
+ TYPE_SELECT types
+ 
+ */
+struct OMMenuValue {
+    uint8_t type;
+    long    max;
+    long    min;
+    void*   targetValue;
+    int     eepromLoc;
+};
+
+
 enum { ITEM_MENU, ITEM_VALUE, ITEM_ACTION };
 enum { MENU_ANALOG, MENU_DIGITAL };
 enum { BUTTON_NONE, BUTTON_FORWARD, BUTTON_BACK, BUTTON_INCREASE, BUTTON_DECREASE, BUTTON_SELECT };
 enum { CHANGE_DISPLAY, CHANGE_UP, CHANGE_DOWN, CHANGE_SAVE, CHANGE_ABORT };
-enum { TYPE_BYTE, TYPE_INT, TYPE_UINT, TYPE_LONG, TYPE_ULONG, TYPE_FLOAT, TYPE_FLOAT_10, TYPE_FLOAT_100, TYPE_FLOAT_1000, TYPE_SELECT };
+enum { TYPE_BYTE, TYPE_INT, TYPE_UINT, TYPE_LONG, TYPE_ULONG, TYPE_FLOAT, TYPE_FLOAT_10, TYPE_FLOAT_100, TYPE_FLOAT_1000, TYPE_SELECT,
+       TYPE_BFLAG };
 enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
+
+
+
 
 
 /** OpenMoCo Menu Manager Class
@@ -229,7 +251,7 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
  by the developer non-destructively using the up and down buttons.  The user may cancel 
  the edit of the value by using the back button, or may save the value using either of
  enter or forward.  When the user saves the value, it is written directly to the variable
- specified by the developer.  All numeric types are supported, and special select lists
+ specified by the developer.  All numeric types are supported; individual bit flags, and special select lists
  are supported as well.  For select lists, the user is presented with strings defined by the
  developer for the numeric values stored in the target variable, providing the ability to
  give the user a more complete and obvious solution.
@@ -318,6 +340,7 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
         <li>Change by thousandths</li>
     </ul>
     <li>TYPE_SELECT</li>
+    <li>TYPE_BFLAG</li>
  </ul>
 
  @section menulists The Basics of Creating Menus
@@ -367,9 +390,35 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
                            // TARGET VAR        LENGTH                          TARGET SELECT LIST
  MENU_SELECT state_select = { &myVar,           MENU_SELECT_SIZE(state_list),   MENU_TARGET(&state_list) };
  
- 
- MENU_VALUE value_sel = { TYPE_SELECT,     0,     0,     MENU_TARGET(&state_select) };
+ MENU_VALUE  value_sel = { TYPE_SELECT, 0, 0, MENU_TARGET(&state_select) };
+ MENU_ITEM   item_sel  = { {"Select It"}, ITEM_VALUE, 0, MENU_TARGET(&value_sel) };
  @endcode
+ 
+ @section menubitflag The Basics of Creating Bit Flag Inputs
+ 
+ A bit flag input allows you to change only one bit in a target variable, for example, in the case where you want
+ to store up to 8 on/off flags in a single byte of data to preserve RAM.  The Menu Manager supports doing this by
+ creating a special target for the MENU_VALUE you're creating:
+ 
+ @code
+ 
+ byte theseFlags = 0;
+ 
+ MENU_FLAG    my_flag    = { 3, &theseFlags };
+ MENU_VALUE   my_value   = { TYPE_BFLAG, 0, 0, MENU_TARGET(&my_flag) };
+ MENU_ITEM    my_item    = { {"Flag Edit"}, ITEM_VALUE, 0, MENU_TARGET(&my_value) };
+ @endcode
+ 
+ We'll note that the new MENU_FLAG type has two parts: the bit position, and the address of the byte containing the bit.  The bit
+ position is from the right and is of the range 0-7, so this item would modify the bit marked with 'x' in the following pattern:
+ B1111x111
+ 
+ In this example, when the user interacts with the "Flag Edit" menu item, the user will be displayed the OM_MENU_FLAG_ON and
+ OM_MENU_FLAG_OFF strings based on the value of bit 3 in the 'theseFlags' variable.  When saved by the user, the correct bit 
+ value will be written back to bit 3 in 'theseFlags'. 
+ 
+ If you want to change the strings used for On and Off, see the \ref menuparam "Setting Control Parameters" section below.
+ 
  
  @section menuaction The Basics of Creating Actions
  
@@ -462,7 +511,7 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
  The following is a complete example of initializing an analog input:
  
  @code
- // which input is our button
+ // which input is our button (use the digital pin#, not the analog pin #!)
  const byte BUT_PIN = 14;
  
  // analog button read values
@@ -606,18 +655,13 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
  @section menuparam Setting Control Parameters
  
  Of course, not every display is the same.  Display parameters are set at compile time, and controlled
- via define's.  To change these parameters, you must define the macros <b>before</b> including the OMMenuMgr.h
- header file.  
+ via define's.
  
- You may also control other aspects of the menu manager via parameters set at compile time, a complete list of
- these are:
+ Unfortunately, the Arduino IDE does not allow you to specify defines to the compiler, so you cannot effectively change these 
+ from the Arduino IDE.  For other IDE users, you may re-define them via your build process.  For Arduino IDE users, you will need to
+ edit the library directly.
  
  <ul>
-    <li>OM_ANALOG_STARTDIG</li>
-    <ul>
-        <li>Default = 14</li>
-        <li>The starting Arduino Digital pin # for analog inputs.  This allows for use with different chips</li>
-    </ul>
     <li>OM_MENU_ROWS</li>
     <ul>
         <li>Default = 2</li>
@@ -653,18 +697,57 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
         <li>Default = " "</li>
         <li>Cursor to show for displayed items not currently selected</li>
     </ul>  
+    <li>OM_MENU_USE_EEPROM</li>
+    <ul>
+        <li>Default = Not Defined</li>
+        <li>Support automatic writing of variables to EEPROM via OMEEPROM library.  For more info, see the \ref menueeprom "Automating EEPROM Writes" section below.</li>
+    </ul>
+    <li>OM_MENU_FLAG_ON</li>
+    <ul>
+        <li>Default = "On"</li>
+        <li>The string to be displayed to the user for bit flag values where the flag is turned on</li>
+    </ul>
+    <li>OM_MENU_FLAG_OFF</li>
+    <ul>
+        <li>Default = "Off"</li>
+        <li>The string to be displayed to the user for bit flag values where the flag is turned off</li>
+    </ul>
+ </ul>
  
  
-  Example:
+  
+ @section menueeprom Automating EEPROM Writes
  
- @code 
- #define OM_MENU_COLS 20
- #define OM_MENU_ROWS 2
+ The Menu Manager can automatically store changed variables to EEPROM for you, using the OMEEPROM library.  You can retrieve the data, do EEPROM format versioning, and
+ more with the OMEEPROM library.  
  
+ Each menu value has a final parameter, with the EEPROM byte address to store the data.  If you do not want to store the data in EEPROM, 
+ use 0 as the address, or simply not pass that parameter at all.  For example:
+ 
+ @code
+
+ #include "OMEEPROM.h"
  #include "OMMenuMgr.h"
+
+ ...
+ 
+ const int EEPROM_NOADDR    = 0;
+ const int EEPROM_FOO       = 10;
+ 
+ unsigned int foo = 1;
+ unsigned int bar = 1;
+ unsigned int baz = 1;
  
  ...
+ 
+ MENU_VALUE value_foo = { TYPE_UINT, 0, 0, MENU_TARGET(&foo), EEPROM_FOO };
+ 
+ MENU_VALUE value_bar = { TYPE_UINT, 0, 0, MENU_TARGET(&foo), EEPROM_NOADDR };
+ MENU_VALUE value_baz = { TYPE_UINT, 0, 0, MENU_TARGET(&baz) }; // equivalent to providing no address at the end
  @endcode
+ 
+ Now, when these values are exercised by the user, foo will be stored to EEPROM, at byte 10, and bar will not be stored in EEPROM.
+ 
  
  @section menuexample A Complete Example
  
@@ -843,7 +926,6 @@ public:
     bool enable();
     
     void setDrawHandler(void(*p_func)(char*, int, int, int));
-    void setSeekHandler(void(*p_func)(int, int));
     void setExitHandler(void(*p_func)());
     
     void setRoot(OMMenuItem* p_root);
@@ -869,9 +951,9 @@ private:
     int            m_butVals[5][2];
     uint8_t        m_curTarget;
     f_drawHandler  m_draw;
-    f_seekHandler  m_seek;
     f_valueHandler m_exit;
     char           m_dispBuf[OM_MENU_COLS];
+    unsigned int   m_holdMod;
     
     uint8_t       m_temp;
     long          m_tempL;
@@ -882,7 +964,7 @@ private:
     int         _checkAnalog();
     int         _checkDigital();
     void        _handleButton(uint8_t p_key);
-    void        _activate(OMMenuItem* p_item); 
+    void        _activate(OMMenuItem* p_item, bool p_return = false); 
     void        _edit(OMMenuItem* p_item, uint8_t p_type); 
     void        _displayList(OMMenuItem* p_item, uint8_t p_target = 0);
     void        _displayEdit(OMMenuItem* p_item);
@@ -890,16 +972,23 @@ private:
     void        _pushHist(OMMenuItem* p_item);
     OMMenuItem* _popHist();
     void        _display(char* p_str, int p_row, int p_col, int p_count);
-    void        _seek(int p_row, int p_col);
     void        _displayVoidNum(void* p_ptr, uint8_t p_type, int p_row, int p_col);
     void        _modifyTemp(uint8_t p_type, uint8_t p_mode, long p_min, long p_max);
     void        _exitMenu();
     void        _modifySel(OMMenuValue* p_value, uint8_t p_mode);
     void        _displaySelVal(OMMenuSelectListItem** p_list, uint8_t p_idx);
+    void        _displayFlagVal();
     
+        
+    // Handle templates for with, and without EEPROM writing
     
-    
-    
+    template <typename T>
+    void _eewrite(OMMenuValue* p_target, T p_item) {
+        int loc = pgm_read_word(&(p_target->eepromLoc));
+        if( loc != 0 )
+            OMEEPROM::write(loc, p_item);
+    }
+
 };
 
 #endif //OM_MENUMGR_H

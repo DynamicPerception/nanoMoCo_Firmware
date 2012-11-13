@@ -104,6 +104,7 @@ namespace OMEEPROM {
      void write( int pos, uint8_t& val, byte len );
      void write( int pos, unsigned int& val );
      void write( int pos, unsigned long& val );
+     void write( int pos, long& val );
      void write( int pos, float& val );
      void write( int pos, int& val );
      void write( int pos, uint8_t& val );
@@ -113,6 +114,7 @@ namespace OMEEPROM {
      void read( int pos, int& val );
      void read( int pos, unsigned int& val );
      void read( int pos, unsigned long& val );
+     void read( int pos, long& val );
      void read( int pos, float& val );
 
      unsigned int version();
@@ -120,7 +122,7 @@ namespace OMEEPROM {
     
         // 0, 1, and 2 bytes are used for internal data (saved flag, version)
      const unsigned int s_EEPROMfirstUserPos = 3;
-    static bool m_forcePos = true;
+     static bool m_forcePos = true;
     
 };
 

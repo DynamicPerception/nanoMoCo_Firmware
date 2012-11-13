@@ -91,6 +91,11 @@ void OMEEPROM::write( int pos, unsigned long& val ) {
     write(pos, *p, sizeof(long));    
 }
 
+void OMEEPROM::write( int pos, long& val ) {
+    byte* p = (byte*)(void*)&val;   
+    write(pos, *p, sizeof(long));    
+}
+
 void OMEEPROM::write( int pos, float& val ) {
     byte* p = (byte*)(void*)&val;   
     write(pos, *p, sizeof(float));    
@@ -142,6 +147,13 @@ void OMEEPROM::read( int pos, unsigned int& val ) {
 }
 
 void OMEEPROM::read( int pos, unsigned long& val ) {
+    
+    byte* p = (byte*)(void*)&val;
+    read(pos, *p, sizeof(long));
+    
+}
+
+void OMEEPROM::read( int pos, long& val ) {
     
     byte* p = (byte*)(void*)&val;
     read(pos, *p, sizeof(long));
