@@ -52,16 +52,6 @@ void OMEEPROM::saved( bool saved ) {
 }
 
 
-
-
-
-// One can ask why I didn't use the templates from http://www.arduino.cc/playground/Code/EEPROMWriteAnything
-// The primary reason here is that we're going to be calling these functions OFTEN, and I _really_ don't 
-// want the templates getting inlined _everywhere_, what a mess!  So, rather than be slick, let's just declare
-// what we mean, and do it once - forget about the overhead of the function call, and worry more about
-// flash and stack abuse 
-
-
 void OMEEPROM::write( int pos, byte& val, byte len ) {
     byte* p = (byte*)(void*)&val;
     
@@ -76,42 +66,6 @@ void OMEEPROM::write( int pos, byte& val, byte len ) {
     
 }
 
-void OMEEPROM::write( int pos, unsigned int& val ) {
-    byte* p = (byte*)(void*)&val;   
-    write(pos, *p, sizeof(int));  
-}
-
-void OMEEPROM::write( int pos, int& val ) {
-    byte* p = (byte*)(void*)&val;   
-    write(pos, *p, sizeof(int));  
-}
-
-void OMEEPROM::write( int pos, unsigned long& val ) {
-    byte* p = (byte*)(void*)&val;   
-    write(pos, *p, sizeof(long));    
-}
-
-void OMEEPROM::write( int pos, long& val ) {
-    byte* p = (byte*)(void*)&val;   
-    write(pos, *p, sizeof(long));    
-}
-
-void OMEEPROM::write( int pos, float& val ) {
-    byte* p = (byte*)(void*)&val;   
-    write(pos, *p, sizeof(float));    
-}
-
-void OMEEPROM::write( int pos, byte& val ) {  
-    if( m_forcePos)
-        pos += s_EEPROMfirstUserPos;
-    
-    EEPROM.write(pos, val);
-    // indicate that memory has been saved
-    saved(true);
-}
-
-
-
 
 
 // read functions
@@ -125,48 +79,6 @@ void OMEEPROM::read( int pos, byte& val, byte len ) {
     for(byte i = 0; i < len; i++) 
         *p++ = EEPROM.read(pos++);
 }
-
-void OMEEPROM::read( int pos, byte& val ) {
-    if( m_forcePos)
-        pos += s_EEPROMfirstUserPos;
-    
-    val = EEPROM.read(pos);
-}
-
-
-void OMEEPROM::read( int pos, int& val ) {
-    byte* p = (byte*)(void*)&val;
-    read(pos, *p, sizeof(int));
-}
-
-void OMEEPROM::read( int pos, unsigned int& val ) {
-    
-    byte* p = (byte*)(void*)&val;
-    read(pos, *p, sizeof(int));
-    
-}
-
-void OMEEPROM::read( int pos, unsigned long& val ) {
-    
-    byte* p = (byte*)(void*)&val;
-    read(pos, *p, sizeof(long));
-    
-}
-
-void OMEEPROM::read( int pos, long& val ) {
-    
-    byte* p = (byte*)(void*)&val;
-    read(pos, *p, sizeof(long));
-    
-}
-
-void OMEEPROM::read( int pos, float& val ) {
-    
-    byte* p = (byte*)(void*)&val;
-    read(pos, *p, sizeof(float));
-    
-}
-
 
 /** Return the Stored Version number from EEPROM
  

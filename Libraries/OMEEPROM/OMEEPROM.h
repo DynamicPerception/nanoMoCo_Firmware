@@ -102,20 +102,38 @@ namespace OMEEPROM {
      void saved( bool saved );
     
      void write( int pos, uint8_t& val, byte len );
+    
+    template <typename T>
+    void write(int pos, T& p_item) {
+        byte* p = (byte*)(void*)&p_item;   
+        write(pos, *p, sizeof(T));
+    }
+
+     /*
      void write( int pos, unsigned int& val );
      void write( int pos, unsigned long& val );
      void write( int pos, long& val );
      void write( int pos, float& val );
      void write( int pos, int& val );
      void write( int pos, uint8_t& val );
+      */
 
      void read( int pos, uint8_t& val, byte len );
+    
+     template <typename T>
+     void read(int pos, T& p_item) {
+        byte* p = (byte*)(void*)&p_item;
+        read(pos, *p, sizeof(T));
+     }
+     
+     /*
      void read( int pos, uint8_t& val ) ;
      void read( int pos, int& val );
      void read( int pos, unsigned int& val );
      void read( int pos, unsigned long& val );
      void read( int pos, long& val );
      void read( int pos, float& val );
+      */
 
      unsigned int version();
      void version(unsigned int);
