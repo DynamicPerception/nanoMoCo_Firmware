@@ -192,6 +192,19 @@ void OMMenuMgr::setExitHandler(void(*p_func)()) {
     m_exit = p_func;
 }
 
+
+ /** Menu Shown State
+  
+   Whether or not the menu is currently being displayed.
+  
+  @return
+  Whether or the menu is currently displayed (true), or not (false)
+  */
+
+bool OMMenuMgr::shown() {
+    return m_menuActive;
+}
+
 /** Check for User Input and Handle
  
  Checks to see if any button has been pressed by the user, and reports back
@@ -208,7 +221,6 @@ void OMMenuMgr::setExitHandler(void(*p_func)()) {
 uint8_t OMMenuMgr::checkInput() {
     
     static unsigned long lastTm  = millis();
-    static unsigned long repTm   = millis();
     static uint8_t       lastKey = BUTTON_NONE;
     static uint8_t       holdKey = BUTTON_NONE;
     static unsigned int  held    = 0;
@@ -232,8 +244,11 @@ uint8_t OMMenuMgr::checkInput() {
     if( key != lastKey ) {
             // did not have two reads in the row with same key,
             // thus de-bouncing is not possible
-        lastKey = key;
-        lastTm  = millis();
+        lastKey   = key;
+        holdKey   = BUTTON_NONE;
+        lastTm    = millis();
+        held      = 0;
+        m_holdMod = 1;
         return BUTTON_NONE;
     }
     
@@ -243,17 +258,13 @@ uint8_t OMMenuMgr::checkInput() {
         lastTm = millis();
     else
         return BUTTON_NONE;
-    
-        // now, we can't have two presses too fast, even if debounced.
-    if( ! ( millis() - repTm > OM_MENU_PRESSDELAY ) )
-        return BUTTON_NONE;
-
-    repTm = millis();
-    
+        
         // no button is pressed, or the menu display
         // is disabled
     if( key == BUTTON_NONE || ! m_enable ) {
-        m_holdMod = 0;
+        held      = 0;
+        m_holdMod = 1;
+        holdKey   = BUTTON_NONE;
         return key;
     }
     
@@ -271,12 +282,13 @@ uint8_t OMMenuMgr::checkInput() {
         // the rate at which numbers go up/down to increase
     
     if( key == holdKey ) {
+        
         held++;
         if( held % 10 )
-            m_holdMod += 2;
+            m_holdMod += 2; 
     }
     else {
-        holdKey = key;
+        holdKey   = key;
         m_holdMod = 1;
     }
     
@@ -388,9 +400,22 @@ void OMMenuMgr::_handleButton(uint8_t p_key) {
                 _activate(m_rootItem);
                 
         } 
+        
+        return;
     }
     
-    else if( p_key == BUTTON_INCREASE ) {
+        // this looks vicious compared to the code below, but it saves nearly 50 bytes of flash space by
+        // converting three if statements to two using ITE operators
+    
+    p_key = (p_key == BUTTON_INCREASE ) ? CHANGE_UP : (p_key == BUTTON_DECREASE) ? CHANGE_DOWN : CHANGE_ABORT;
+    
+    if( m_inEdit )
+        _edit(m_curSel, p_key);
+    else
+        _menuNav(p_key);
+    
+    
+ /*   else if( p_key == BUTTON_INCREASE ) {
         
         if( m_inEdit )
             _edit(m_curSel, CHANGE_UP);
@@ -414,7 +439,7 @@ void OMMenuMgr::_handleButton(uint8_t p_key) {
         else 
             _menuNav(CHANGE_ABORT);  
         
-    }
+    }*/
             
 }
 
@@ -456,6 +481,8 @@ void OMMenuMgr::_menuNav(uint8_t p_mode) {
             m_curTarget = 0;
             _activate(m_curParent, true);
         }
+        
+    
     }
     
     else if( p_mode == CHANGE_UP ) {
@@ -508,15 +535,14 @@ void OMMenuMgr::_activate(OMMenuItem* p_item, bool p_return) {
         // this is gnarly, dig? We're pulling a function pointer
         // out of progmem
         f_valueHandler callback = reinterpret_cast<f_valueHandler>( reinterpret_cast<void*>(pgm_read_word(&(p_item->target)) ));
+        
         if( callback != 0 )
             callback();
         
-        if( m_enable ) {
+        if( m_enable )
             _displayList(m_curParent, m_curTarget);
-        }
-        else {
+        else 
             m_forceReturn = true;
-        }
     } 
 }
 

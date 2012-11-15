@@ -45,19 +45,15 @@
 #endif
 
 #ifndef OM_MENU_LBLLEN
-    #define OM_MENU_LBLLEN OM_MENU_COLS
+    #define OM_MENU_LBLLEN 9
 #endif
 
 #ifndef OM_MENU_MAXDEPTH
-    #define OM_MENU_MAXDEPTH    5
+    #define OM_MENU_MAXDEPTH    3
 #endif
 
 #ifndef OM_MENU_DEBOUNCE
-    #define OM_MENU_DEBOUNCE 80
-#endif
-
-#ifndef OM_MENU_PRESSDELAY
-    #define OM_MENU_PRESSDELAY 120
+    #define OM_MENU_DEBOUNCE 120
 #endif
 
 #ifndef OM_MENU_CURSOR
@@ -75,6 +71,7 @@
 #ifndef OM_MENU_FLAG_OFF
     #define OM_MENU_FLAG_OFF "Off"
 #endif
+
 
 
 #define MENU_ITEM           PROGMEM OMMenuItem
@@ -167,7 +164,7 @@ struct OMMenuValue {
 
 enum { ITEM_MENU, ITEM_VALUE, ITEM_ACTION };
 enum { MENU_ANALOG, MENU_DIGITAL };
-enum { BUTTON_NONE, BUTTON_FORWARD, BUTTON_BACK, BUTTON_INCREASE, BUTTON_DECREASE, BUTTON_SELECT };
+enum { BUTTON_NONE, BUTTON_FORWARD, BUTTON_BACK, BUTTON_INCREASE, BUTTON_DECREASE, BUTTON_SELECT, BUTTON_HELD };
 enum { CHANGE_DISPLAY, CHANGE_UP, CHANGE_DOWN, CHANGE_SAVE, CHANGE_ABORT };
 enum { TYPE_BYTE, TYPE_INT, TYPE_UINT, TYPE_LONG, TYPE_ULONG, TYPE_FLOAT, TYPE_FLOAT_10, TYPE_FLOAT_100, TYPE_FLOAT_1000, TYPE_SELECT,
        TYPE_BFLAG };
@@ -684,7 +681,7 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
     </ul>
     <li>OM_MENU_DEBOUNCE</li>
     <ul>
-        <li>Default = 80</li>
+        <li>Default = 120</li>
         <li>Debounce time for button input, in mS</li>
     </ul> 
     <li>OM_MENU_CURSOR</li>
@@ -746,7 +743,7 @@ enum { MODE_INCREMENT, MODE_DECREMENT, MODE_NOOP };
  MENU_VALUE value_baz = { TYPE_UINT, 0, 0, MENU_TARGET(&baz) }; // equivalent to providing no address at the end
  @endcode
  
- Now, when these values are exercised by the user, foo will be stored to EEPROM, at byte 10, and bar will not be stored in EEPROM.
+ Now, when these values are exercised by the user, foo will be stored to EEPROM, starting at byte 10, and bar will not be stored in EEPROM.
  
  
  @section menuexample A Complete Example
@@ -930,6 +927,7 @@ public:
     
     void setRoot(OMMenuItem* p_root);
     
+    bool shown();
     
 private:
     
@@ -980,7 +978,7 @@ private:
     void        _displayFlagVal();
     
         
-    // Handle templates for with, and without EEPROM writing
+    // Handle templates for EEPROM writing of different data types
     
     template <typename T>
     void _eewrite(OMMenuValue* p_target, T p_item) {
