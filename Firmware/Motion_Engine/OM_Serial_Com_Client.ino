@@ -65,10 +65,7 @@ See dynamicperception.com for more information
   0.  
   
   For all status requests, the response data len will be
-  greater than or equal to 1.
-  
-  
-         
+  greater than or equal to 1.  
        
 */
     
@@ -720,6 +717,7 @@ void serialComplexMove(byte* buf) {
 
    Motor.move(dir, dist, arrive, accel, decel); 
 }
+
 
 void serialComplexPlan(byte* buf) {
   

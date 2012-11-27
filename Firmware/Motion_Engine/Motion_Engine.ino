@@ -39,10 +39,10 @@ See dynamicperception.com for more information
 #include "OMEEPROM.h"
 
 
-#define SERIAL_TYPE "OMAXISVX"
+const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-#define SERIAL_VERSION  5
+const byte SERIAL_VERSION = 5;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
@@ -82,14 +82,14 @@ const byte PBT_PIN      = 7;
 
  (position count starts at zero)
  
- flash enabled   = 0
- dev_addr        = 1
  
+ dev_addr        = 0
+ name            = 2
  
 */
 
-const int EE_ADDR       = 1; // device_address
-const int EE_NAME       = 3; // device name (16 bytes)
+const int EE_ADDR       = 0; // device_address
+const int EE_NAME       = 2; // device name (16 bytes)
 
 
 
@@ -150,7 +150,7 @@ const byte ST_WAIT  = 5;
  // initialize core objects
 OMCamera     Camera = OMCamera();
 OMMotor      Motor  = OMMotor();
-OMMoCoNode   Node   = OMMoCoNode(Serial, device_address, SERIAL_VERSION, SERIAL_TYPE);
+OMMoCoNode   Node   = OMMoCoNode(Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 OMComHandler ComMgr = OMComHandler();
     // there are 6 possible states in 
     // our engine (0-5)

@@ -39,13 +39,12 @@ const byte MT_COM_DIR2 = 100;
  // max steps to move during program
  
 unsigned long motor_steps_max   = 0;
-boolean mt_plan = false;
-
-unsigned long mtpc_steps  = 0;
-boolean       mtpc_dir    = false;
-unsigned long mtpc_arrive = 0;
-unsigned long mtpc_accel  = 0;
-unsigned long mtpc_decel  = 0;
+boolean       mt_plan           = false;
+unsigned long mtpc_steps        = 0;
+boolean       mtpc_dir          = false;
+unsigned long mtpc_arrive       = 0;
+unsigned long mtpc_accel        = 0;
+unsigned long mtpc_decel        = 0;
 
 
 
