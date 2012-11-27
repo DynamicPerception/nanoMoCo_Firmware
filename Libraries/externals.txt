@@ -1,18 +1,12 @@
-CHANGELOG.TXT https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/CHANGELOG.TXT
-Docs https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/Docs
 LICENSE.txt https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/LICENSE.txt
 OMByteBuffer https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMByteBuffer
 OMCamera https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMCamera
 OMComHandler https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMComHandler
 OMEEPROM https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMEEPROM
-OMMenu https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMenu
-OMMenuMgr https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMenuMgr
 OMMoCoBus https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMoCoBus
 OMMoCoMaster https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMoCoMaster
 OMMoCoNode https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMoCoNode
 OMMotor https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMMotor
 OMState https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.1/OMState
-LiquidCrystal https://silo.dynamicperception.com/repo/Software/3rdParty/tags/OMAVRLibraries-1.1/LiquidCrystal
 MsTimer2 https://silo.dynamicperception.com/repo/Software/3rdParty/tags/OMAVRLibraries-1.1/MsTimer2
 TimerOne https://silo.dynamicperception.com/repo/Software/3rdParty/tags/OMAVRLibraries-1.1/TimerOne
-
