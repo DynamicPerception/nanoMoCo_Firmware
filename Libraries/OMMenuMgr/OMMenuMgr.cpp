@@ -789,6 +789,9 @@ void OMMenuMgr::_modifyTemp(uint8_t p_type, uint8_t p_mode, long p_min, long p_m
 
 void OMMenuMgr::_displaySelVal(OMMenuSelectListItem** p_list, uint8_t p_idx) {
     
+        // clear out display buffer
+    memset(m_dispBuf, ' ', sizeof(char) * sizeof(m_dispBuf));
+
         // get the actual select list item
     OMMenuSelectListItem* item = reinterpret_cast<OMMenuSelectListItem*>(pgm_read_word(&(p_list[p_idx])));
     
