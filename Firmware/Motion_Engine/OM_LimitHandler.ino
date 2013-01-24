@@ -40,7 +40,7 @@ volatile byte ls_pc_hist = 0xFF;
 
 void limitSwitch(bool p_enable) {
 
-    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT32
+    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT23
     
     if( p_enable ) {
       PCICR |= (1 << LIMIT_ENABLE);
@@ -57,7 +57,7 @@ void limitSwitch(bool p_enable) {
 
  // Our ISR for the pin change
  
-ISR(PCINT2_vect) {
+ISR(LIMIT_VECT) {
 
     // if we've just switched low (pin was previouslty high, and our current state is LOW)
   if( ! ( LIMIT_PREG & (1 << LIMIT_PIN))  && (ls_pc_hist & (1 << LIMIT_PIN) ) ) {

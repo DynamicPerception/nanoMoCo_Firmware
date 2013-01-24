@@ -273,6 +273,8 @@ void pauseProgram() {
   running = false;
 }
 
+
+
 void stopProgram(boolean force_clear) {
               
    // stop/clear program
@@ -290,6 +292,8 @@ void stopProgram(boolean force_clear) {
   Motor.clear();
   Camera.stop();
 }
+
+
 
 void startProgram() {
   
@@ -312,7 +316,7 @@ void startProgram() {
 }
 
 
-  void flasher(byte pin, int count) {
+void flasher(byte pin, int count) {
     // flash a pin several times (blink)
     
    for(int i = 0; i < count; i++) {
