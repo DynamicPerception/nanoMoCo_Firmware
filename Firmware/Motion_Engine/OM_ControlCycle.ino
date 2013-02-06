@@ -34,11 +34,11 @@ See dynamicperception.com for more information
 
 
 
-unsigned long  camera_tm        = 0;
-unsigned long  camera_delay     = 1;
-boolean        camera_on        = false;
-unsigned long  motor_delay      = 0;
-
+unsigned long  camera_tm         = 0;
+unsigned long  camera_delay      = 1;
+boolean        camera_on         = false;
+unsigned long  motor_delay       = 0;
+boolean        control_autoPause = false;
 
 
 void setupControlCycle() {
@@ -98,7 +98,8 @@ void cycleClearToMove() {
        ComMgr.masterSignal();
        
        // do not move if a motor delay is programmed...
-      if( motor_delay > 0 && run_time < motor_delay ) {
+      if( (mt_plan == true && motor_delay > 0 && camera_fired < motor_delay ) ||
+          (mt_plan == false && motor_delay > 0 && run_time < motor_delay)   ) {
         Engine.state(ST_CLEAR);
         return;
       }        
@@ -121,7 +122,12 @@ void cycleCheckMotor() {
     
     if( ComMgr.master() == true ) {
         // we are a timing master
-      Engine.state(ST_CLEAR);        
+      Engine.state(ST_CLEAR);    
+        
+        // if autopause is enabled then pause upon completion of movement
+      if( control_autoPause == true ) {
+            pauseProgram();
+      }
     }
     else { 
         // we are a slave - block until next slaveClear signal

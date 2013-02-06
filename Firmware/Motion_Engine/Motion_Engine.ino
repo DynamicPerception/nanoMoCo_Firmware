@@ -112,16 +112,17 @@ boolean timing_master = true;
 
 boolean debug_led_enable = false;
 
- // device address
+ // default device address
 byte device_address = 2;
 
  // necessary camera control variables
  
 unsigned int  camera_fired     = 0;
 
- // motor planned continuous move variables
+ // motor planned move variables that need to be defined here
 boolean mtpc       = false;
-boolean mtpc_start  = false;
+boolean mtpc_start = false;
+boolean mt_plan    = false;
 
  // maximum run time
 unsigned long max_time = 0;
@@ -298,8 +299,8 @@ void stopProgram(boolean force_clear) {
 void startProgram() {
   
      // start program
-  last_time      = millis();
-  running = true;
+  last_time = millis();
+  running   = true;
   
     // debug pin may have been brought high with a force stop
   if( force_stop == true ) {

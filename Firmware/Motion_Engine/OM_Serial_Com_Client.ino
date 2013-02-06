@@ -338,7 +338,54 @@ void serProgramAction(byte* input_serial_buffer) {
              }
              
              break;
-                          
+             
+           case 25: 
+             // set autpause (only if using planned moves)
+             
+             if( ! mt_plan )
+               fail = true;
+             else
+               control_autoPause = input_serial_buffer[0];
+               
+             break;
+                  
+           case 26:
+             // step forward one interleaved (sms) plan cycle
+       
+             if( ! mt_plan ) {
+               fail = true;
+             }
+             else {
+                 // dig this?  We advance one frame by simply turning on autopausing
+                 // and then playing.  This is a convienence function for clients, 
+                 // rather than forcing them to run both commands.
+               control_autoPause = true;
+               startProgram();
+             }
+     
+             break;
+             
+           case 27:
+             // step back one interleaved (sms) plan cycle
+           
+               // return an error if we don't actually have a planned move
+             if( ! mt_plan )
+               fail = true;
+             else {
+               if( motor_delay > 0 && camera_fired < motor_delay ) {
+                   // do not reverse the plan, the motor isn't supposed to move here
+               }
+               else {
+                   Motor.planReverse();
+               }
+               
+                 // rollback one shot in the program
+               camera_fired--;
+                 // need to decrease run time counter
+               run_time -= ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
+             }
+               
+             break;
              
            case 100:
 
@@ -386,13 +433,7 @@ boolean serProgramCamera(byte* input_serial_buffer) {
              
        case 2:
        
-             { 
-               
-               unsigned long tm  = Node.ntoul(input_serial_buffer);
-               
-               Camera.exposeTime(tm);
-             }
-             
+             Camera.exposeTime( Node.ntoul(input_serial_buffer) );
              break;
              
        case 3: 
@@ -463,7 +504,7 @@ boolean serProgramMotor(byte* input_serial_buffer) {
 
       case 4:
       
-            Motor.maxSteps( Node.ntoul(input_serial_buffer) );
+          Motor.maxSteps( Node.ntoul(input_serial_buffer) );
           
           break;
           
@@ -489,7 +530,7 @@ boolean serProgramMotor(byte* input_serial_buffer) {
            
       case 9:
 
-            Motor.contSpeed(Node.ntof(input_serial_buffer));
+          Motor.contSpeed(Node.ntof(input_serial_buffer));
           break;
       
       case 10:
@@ -713,7 +754,6 @@ void serialComplexMove(byte* buf) {
    buf += 5; // one padding byte added
    
    unsigned long decel  = Node.ntoul(buf);
-   buf += 5; // one padding byte added
 
    Motor.move(dir, dist, arrive, accel, decel); 
 }
