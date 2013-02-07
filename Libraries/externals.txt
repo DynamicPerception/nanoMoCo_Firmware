@@ -1,0 +1,12 @@
+LICENSE.txt https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/LICENSE.txt
+OMByteBuffer https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMByteBuffer
+OMCamera https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMCamera
+OMComHandler https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMComHandler
+OMEEPROM https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMEEPROM
+OMMoCoBus https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMMoCoBus
+OMMoCoMaster https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMMoCoMaster
+OMMoCoNode https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMMoCoNode
+OMMotor https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMMotor
+OMState https://silo.dynamicperception.com/repo/Software/OMLibraries/tags/OMAVRLibraries-1.12/OMState
+MsTimer2 https://silo.dynamicperception.com/repo/Software/3rdParty/tags/OMAVRLibraries-1.1/MsTimer2
+TimerOne https://silo.dynamicperception.com/repo/Software/3rdParty/tags/OMAVRLibraries-1.1/TimerOne
