@@ -359,6 +359,10 @@ void serProgramAction(byte* input_serial_buffer) {
                  // dig this?  We advance one frame by simply turning on autopausing
                  // and then playing.  This is a convienence function for clients, 
                  // rather than forcing them to run both commands.
+               
+                 // go ahead and make sure we fire immediately
+               camera_tm = millis() - camera_delay;
+               
                control_autoPause = true;
                startProgram();
              }
@@ -376,14 +380,24 @@ void serProgramAction(byte* input_serial_buffer) {
                    // do not reverse the plan, the motor isn't supposed to move here
                }
                else {
+                   // rollback one shot in the program
+                   if( camera_fired > 0 )
+                     camera_fired--;
+                     
                    Motor.planReverse();
                }
                
-                 // rollback one shot in the program
-               camera_fired--;
                  // need to decrease run time counter
-               run_time -= ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
-             }
+               {
+                 unsigned long delayTime = ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
+                 
+                 if( run_time >= delayTime )
+                   run_time -= delayTime;
+                 else
+                   run_time = 0;
+               }
+               
+             } // end else (mt_plan
                
              break;
              
