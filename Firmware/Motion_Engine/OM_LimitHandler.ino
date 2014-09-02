@@ -27,45 +27,48 @@ See dynamicperception.com for more information
 
 // These defines are used for the Limit Switch Pin Change Registers
 
- // for port PCINT32/PD7/AIN1
-#define LIMIT_ENABLE  PCIE2
-#define LIMIT_MASK    PCMSK2
-#define LIMIT_INT     PCINT23
-#define LIMIT_VECT    PCINT2_vect
-#define LIMIT_PREG    PIND
-#define LIMIT_PIN     PIND7
-
-
-volatile byte ls_pc_hist = 0xFF;
-
-void limitSwitch(bool p_enable) {
-
-    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT23
-    
-    if( p_enable ) {
-      PCICR |= (1 << LIMIT_ENABLE);
-      LIMIT_MASK |= (1 << LIMIT_INT);
-    }
-    else {
-      PCICR ^= (1 << LIMIT_ENABLE);
-      LIMIT_MASK ^= (1 << LIMIT_INT);
-    }
-      
-  
-}
-
-
- // Our ISR for the pin change
- 
-ISR(LIMIT_VECT) {
-
-    // if we've just switched low (pin was previouslty high, and our current state is LOW)
-  if( ! ( LIMIT_PREG & (1 << LIMIT_PIN))  && (ls_pc_hist & (1 << LIMIT_PIN) ) ) {
-    force_stop = true;
-    digitalWrite(DEBUG_PIN, HIGH);
-  }
-    
-  ls_pc_hist = LIMIT_PREG;
-    
-}
+// // for port PCINT32/PD7/AIN1
+//#define LIMIT_ENABLE  PCIE2
+//#define LIMIT_MASK    PCMSK2
+//#define LIMIT_INT     PCINT23
+//#define LIMIT_VECT    PCINT2_vect
+//#define LIMIT_PREG    PIND
+//#define LIMIT_PIN     PIND7
+//
+//
+//volatile byte ls_pc_hist = 0xFF;
+//
+//void limitSwitch(bool p_enable) {
+//
+//    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT23
+//    
+//    if( p_enable ) {
+//      
+//      attachInterrupt(LIMIT_PIN, ISR(), CHANGE);
+//      
+//      PCICR |= (1 << LIMIT_ENABLE);
+//      LIMIT_MASK |= (1 << LIMIT_INT);
+//    }
+//    else {
+//      PCICR ^= (1 << LIMIT_ENABLE);
+//      LIMIT_MASK ^= (1 << LIMIT_INT);
+//    }
+//      
+//  
+//}
+//
+//
+// // Our ISR for the pin change
+// 
+//ISR(LIMIT_VECT) {
+//
+//    // if we've just switched low (pin was previouslty high, and our current state is LOW)
+//  if( ! ( LIMIT_PREG & (1 << LIMIT_PIN))  && (ls_pc_hist & (1 << LIMIT_PIN) ) ) {
+//    force_stop = true;
+//    digitalWrite(DEBUG_PIN, HIGH);
+//  }
+//    
+//  ls_pc_hist = LIMIT_PREG;
+//    
+//}
 

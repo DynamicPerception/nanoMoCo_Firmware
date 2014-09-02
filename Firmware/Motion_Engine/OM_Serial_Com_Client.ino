@@ -69,6 +69,89 @@ See dynamicperception.com for more information
        
 */
     
+    
+/* Handles Node 1 Commands
+
+  only Node1 goes through this function, determines which node
+  to respond to
+
+  */
+
+void serNode1Handler(byte subaddr, byte command, byte*buf) {
+  node = 1;
+  serCommandHandler(subaddr, command, buf);
+}
+
+/* Handles Node 2 Commands
+
+  only NodeBlue goes through this function, determines which node
+  to respond to
+
+  */
+
+void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
+  node = 2;
+  serCommandHandler(subaddr, command, buf);
+}
+
+
+/* Handles Node Packets not for this device
+
+  only Node goes through this function, repeats the packet to NodeBlue
+
+  */
+
+void serNotUsNode1Handler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
+  /*
+  USBSerial.print("Packet sent out is ");
+  USBSerial.print(addr);
+  USBSerial.print("  ");
+  USBSerial.print(subaddr);
+  USBSerial.print("  ");
+  USBSerial.print(command);
+  USBSerial.print("  ");
+  USBSerial.print(bufLen);
+  USBSerial.print("  ");
+  
+  for (int i = 0; i < bufLen; i++)
+    USBSerial.println(buf[i]);
+    */
+  /*char message[512];
+  sprintf(message,"serNotUsNode1Handler: %p %d %d %d %d\n", &NodeBlue, addr, subaddr, command, bufLen);
+  
+  USBSerial.print(message);
+  */
+  //delay(10);
+  NodeBlue.sendPacket(addr,subaddr,command,bufLen,buf);
+}
+
+
+/* Handles Node 2 Commands
+
+  only NodeBlue goes through this function, repeats the packet to Node1
+
+  */
+
+void serNotUsNodeBlueHandler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
+  /*char message[512];
+  sprintf(message,"serNotUsNode1Handler: %p %d %d %d %d\n", &Node, addr, subaddr, command, bufLen);
+  USBSerial.print(message);*/
+  /*USBSerial.print("Packet sent out is ");
+  USBSerial.print(addr);
+  USBSerial.print("  ");
+  USBSerial.print(subaddr);
+  USBSerial.print("  ");
+  USBSerial.print(command);
+  USBSerial.print("  ");
+  USBSerial.print(bufLen);
+  USBSerial.print("  ");
+  for (int i = 0; i < bufLen; i++)
+    USBSerial.println(buf[i]);
+  */
+//  delay(10);
+  Node.sendPacket(addr,subaddr,command,bufLen,buf);
+}
+    
 
 /* Handle normal commands
 
@@ -78,7 +161,7 @@ See dynamicperception.com for more information
   all else generates error
   */
   
-void serCommandHandler(byte command, byte* buf) {
+void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
  switch(command) {   
    case 2:
@@ -91,9 +174,13 @@ void serCommandHandler(byte command, byte* buf) {
         serProgramData(buf);
         break;
         
+       
    default :
            // anything else is an error
-       Node.response(false);
+       if (node == 2)
+         NodeBlue.response(false);
+       else
+         Node.response(false);
        break;
  }
 
@@ -102,7 +189,7 @@ void serCommandHandler(byte command, byte* buf) {
  // handle broadcast commands - do not send any
  // responses to a broadcast command!
  
-void serBroadcastHandler(byte command, byte* buf) {
+void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
   
   switch(command) {
     case OM_BCAST_START:
@@ -140,10 +227,16 @@ void serProgramData(byte* input_serial_buffer) {
   
   // send serial response  
  if( fail ) {
-   Node.response(false);
+   if (node == 2)
+     NodeBlue.response(false);
+   else
+     Node.response(false);
  }
  else {
-   Node.response(true);
+   if (node == 2)
+     NodeBlue.response(true);
+   else
+     Node.response(true);
  }
  
 }
@@ -401,6 +494,13 @@ void serProgramAction(byte* input_serial_buffer) {
                
              break;
              
+           case 28:
+           //Flashes debug pin to identify controller 
+             
+             flasher(AEN_PIN, 4);
+             break;
+             
+             
            case 100:
 
               // handling status requests
@@ -420,10 +520,16 @@ void serProgramAction(byte* input_serial_buffer) {
 
   // send serial response  
  if( fail ) {
-   Node.response(false);
+   if (node == 2)
+      NodeBlue.response(false);
+   else
+     Node.response(false);
  }
  else {
-   Node.response(true);
+   if (node == 2)
+     NodeBlue.response(true);
+   else
+     Node.response(true);
  }
 
  
@@ -594,24 +700,30 @@ void serStatusRequest(byte* input_serial_buffer) {
     case 0:
 
       // serial api version
-
-      Node.response( true, (byte) SERIAL_VERSION );
+      if (node == 2)
+        NodeBlue.response( true, (byte) SERIAL_VERSION );
+      else
+        Node.response( true, (byte) SERIAL_VERSION );
       
       break;
     
     case 1:
     
       // program run status
-      
-      Node.response( true, (byte) running );
+      if (node == 2)
+        NodeBlue.response( true, (byte) running );
+      else      
+        Node.response( true, (byte) running );
       
       break;
       
     case 2:
     
       // current run time
-      
-      Node.response(true, run_time);
+      if (node == 2)
+        NodeBlue.response(true, run_time);
+      else  
+        Node.response(true, run_time);
       
       break;
       
@@ -620,15 +732,20 @@ void serStatusRequest(byte* input_serial_buffer) {
     
       // camera enabled
       
-      Node.response( true, (byte) camera_on );
+      if (node == 2)
+        NodeBlue.response( true, (byte) camera_on );
+      else  
+        Node.response( true, (byte) camera_on );
       
       break;
 
     case 4:
     
       // current shot count
-      
-      Node.response(true, camera_fired);
+      if (node == 2)
+        NodeBlue.response(true, camera_fired);
+      else  
+        Node.response(true, camera_fired);
       
       break;
       
@@ -636,15 +753,20 @@ void serStatusRequest(byte* input_serial_buffer) {
     
       // camera interval time
       
-      Node.response(true, camera_delay);
+      if (node == 2)
+        NodeBlue.response(true, camera_delay);
+      else 
+        Node.response(true, camera_delay);
       
       break;
       
     case 6:                  
     
       // camera exposure time
-      
-      Node.response(true, Camera.exposeTime());
+      if (node == 2)
+        NodeBlue.response(true, Camera.exposeTime());
+      else 
+        Node.response(true, Camera.exposeTime());
       
       break;
       
@@ -660,7 +782,10 @@ void serStatusRequest(byte* input_serial_buffer) {
     
       // camera currently exposing
       
-      Node.response( true, (byte) Camera.busy() );
+      if (node == 2)
+        NodeBlue.response( true, (byte) Camera.busy() );
+      else
+        Node.response( true, (byte) Camera.busy() );
       
       break;
 
@@ -669,7 +794,10 @@ void serStatusRequest(byte* input_serial_buffer) {
       // motor enabled
 
         // get motor status for given motor
-      Node.response( true, (byte) Motor.enable() );
+      if (node == 2)
+        NodeBlue.response( true, (byte) Motor.enable() );
+      else  
+        Node.response( true, (byte) Motor.enable() );
       
       break;
 
@@ -678,75 +806,107 @@ void serStatusRequest(byte* input_serial_buffer) {
       // motor dir
       
         // get motor dir for given motor
-      Node.response( true, (byte) Motor.dir() );
+        
+      if (node == 2)
+        NodeBlue.response( true, (byte) Motor.dir() );
+      else 
+        Node.response( true, (byte) Motor.dir() );
       
       break;
 
     case 11:
     
       // motor steps moved
-      
-     Node.response( true, Motor.stepsMoved() );
+     if (node == 2)
+       NodeBlue.response( true, Motor.stepsMoved() );
+     else 
+       Node.response( true, Motor.stepsMoved() );
       break;
 
     case 12:
     
       // motor distance from home
       
-      Node.response( true, Motor.homeDistance() );
+      if (node == 2)
+        NodeBlue.response( true, Motor.homeDistance() );
+      else 
+        Node.response( true, Motor.homeDistance() );
       
       break;
 
 
     case 13:
-
-      Node.response(false);    
+      
+      if (node == 2)
+        NodeBlue.response(false);
+      else 
+        Node.response(false);    
       break;                  
 
     case 14:                
 
       // motor max step
       
-       Node.response( true, Motor.maxSteps() );      
+      if (node == 2)
+        NodeBlue.response( true, Motor.maxSteps() ); 
+      else 
+        Node.response( true, Motor.maxSteps() );      
       break;
 
     case 15:                
 
-      // motor ramp levels - removed from protocol for now      
-      Node.response(false);    
+      // motor ramp levels - removed from protocol for now  
+      if (node == 2)
+        NodeBlue.response(false);  
+      else     
+        Node.response(false);    
       break;
 
     case 16:                
 
       // motor backlash
-      
-      Node.response( true, Motor.backlash() );
+      if (node == 2)
+        NodeBlue.response( true, Motor.backlash() );
+      else  
+        Node.response( true, Motor.backlash() );
       break;
 
     case 17:                
 
       // motor steps between shots
       
-      Node.response( true, Motor.steps() );      
+      if (node == 2)
+        NodeBlue.response( true, Motor.steps() );  
+      else 
+        Node.response( true, Motor.steps() );      
       break;
       
       // note gap from removed status commands
 
     case 22:
     
-      // timing master      
-      Node.response( true, timing_master );     
+      // timing master    
+      if (node == 2)
+        NodeBlue.response( true, timing_master );   
+      else   
+        Node.response( true, timing_master );     
       break;
       
     case 23:
     
       // device name
-      Node.response(true, (char*)device_name, 16);
+      if (node == 2)
+        NodeBlue.response(true, (char*)device_name, 16);   
+      else       
+        Node.response(true, (char*)device_name, 16);
       break;
       
     default:
-    
-      Node.response(false);      
+      
+      if (node == 2)
+        NodeBlue.response(false);    
+      else  
+        Node.response(false);      
       break;
       
   } // end switch for current status req type
@@ -811,3 +971,69 @@ void serialComplexPlan(byte* buf) {
      mtpc_steps  = steps;
    }
 }
+
+/*
+/*=========================================
+          Node Response Functions
+===========================================
+
+void response(bool p_stat){
+  if (node == 2)
+    NodeBlue.response(p_stat);    
+  else  
+    Node.response(p_stat); 
+} 
+
+void response(bool p_stat, uint8_t p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, unsigned int p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, int p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, unsigned long p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, long p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, float p_resp){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp);    
+  else  
+    Node.response(p_stat, p_resp); 
+}
+
+void response(bool p_stat, char* p_resp, int p_len){
+    if (node == 2)
+    NodeBlue.response(p_stat, p_resp, p_le);    
+  else  
+    Node.response(p_stat, p_resp, p_le); 
+}
+
+*/
+
+
+

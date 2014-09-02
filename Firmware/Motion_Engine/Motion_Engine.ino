@@ -29,14 +29,17 @@ See dynamicperception.com for more information
 #include "TimerOne.h"
 #include <EEPROM.h>
 
+#include <AltSoftSerial.h>
+
   // openmoco standard libraries
-#include "OMComHandler.h"
-#include "OMState.h"
-#include "OMCamera.h"
-#include "OMMotor.h"
-#include "OMMoCoBus.h"
-#include "OMMoCoNode.h"
-#include "OMEEPROM.h"
+#include <OMComHandler_AT90USB.h>
+#include <OMState.h>
+#include <OMCamera.h>
+#include <OMMotor.h>
+#include <OMMoCoBus.h>
+#include <OMMoCoNode.h>
+#include <OMEEPROM.h>
+
 
 
 const char SERIAL_TYPE[] = "OMAXISVX";
@@ -60,17 +63,23 @@ const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
 
  // digital I/O line definitions
 
-const byte DE_PIN       = 5;
-const byte DEBUG_PIN    = 18;
-const byte CAM_SHT_PIN  = 13;
-const byte CAM_FOC_PIN  = 12;
-const byte AEN_PIN      = 17;
-const byte STEP_PIN     = 9;
-const byte DIR_PIN      = 4;
-const byte MS1_PIN      = 14;
-const byte MS2_PIN      = 15;
-const byte MS3_PIN      = 16;
+const byte DE_PIN       = 28;//5;
+const byte DEBUG_PIN    = 12;//18;
+const byte CAM1_SHT_PIN  = 9;
+const byte CAM1_FOC_PIN  = 11;
+const byte CAM2_SHT_PIN  = 8;
+const byte CAM2_FOC_PIN  = 10;
+const byte AEN_PIN      = 32;
+const byte STEP_PIN     = 45;
+const byte DIR_PIN      = 16;
+const byte MS1_PIN      = 17;
+const byte MS2_PIN      = 18;
+const byte MS3_PIN      = 19;
 const byte PBT_PIN      = 7;
+
+
+
+
 
 
 /* 
@@ -113,7 +122,7 @@ boolean timing_master = true;
 boolean debug_led_enable = false;
 
  // default device address
-byte device_address = 2;
+byte device_address = 3;
 
  // necessary camera control variables
  
@@ -129,6 +138,10 @@ unsigned long max_time = 0;
 
  // default device name, exactly 15 characters + null terminator
 byte device_name[] = "DEFAULT        ";
+
+
+ // default node to use (Hardware Serial = 1; AltSoftSerial = 2)
+byte node =1;
 
  /*  state transitions
  
@@ -147,15 +160,48 @@ const byte ST_MOVE  = 2;
 const byte ST_RUN   = 3;
 const byte ST_EXP   = 4;
 const byte ST_WAIT  = 5;
+unsigned long time = 0;
 
  // initialize core objects
 OMCamera     Camera = OMCamera();
 OMMotor      Motor  = OMMotor();
-OMMoCoNode   Node   = OMMoCoNode(Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
-OMComHandler ComMgr = OMComHandler();
+OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
+OMComHandler_AT90USB ComMgr = OMComHandler_AT90USB();
     // there are 6 possible states in 
     // our engine (0-5)
 OMState      Engine = OMState(6);
+
+int incomingByte = 0;
+
+
+/* 
+
+ =========================================
+ Bluetooth Test Variables
+ =========================================
+ 
+*/
+
+
+AltSoftSerial altSerial;
+OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
+
+
+char inData[255]; // Allocate some space for the string
+char inChar1; // Where to store the character read
+char inChar2; 
+byte index = 0; // Index into array; where to store the character
+int a = 50;
+int voltage =0;
+byte sendBlueFlag = false;
+byte sendSerialFlag = false;
+
+byte temp_addr;
+byte temp_subaddr;
+byte temp_command;
+byte temp_bufLen;
+byte*temp_buf;
+
 
 /* 
 
@@ -167,11 +213,24 @@ OMState      Engine = OMState(6);
 
 
 void setup() {
+  
+  USBSerial.begin(9600);
+  delay(100);
+  
+  altSerial.begin(9600);
+  altSerial.println("Hello World");
+  USBSerial.println("HI");
+  time = millis();
 
 
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(PBT_PIN, INPUT);
-  pinMode(CAM_SHT_PIN, OUTPUT);
+  pinMode(CAM1_SHT_PIN, OUTPUT);
+  pinMode(CAM1_FOC_PIN, OUTPUT);
+  pinMode(0, OUTPUT);
+  digitalWrite(0,HIGH);
+  pinMode(42, INPUT);
+  pinMode(41, INPUT);
   
     // pull PBT up internally
   digitalWrite(PBT_PIN, HIGH);
@@ -204,11 +263,25 @@ void setup() {
 
   // setup MoCoBus Node object
  Node.address(device_address);
- Node.setHandler(serCommandHandler);
+ Node.setHandler(serNode1Handler);
+ Node.setNotUsHandler(serNotUsNode1Handler);
  Node.setBCastHandler(serBroadcastHandler);
+ Node.setSoftSerial(false);
+ 
+  // setup MoCoBus Node object for bluetooth
+
+ NodeBlue.address(device_address);
+ NodeBlue.setHandler(serNodeBlueHandler);
+ NodeBlue.setNotUsHandler(serNotUsNodeBlueHandler);
+ NodeBlue.setBCastHandler(serBroadcastHandler);
+ NodeBlue.setSoftSerial(true);
+
+ 
  
   // Listen for address change
  Node.addressCallback(changeNodeAddr);
+ 
+ NodeBlue.addressCallback(changeNodeAddr);
  
   
   // defaults for motor
@@ -217,12 +290,15 @@ void setup() {
  Motor.maxStepRate(MOT_DEFAULT_MAX_STEP);
  Motor.maxSpeed(MOT_DEFAULT_MAX_SPD);
  Motor.sleep(true);
+ Motor.ms(16);
  
   // enable limit switch handler
- limitSwitch(true);
+// limitSwitch(true);
  
   // startup LED signal
  flasher(DEBUG_PIN, START_FLASH_CNT);
+
+ 
   
 }
 
@@ -231,11 +307,75 @@ void setup() {
 
 
 void loop() {
-
+  
 
    // check to see if we have any commands waiting      
   Node.check();
-     
+  /*
+  if (sendSerialFlag) {
+    USBSerial.print("Before serial send");
+    delay(10);
+    Node.sendPacket(temp_addr,temp_subaddr,temp_command,temp_bufLen,temp_buf);
+    sendSerialFlag = 0;
+    USBSerial.println("---- Serial Sent");
+  }
+  */
+  NodeBlue.check();
+  /*
+  if (sendBlueFlag){
+    USBSerial.print("Before bluetooth send");
+    NodeBlue.sendPacket(temp_addr,temp_subaddr,temp_command,temp_bufLen,temp_buf);
+    sendBlueFlag = 0;
+    USBSerial.println("---- Blue Sent");
+  }
+  */
+  /*
+  int x = 0;
+  x = NodeBlue.getPacket();
+  if ( x > 0)
+  USBSerial.println(x);
+  /*
+   while(USBSerial.available() > 0) // Don't read unless
+   {
+       inChar1 = USBSerial.read(); // Read a character
+       delay(10);
+       altSerial.print(inChar1);  //print to bluetooth
+       USBSerial.print("Sent ");
+       USBSerial.println(inChar1);
+   }
+   while(altSerial.available() > 0) // Don't read unless
+   {
+       inChar2 = altSerial.read(); // Read a character from bluetooth
+      // altSerial.print(inChar2);
+      delay(10);
+       //digitalWrite(28,HIGH);
+   
+       altSerial.print(inChar2);  //print to bluetooth
+       //digitalWrite(28, LOW);
+       inData[index] = inChar2;
+       index++;
+
+   }
+   */
+   if ((millis()-time) > 500)
+   {   
+     for (int i = 0; i < index; i++)
+     {
+       //digitalWrite(28, HIGH);
+       //USBSerial.print(inData[i]);
+       //digitalWrite(28, LOW);
+     }
+     time = millis();
+     //altSerial.print(j);
+     voltage=analogRead(42);  
+     a=analogRead(41);
+     USBSerial.print("Voltage is ");
+     USBSerial.print((float)voltage/1023*5*5);
+     USBSerial.print(" Current is ");
+     USBSerial.println((float)a/1023*5);
+     index = 0;
+   }
+   
       // if our program is currently running...
       
    if( running ) {
@@ -345,7 +485,7 @@ void checkReset() {
       OMEEPROM::saved(false);
       digitalWrite(DEBUG_PIN, LOW);
         // indicate memory reset by flashing shutter 10 times
-      flasher(CAM_SHT_PIN, START_FLASH_CNT * 2);
+      flasher(CAM1_SHT_PIN, START_FLASH_CNT * 2);
       
       break;
     }
@@ -353,5 +493,29 @@ void checkReset() {
   }
 
   digitalWrite(DEBUG_PIN, LOW);
+}
+
+void setBlueFlag( byte addr, byte subaddr, byte command, byte bufLen, byte*buf ){
+  
+  sendBlueFlag = true;
+  temp_addr = addr;
+  temp_subaddr = subaddr;
+  temp_command = command;
+  temp_bufLen = bufLen;
+  temp_buf = buf;
+  
+  
+}
+
+void setSerialFlag( byte addr, byte subaddr, byte command, byte bufLen, byte*buf ){
+  
+  sendSerialFlag = true;
+  temp_addr = addr;
+  temp_subaddr = subaddr;
+  temp_command = command;
+  temp_bufLen = bufLen;
+  temp_buf = buf;
+  
+  
 }
 
