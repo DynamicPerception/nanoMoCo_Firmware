@@ -37,7 +37,6 @@ See dynamicperception.com for more information
 unsigned long  camera_tm         = 0;
 unsigned long  camera_delay      = 1;
 boolean        camera_on         = false;
-unsigned long  motor_delay       = 0;
 boolean        control_autoPause = false;
 
 
@@ -98,11 +97,13 @@ void cycleClearToMove() {
        ComMgr.masterSignal();
        
        // do not move if a motor delay is programmed...
-      if( (mt_plan == true && motor_delay > 0 && camera_fired < motor_delay ) ||
-          (mt_plan == false && motor_delay > 0 && run_time < motor_delay)   ) {
-        Engine.state(ST_CLEAR);
-        return;
-      }        
+	   for(int i = 0; i < 3; i++){
+		  if( (motor[i].enable() && motor[i].mt_plan == true && motor[i].motorDelay > 0 && camera_fired < motor[i].motorDelay ) ||
+			  (motor[i].enable() && motor[i].mt_plan == false && motor[i].motorDelay > 0 && run_time < motor[i].motorDelay)   ) {
+			  Engine.state(ST_CLEAR);
+			  return;
+		  }    
+	   }
       
          // ok to run motors, if needed
       move_motor(); 
@@ -113,8 +114,10 @@ void cycleCheckMotor() {
          // still running
      
      // do not block on continuous motion of any sort
-      if( Motor.continuous() == false && mtpc == false && Motor.running() == true )
+	 for (int i = 0; i < 3; i++){
+      if( motor[i].continuous() == false && motor[i].mtpc == false && motor[i].running() == true )
         return;
+	 }
 
 
     // no longer running, ok to fire camera

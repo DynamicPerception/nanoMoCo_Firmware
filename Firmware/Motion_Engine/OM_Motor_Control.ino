@@ -36,15 +36,6 @@ See dynamicperception.com for more information
 const byte MT_COM_DIR1 = 50;
 const byte MT_COM_DIR2 = 100;
 
- // max steps to move during program
- 
-unsigned long motor_steps_max   = 0;
-unsigned long mtpc_steps        = 0;
-boolean       mtpc_dir          = false;
-unsigned long mtpc_arrive       = 0;
-unsigned long mtpc_accel        = 0;
-unsigned long mtpc_decel        = 0;
-
 
 
 void move_motor() {
@@ -55,44 +46,56 @@ void move_motor() {
    byte continue_state = (ComMgr.master() == true) ? ST_CLEAR : ST_BLOCK;
    
      // motor disabled? Do nothing.
-   if( ! Motor.enable() ) {
+   if( ! motor[0].enable() && !motor[1].enable() && !motor[2].enable() ) {
      Engine.state(continue_state);
      return;
    }
+   
+   for(int i = 0; i < 3; i++){
+	   
+	   if( motor[i].continuous() ) {
+		   // continuous motion mode
+		   if( ! motor[i].running() ) {
+			   motor[i].move( motor[i].dir(), 0 );
+		   }
+		   Engine.state(continue_state);
+	   }
+	   else if( motor[i].mt_plan == true ) {
+		   // planned SMS move
+		   motor[i].planRun();
+		   // block camera while motor is moving
+		   Engine.state(ST_RUN);
+	   }
+	   else if( motor[i].mtpc == true ) {
+		   // planned continuous move
+		   if( motor[i].mtpc_start == false ) {
+			   // a planned continuous move has not been started...
+			   motor[i].mtpc_start = true;
+			   motor[i].move(motor[i].mtpc_dir, motor[i].mtpc_steps, motor[i].mtpc_arrive, motor[i].mtpc_accel, motor[i].mtpc_decel);
+		   }
+		   Engine.state(continue_state);
+	   }
+	   else if( motor[i].steps() == 0 ) {
+		   // not a planned move and nothing to do
+		   Engine.state(continue_state);
+	   }
+	   else if (motor[i].enable()){
+		   // move using Motor.steps() and Motor.dir()
+		   motor[i].move();
+		   // we need to block the camera while the motor is running
+		   Engine.state(ST_RUN);
+	   } else {
+		   //check next motor without doing anything to this motor
+	   }
+
+   }
+   
+   
+   //Start interrupt service rotuine to start motors moving
+   startISR();
  
  
-  if( Motor.continuous() ) {
-         // continuous motion mode
-      if( ! Motor.running() ) {
-         Motor.move( Motor.dir(), 0 );
-      }
-      Engine.state(continue_state);
-   }
-   else if( mt_plan == true ) {
-       // planned SMS move
-     Motor.planRun();
-       // block camera while motor is moving
-     Engine.state(ST_RUN);
-   }
-   else if( mtpc == true ) {
-       // planned continuous move
-     if( mtpc_start == false ) {
-       // a planned continuous move has not been started...
-       mtpc_start = true;
-       Motor.move(mtpc_dir, mtpc_steps, mtpc_arrive, mtpc_accel, mtpc_decel);
-     }
-     Engine.state(continue_state);
-   }
-   else if( Motor.steps() == 0 ) {
-     // not a planned move and nothing to do
-     Engine.state(continue_state);
-   }
-   else {  
-       // move using Motor.steps() and Motor.dir()
-     Motor.move();
-       // we need to block the camera while the motor is running
-     Engine.state(ST_RUN);
-   }
+  
    
 }
 
@@ -101,10 +104,16 @@ void move_motor() {
  // (if we're watching a common line for movement trips)
  
 void motor_com_line(unsigned int p_time) {
-  if( p_time > MT_COM_DIR1 && p_time < MT_COM_DIR2 )
-    Motor.move(0, 1);
-  else if( p_time > MT_COM_DIR2 )
-    Motor.move(1, 1);
+  if( p_time > MT_COM_DIR1 && p_time < MT_COM_DIR2 ){
+    motor[0].move(0, 1);
+	motor[1].move(0, 1);
+	motor[2].move(0, 1);
+  }
+  else if( p_time > MT_COM_DIR2 ){
+    motor[0].move(1, 1);
+    motor[1].move(1, 1);
+    motor[2].move(1, 1);
+  }
 }
 
 

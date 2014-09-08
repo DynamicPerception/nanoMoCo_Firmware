@@ -26,13 +26,15 @@ See dynamicperception.com for more information
 
 
 #include <MsTimer2.h>
-#include "TimerOne.h"
+#include <TimerOne.h>
 #include <EEPROM.h>
 
 #include <AltSoftSerial.h>
 
   // openmoco standard libraries
 #include <OMComHandler_AT90USB.h>
+#include <OMMotorMaster.h>
+#include <OMMotorFunctions.h>
 #include <OMState.h>
 #include <OMCamera.h>
 #include <OMMotor.h>
@@ -65,17 +67,6 @@ const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
 
 const byte DE_PIN       = 28;//5;
 const byte DEBUG_PIN    = 12;//18;
-const byte CAM1_SHT_PIN  = 9;
-const byte CAM1_FOC_PIN  = 11;
-const byte CAM2_SHT_PIN  = 8;
-const byte CAM2_FOC_PIN  = 10;
-const byte AEN_PIN      = 32;
-const byte STEP_PIN     = 45;
-const byte DIR_PIN      = 16;
-const byte MS1_PIN      = 17;
-const byte MS2_PIN      = 18;
-const byte MS3_PIN      = 19;
-const byte PBT_PIN      = 7;
 
 
 
@@ -100,9 +91,13 @@ const byte PBT_PIN      = 7;
 const int EE_ADDR       = 0; // device_address
 const int EE_NAME       = 2; // device name (16 bytes)
 
+// default device address
+byte device_address = 3;
 
+//Motor variables
+boolean ISR_On = false;
 
-  // predefine this function to declare the default argument
+// predefine this function to declare the default argument
 void stopProgram(boolean force_clear = true);
 
 
@@ -121,17 +116,13 @@ boolean timing_master = true;
 
 boolean debug_led_enable = false;
 
- // default device address
-byte device_address = 3;
+
 
  // necessary camera control variables
  
 unsigned int  camera_fired     = 0;
 
- // motor planned move variables that need to be defined here
-boolean mtpc       = false;
-boolean mtpc_start = false;
-boolean mt_plan    = false;
+
 
  // maximum run time
 unsigned long max_time = 0;
@@ -164,7 +155,11 @@ unsigned long time = 0;
 
  // initialize core objects
 OMCamera     Camera = OMCamera();
-OMMotor      Motor  = OMMotor();
+OMMotorFunctions motor[3] = {
+    OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG),
+ 	OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG),
+ 	OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG)};
+
 OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 OMComHandler_AT90USB ComMgr = OMComHandler_AT90USB();
     // there are 6 possible states in 
@@ -186,7 +181,7 @@ int incomingByte = 0;
 AltSoftSerial altSerial;
 OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 
-
+const byte blueToothEnablePin = 0;
 char inData[255]; // Allocate some space for the string
 char inChar1; // Where to store the character read
 char inChar2; 
@@ -195,12 +190,6 @@ int a = 50;
 int voltage =0;
 byte sendBlueFlag = false;
 byte sendSerialFlag = false;
-
-byte temp_addr;
-byte temp_subaddr;
-byte temp_command;
-byte temp_bufLen;
-byte*temp_buf;
 
 
 /* 
@@ -224,20 +213,11 @@ void setup() {
 
 
   pinMode(DEBUG_PIN, OUTPUT);
-  pinMode(PBT_PIN, INPUT);
-  pinMode(CAM1_SHT_PIN, OUTPUT);
-  pinMode(CAM1_FOC_PIN, OUTPUT);
-  pinMode(0, OUTPUT);
-  digitalWrite(0,HIGH);
+  pinMode(blueToothEnablePin, OUTPUT);
+  digitalWrite(blueToothEnablePin,HIGH);
   pinMode(42, INPUT);
   pinMode(41, INPUT);
-  
-    // pull PBT up internally
-  digitalWrite(PBT_PIN, HIGH);
-  
-    // handle reading the PBT pin to see if a factory reset is
-    // required
- checkReset();
+
     
   // restore/store eeprom memory
  eepromCheck();
@@ -285,12 +265,16 @@ void setup() {
  
   
   // defaults for motor
- Motor.enable(true);
- Motor.continuous(false);
- Motor.maxStepRate(MOT_DEFAULT_MAX_STEP);
- Motor.maxSpeed(MOT_DEFAULT_MAX_SPD);
- Motor.sleep(true);
- Motor.ms(16);
+ for( int i = 0; i < 3; i++){
+	  motor[i].enable(true);
+	  motor[i].continuous(false);
+	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
+	  motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
+	  motor[i].sleep(true);
+	  motor[i].ms(16);
+	 
+ }
+
  
   // enable limit switch handler
 // limitSwitch(true);
@@ -311,52 +295,8 @@ void loop() {
 
    // check to see if we have any commands waiting      
   Node.check();
-  /*
-  if (sendSerialFlag) {
-    USBSerial.print("Before serial send");
-    delay(10);
-    Node.sendPacket(temp_addr,temp_subaddr,temp_command,temp_bufLen,temp_buf);
-    sendSerialFlag = 0;
-    USBSerial.println("---- Serial Sent");
-  }
-  */
   NodeBlue.check();
-  /*
-  if (sendBlueFlag){
-    USBSerial.print("Before bluetooth send");
-    NodeBlue.sendPacket(temp_addr,temp_subaddr,temp_command,temp_bufLen,temp_buf);
-    sendBlueFlag = 0;
-    USBSerial.println("---- Blue Sent");
-  }
-  */
-  /*
-  int x = 0;
-  x = NodeBlue.getPacket();
-  if ( x > 0)
-  USBSerial.println(x);
-  /*
-   while(USBSerial.available() > 0) // Don't read unless
-   {
-       inChar1 = USBSerial.read(); // Read a character
-       delay(10);
-       altSerial.print(inChar1);  //print to bluetooth
-       USBSerial.print("Sent ");
-       USBSerial.println(inChar1);
-   }
-   while(altSerial.available() > 0) // Don't read unless
-   {
-       inChar2 = altSerial.read(); // Read a character from bluetooth
-      // altSerial.print(inChar2);
-      delay(10);
-       //digitalWrite(28,HIGH);
-   
-       altSerial.print(inChar2);  //print to bluetooth
-       //digitalWrite(28, LOW);
-       inData[index] = inChar2;
-       index++;
 
-   }
-   */
    if ((millis()-time) > 500)
    {   
      for (int i = 0; i < index; i++)
@@ -410,7 +350,7 @@ void loop() {
 void pauseProgram() {
      // pause program
   Camera.stop();
-  Motor.stop();
+  stopAllMotors();
   running = false;
 }
 
@@ -423,14 +363,21 @@ void stopProgram(boolean force_clear) {
   if( force_clear == true ) {
     run_time     = 0;
     camera_fired = 0;
-    mtpc_start   = false;
+	for( int i = 0; i < 3; i++){
+		motor[i].mtpc_start = false;
+	}
+
   }
 
   running      = false;
   
     // clear out motor moved data
-    // and stop motor  
-  Motor.clear();
+    // and stop motor 
+	for( int i = 0; i < 3; i++){
+		  motor[i].clear();
+	}
+	
+
   Camera.stop();
 }
 
@@ -469,53 +416,4 @@ void flasher(byte pin, int count) {
    
 }
 
-
-  // check for factory reset on startup
-void checkReset() {
-  
-  unsigned long rstTm = millis();
-  
-  while( digitalRead(PBT_PIN) == LOW ) {
-    digitalWrite(DEBUG_PIN, HIGH);
-    
-    unsigned long newTm = millis();
-    
-    if( newTm - rstTm > START_RST_TM ) {
-        // set eeprom back to defaults
-      OMEEPROM::saved(false);
-      digitalWrite(DEBUG_PIN, LOW);
-        // indicate memory reset by flashing shutter 10 times
-      flasher(CAM1_SHT_PIN, START_FLASH_CNT * 2);
-      
-      break;
-    }
-    
-  }
-
-  digitalWrite(DEBUG_PIN, LOW);
-}
-
-void setBlueFlag( byte addr, byte subaddr, byte command, byte bufLen, byte*buf ){
-  
-  sendBlueFlag = true;
-  temp_addr = addr;
-  temp_subaddr = subaddr;
-  temp_command = command;
-  temp_bufLen = bufLen;
-  temp_buf = buf;
-  
-  
-}
-
-void setSerialFlag( byte addr, byte subaddr, byte command, byte bufLen, byte*buf ){
-  
-  sendSerialFlag = true;
-  temp_addr = addr;
-  temp_subaddr = subaddr;
-  temp_command = command;
-  temp_bufLen = bufLen;
-  temp_buf = buf;
-  
-  
-}
 

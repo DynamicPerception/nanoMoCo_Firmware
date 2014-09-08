@@ -102,26 +102,7 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   */
 
 void serNotUsNode1Handler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
-  /*
-  USBSerial.print("Packet sent out is ");
-  USBSerial.print(addr);
-  USBSerial.print("  ");
-  USBSerial.print(subaddr);
-  USBSerial.print("  ");
-  USBSerial.print(command);
-  USBSerial.print("  ");
-  USBSerial.print(bufLen);
-  USBSerial.print("  ");
-  
-  for (int i = 0; i < bufLen; i++)
-    USBSerial.println(buf[i]);
-    */
-  /*char message[512];
-  sprintf(message,"serNotUsNode1Handler: %p %d %d %d %d\n", &NodeBlue, addr, subaddr, command, bufLen);
-  
-  USBSerial.print(message);
-  */
-  //delay(10);
+
   NodeBlue.sendPacket(addr,subaddr,command,bufLen,buf);
 }
 
@@ -133,22 +114,8 @@ void serNotUsNode1Handler(byte addr, byte subaddr, byte command, byte bufLen, by
   */
 
 void serNotUsNodeBlueHandler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
-  /*char message[512];
-  sprintf(message,"serNotUsNode1Handler: %p %d %d %d %d\n", &Node, addr, subaddr, command, bufLen);
-  USBSerial.print(message);*/
-  /*USBSerial.print("Packet sent out is ");
-  USBSerial.print(addr);
-  USBSerial.print("  ");
-  USBSerial.print(subaddr);
-  USBSerial.print("  ");
-  USBSerial.print(command);
-  USBSerial.print("  ");
-  USBSerial.print(bufLen);
-  USBSerial.print("  ");
-  for (int i = 0; i < bufLen; i++)
-    USBSerial.println(buf[i]);
-  */
-//  delay(10);
+  
+
   Node.sendPacket(addr,subaddr,command,bufLen,buf);
 }
     
@@ -163,25 +130,25 @@ void serNotUsNodeBlueHandler(byte addr, byte subaddr, byte command, byte bufLen,
   
 void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
- switch(command) {   
-   case 2:
+ switch(subaddr) {   
+   case 0:
            // program control
-         serProgramAction(buf);
+         serMain(command, buf);
          break;
-
+   case 1:
+   case 2:
    case 3:
-           // data setting
-        serProgramData(buf);
-        break;
-        
-       
-   default :
-           // anything else is an error
-       if (node == 2)
-         NodeBlue.response(false);
-       else
-         Node.response(false);
-       break;
+         //serial motor commands
+         serMotor(subaddr, command, buf);
+         break;
+   case 4:
+   case 5:
+         //serial camera commands
+         serCamera(subaddr, command, buf);
+         break;
+   default:
+         response(false);
+         break;
  }
 
 }
@@ -203,718 +170,553 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
     case OM_BCAST_PAUSE:
       pauseProgram();
       break;
+	  
+	  //resets controller to default address/name, flashes the debug LED 10 times to indicate restart required      
+    case OM_BCAST_SET_ADDRESS:
+      OMEEPROM::saved(false);
+	  flasher(DEBUG_PIN, 10);
+      break;
       
     default:
       break;
   }
   
 }
-  
-void serProgramData(byte* input_serial_buffer) {
 
-    // used for serial response
-  boolean fail = false;
+
+/*=========================================
+              Main Functions
+=========================================== */
+
+
+void serMain(byte command, byte* input_serial_buffer) {
   
-    // look for a sub-command in the first byte of the
-    // data
+  switch(command) {
     
-  if( input_serial_buffer[0] == 1 ) {
-       fail = serProgramCamera(input_serial_buffer);
-  } 
-  else if( input_serial_buffer[0] == 2 ) {
-      fail = serProgramMotor(input_serial_buffer); 
-  }
-  
-  // send serial response  
- if( fail ) {
-   if (node == 2)
-     NodeBlue.response(false);
-   else
-     Node.response(false);
- }
- else {
-   if (node == 2)
-     NodeBlue.response(true);
-   else
-     Node.response(true);
- }
- 
-}
-           
-                 
-  
-void serProgramAction(byte* input_serial_buffer) {
-
-  // used for serial response
-  boolean fail = false;
-  
-  byte subcom = input_serial_buffer[0];
-  input_serial_buffer++;
-  
-   switch( subcom ) {
-
-           case 0:
-                   // noop
-                 break;
-                 
-           case 1: 
-           
-                  startProgram();
-                  break;
-           
-           case 2: 
-
-                  pauseProgram();
-                  break;
-                  
-            case 3:
-                  stopProgram();
-                  break;
-
-            case 4:
-            
-                   // camera on
-                   
-                   // we use our own variable, instead of the Camera object
-                   // to block all camera actions without affecting manual camera shots
-                  camera_on = true;
-                  break;
-
-            case 5:
-            
-                   // camera off
-                  camera_on = false;
-                  break;
-
-            case 6:
-      
-                   // move motor now
-                   
-                   {
-                      // how many steps to take
-                    
-                    byte dir = input_serial_buffer[0];
-                    input_serial_buffer++;
-                    
-                    unsigned int steps   = Node.ntoul(input_serial_buffer);
-
-                     // move
-                    Motor.move( dir, steps ); 
-                   }
-                   
-                   break;
-
-            case 7:
-            
-                  // send a motor home
-                  
-                  Motor.home();
-                  break;
-
-           case 8:
-
-                  // take a photo now
-                
-               Camera.expose( Node.ntoul(input_serial_buffer) );
-               break;    
-
-           case 9:
-           
-               // motor kill enable/disable
-               
-               Motor.sleep( input_serial_buffer[0] );
-               break;
-
-           case 10:
-               //motor maximum step rate
-               
-               Motor.maxStepRate( Node.ntoui(input_serial_buffer) );
-               break;
-
-           case 11:
-               //motor maximum step speed
-               
-               Motor.maxSpeed( Node.ntoui(input_serial_buffer) );
-               break;
-
-              // note gap from removed commands
-               
-           case 15:
-               // set debug led state (on/off)
-               
-               debug_led_enable = input_serial_buffer[0];
-               
-                 // turn off led in case it was on an on cycle
-               if( ! debug_led_enable )
-                 debugOff();
-               else
-                 debugOn();
-                 
-               break;
-               
-           case 16:
-           
-             // stop motor now
-              Motor.stop();
-             break;
-             
-           case 17:
-           
-             // set motor microstep (1,2,4,8,16)
-              Motor.ms( input_serial_buffer[0] );
-             break;
-           
-           case 18:
-           
-             // set timing master
-             ComMgr.master(input_serial_buffer[0]);                           
-             break;
-           
-           case 19:
-         
-             // move distance with specified arrival, accel, and decel times
-           
-             serialComplexMove(input_serial_buffer);             
-             break;
-             
-           case 20:
-           
-             // plan a move to occur across a specified number of shots in SMS mode
-             serialComplexPlan(input_serial_buffer);
-             break;
-             
-           case 21:
-             // clear current plan (also clears motor history, except distance from home!)
-             
-             Motor.clear();
-             mtpc = false;
-             mt_plan = false;
-             break;
-             
-           case 22:
-             // max run time
-             max_time = Node.ntoul(input_serial_buffer);
-             break;
-             
-           case 23:
-             // store device name
-             
-             // I am not the trusting type, so we'll scan the buffer rather than
-             // assume that it is a null-terminated string...
-             
-             {
-               memset(device_name, 0, 16);
-               
-               for(byte i = 0; i <= 15; i++) {
-                if( input_serial_buffer[i] != 0 ) 
-                   device_name[i] = input_serial_buffer[i];
-               }
-             }
-             
-               // save to eeprom
-               
-             OMEEPROM::write(EE_NAME, *device_name, 16);
-               
-             break;
-             
-           case 24: 
-             // set common line for step pulsing
-             
-             if( input_serial_buffer[0] > 2 ) {
-               fail = true;
-             }
-             else {
-               if( input_serial_buffer[0] == 0 )
-                 ComMgr.stopWatch();
-               else
-                 ComMgr.watch(input_serial_buffer[0]);
-             }
-             
-             break;
-             
-           case 25: 
-             // set autpause (only if using planned moves)
-             
-             if( ! mt_plan )
-               fail = true;
-             else
-               control_autoPause = input_serial_buffer[0];
-               
-             break;
-                  
-           case 26:
-             // step forward one interleaved (sms) plan cycle
-       
-             if( ! mt_plan ) {
-               fail = true;
-             }
-             else {
-                 // dig this?  We advance one frame by simply turning on autopausing
-                 // and then playing.  This is a convienence function for clients, 
-                 // rather than forcing them to run both commands.
-               
-                 // go ahead and make sure we fire immediately
-               camera_tm = millis() - camera_delay;
-               
-               control_autoPause = true;
-               startProgram();
-             }
-     
-             break;
-             
-           case 27:
-             // step back one interleaved (sms) plan cycle
-           
-               // return an error if we don't actually have a planned move
-             if( ! mt_plan )
-               fail = true;
-             else {
-               if( motor_delay > 0 && camera_fired < motor_delay ) {
-                   // do not reverse the plan, the motor isn't supposed to move here
-               }
-               else {
-                   // rollback one shot in the program
-                   if( camera_fired > 0 )
-                     camera_fired--;
-                     
-                   Motor.planReverse();
-               }
-               
-                 // need to decrease run time counter
-               {
-                 unsigned long delayTime = ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
-                 
-                 if( run_time >= delayTime )
-                   run_time -= delayTime;
-                 else
-                   run_time = 0;
-               }
-               
-             } // end else (mt_plan
-               
-             break;
-             
-           case 28:
-           //Flashes debug pin to identify controller 
-             
-             flasher(AEN_PIN, 4);
-             break;
-             
-             
-           case 100:
-
-              // handling status requests
-
-              serStatusRequest(input_serial_buffer);
-                // the above function handles all serial
-                // response on success and failure -- return out of
-                // this function before getting to the default response
-                // handling below                
-              return;
-              
-           default: 
-           
-                  fail = true;
-                  break;
-         }
-
-  // send serial response  
- if( fail ) {
-   if (node == 2)
-      NodeBlue.response(false);
-   else
-     Node.response(false);
- }
- else {
-   if (node == 2)
-     NodeBlue.response(true);
-   else
-     Node.response(true);
- }
-
- 
- return;
-}
-
-
-boolean serProgramCamera(byte* input_serial_buffer) {
-  
-  boolean fail = false;
-  byte subcom = input_serial_buffer[1];
-  
-  input_serial_buffer += 2;
-  
-     switch( subcom ) {
-     
-       case 1:
-               // interval
-             camera_delay = Node.ntoul(input_serial_buffer);
-             break;
-             
-       case 2:
-       
-             Camera.exposeTime( Node.ntoul(input_serial_buffer) );
-             break;
-             
-       case 3: 
-       
-             Camera.focusTime( Node.ntoui(input_serial_buffer) );               
-             break;
-             
-       case 4:
-       
-             camera_max_shots  = Node.ntoui(input_serial_buffer);
-             break;
-
-       case 5:
-
-             Camera.waitTime( Node.ntoui(input_serial_buffer) );
-             break;
-             
-       case 6:
-       
-               // set focus w. shutter
-             Camera.exposureFocus((boolean) input_serial_buffer[0]);             
-             break;
-
-       case 7:
-
-              // camera cycle repeat count
-              
-             camera_repeat = input_serial_buffer[0];
- 
-             break;
-             
-           
-       default:
-       
-             fail = true;
-             break;
-   } // end camera control switch
-       
- return(fail);
- 
-}
-
-boolean serProgramMotor(byte* input_serial_buffer) {
-
-  boolean fail = false;
-  byte subcom = input_serial_buffer[1];
-  input_serial_buffer += 2;
-
-    // determine which motor setting is requested
-    
-  switch( subcom ) {      
-
-      case 1:
-      
-          Motor.steps( Node.ntoui(input_serial_buffer) );
-          break;
-          
-      case 2:
-      
-            // was set ramp, remove later
-          fail = true;
-          break;
-          
-      case 3:
-      
-          Motor.dir( input_serial_buffer[0] );
-          break;
-
-      case 4:
-      
-          Motor.maxSteps( Node.ntoul(input_serial_buffer) );
-          
-          break;
-          
-      case 5:
-                        
-          Motor.enable(true);
-          break;
-          
-      case 6:
-      
-          Motor.enable(false);
-          break;
-          
-      case 7:
-      
-          Motor.homeSet();
-          break;
-
-      case 8:
-
-           Motor.backlash(input_serial_buffer[0]);
-           break;
-           
-      case 9:
-
-          Motor.contSpeed(Node.ntof(input_serial_buffer));
-          break;
-      
-      case 10:
-      
-          if( input_serial_buffer[0] == 1 )
-            Motor.easing(OM_MOT_LINEAR);
-          else if( input_serial_buffer[0] == 2 )
-            Motor.easing(OM_MOT_QUAD);
-          else if( input_serial_buffer[0] == 3 )
-            Motor.easing(OM_MOT_QUADINV);
-          else
-            fail = true;
-          
-          break;
-          
-      case 11:
-      
-          Motor.continuous( input_serial_buffer[0] );             
-          break;
-                       
-      case 12:
-        
-          // delay motor start
-          
-          motor_delay = Node.ntoul(input_serial_buffer);
-          break;
-
-
-      default:
-        
-          fail = true;
-          break;
-          
-  } // end motor control code switch statement
-
- return(fail);
-} 
-
-
-
-
-
-void serStatusRequest(byte* input_serial_buffer) {
-  
-  switch( input_serial_buffer[0] ) {
-
-    case 0:
-
-      // serial api version
-      if (node == 2)
-        NodeBlue.response( true, (byte) SERIAL_VERSION );
-      else
-        Node.response( true, (byte) SERIAL_VERSION );
-      
-      break;
-    
-    case 1:
-    
-      // program run status
-      if (node == 2)
-        NodeBlue.response( true, (byte) running );
-      else      
-        Node.response( true, (byte) running );
-      
-      break;
-      
+    //Command 2 starts program  
     case 2:
-    
-      // current run time
-      if (node == 2)
-        NodeBlue.response(true, run_time);
-      else  
-        Node.response(true, run_time);
-      
+      startProgram();
+      response(true);
       break;
-      
-
+    
+    //Command 3 pauses program  
     case 3:
-    
-      // camera enabled
-      
-      if (node == 2)
-        NodeBlue.response( true, (byte) camera_on );
-      else  
-        Node.response( true, (byte) camera_on );
-      
+      pauseProgram();
+      response(true);
       break;
-
+    
+    //Command 4 stops program  
     case 4:
-    
-      // current shot count
-      if (node == 2)
-        NodeBlue.response(true, camera_fired);
-      else  
-        Node.response(true, camera_fired);
-      
+      stopProgram();
+      response(true);
       break;
-      
+    
+    //Command 5 enables or disables the debug LED  
     case 5:
-    
-      // camera interval time
-      
-      if (node == 2)
-        NodeBlue.response(true, camera_delay);
-      else 
-        Node.response(true, camera_delay);
-      
-      break;
-      
-    case 6:                  
-    
-      // camera exposure time
-      if (node == 2)
-        NodeBlue.response(true, Camera.exposeTime());
-      else 
-        Node.response(true, Camera.exposeTime());
-      
-      break;
-      
-    case 7:                  
-      
-      // camera post time
-      
-      Node.response(true, Camera.waitTime());
-      
-      break;
-      
-    case 8:
-    
-      // camera currently exposing
-      
-      if (node == 2)
-        NodeBlue.response( true, (byte) Camera.busy() );
+      debug_led_enable = input_serial_buffer[0];
+               // turn off led in case it was on an on cycle
+      if( ! debug_led_enable )
+        debugOff();
       else
-        Node.response( true, (byte) Camera.busy() );
-      
-      break;
-
-    case 9:
-    
-      // motor enabled
-
-        // get motor status for given motor
-      if (node == 2)
-        NodeBlue.response( true, (byte) Motor.enable() );
-      else  
-        Node.response( true, (byte) Motor.enable() );
-      
-      break;
-
-    case 10:
-    
-      // motor dir
-      
-        // get motor dir for given motor
+        debugOn();
         
-      if (node == 2)
-        NodeBlue.response( true, (byte) Motor.dir() );
-      else 
-        Node.response( true, (byte) Motor.dir() );
-      
+      response(true);
       break;
-
-    case 11:
     
-      // motor steps moved
-     if (node == 2)
-       NodeBlue.response( true, Motor.stepsMoved() );
-     else 
-       Node.response( true, Motor.stepsMoved() );
+    //Command 6 sets the master timing  
+    case 6:
+      ComMgr.master(input_serial_buffer[0]);
+      response(true);      
       break;
-
-    case 12:
+      
     
-      // motor distance from home
-      
-      if (node == 2)
-        NodeBlue.response( true, Motor.homeDistance() );
-      else 
-        Node.response( true, Motor.homeDistance() );
-      
+    //Command 7 sets the max run time  
+    case 7:
+      max_time = Node.ntoul(input_serial_buffer);
+      response(true);
       break;
-
-
-    case 13:
+   
+    //Command 8 sets the name of the device  
+    case 8:
+      {  
+         memset(device_name, 0, 16);
+               
+           for(byte i = 0; i <= 15; i++) {
+             if( input_serial_buffer[i] != 0 ) 
+               device_name[i] = input_serial_buffer[i];
+           }
+      }             
       
-      if (node == 2)
-        NodeBlue.response(false);
-      else 
-        Node.response(false);    
-      break;                  
-
-    case 14:                
-
-      // motor max step
-      
-      if (node == 2)
-        NodeBlue.response( true, Motor.maxSteps() ); 
-      else 
-        Node.response( true, Motor.maxSteps() );      
-      break;
-
-    case 15:                
-
-      // motor ramp levels - removed from protocol for now  
-      if (node == 2)
-        NodeBlue.response(false);  
-      else     
-        Node.response(false);    
-      break;
-
-    case 16:                
-
-      // motor backlash
-      if (node == 2)
-        NodeBlue.response( true, Motor.backlash() );
-      else  
-        Node.response( true, Motor.backlash() );
-      break;
-
-    case 17:                
-
-      // motor steps between shots
-      
-      if (node == 2)
-        NodeBlue.response( true, Motor.steps() );  
-      else 
-        Node.response( true, Motor.steps() );      
+      // save to eeprom
+      OMEEPROM::write(EE_NAME, *device_name, 16);
+      response(true);
       break;
       
-      // note gap from removed status commands
-
-    case 22:
+    //Command 9 sets a common line for step pulsing  
+    case 9:
+      if( input_serial_buffer[0] > 2 ) {
+        response(false);
+      }
+      else {
+        if( input_serial_buffer[0] == 0 )
+          ComMgr.stopWatch();
+        else
+          ComMgr.watch(input_serial_buffer[0]);
+      }
+      response(true);
+      break;
+        
     
+    //*****************MAIN READ COMMANDS********************
+    
+    //Command 100 read firmware version
+    case 100:
+      // serial api version
+      response( true, (byte) SERIAL_VERSION );
+      
+      break;
+    
+    //Command 101 reads run status
+    case 101:
+      // program run status
+      response( true, (byte) running );
+      break;
+    
+    //Command 102 reads run time  
+    case 102:
+      // current run time
+      response(true, run_time);     
+      break;
+      
+    //Command 103 is camera(s) currently exposing?  
+    case 103:
+      // camera currently exposing
+      response( true, (byte) Camera.busy() );
+      break;
+      
+    //Command 104 reads master timing value  
+    case 104:
       // timing master    
-      if (node == 2)
-        NodeBlue.response( true, timing_master );   
-      else   
-        Node.response( true, timing_master );     
+      response( true, timing_master );
       break;
       
-    case 23:
-    
+    //Command 105 reads device name 
+    case 105:
       // device name
-      if (node == 2)
-        NodeBlue.response(true, (char*)device_name, 16);   
-      else       
-        Node.response(true, (char*)device_name, 16);
+      response(true, (char*)device_name, 16);
       break;
-      
-    default:
-      
-      if (node == 2)
-        NodeBlue.response(false);    
-      else  
-        Node.response(false);      
+            
+    //Error    
+    default: 
+      response(false);
       break;
-      
-  } // end switch for current status req type
-
-
+  }               
 }
 
-void serialComplexMove(byte* buf) {
+/*=========================================
+              Motor Functions
+=========================================== */
+
+
+void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
+  
+  
+    switch(command) {
+    
+    //Command 2 set motor enable  
+    case 2:
+      motor[subaddr-1].enable(input_serial_buffer[0]);
+      response(true);
+      break;
+    
+    //Command 3 set motor direction  
+    case 3:
+      motor[subaddr-1].dir( input_serial_buffer[0] );
+      response(true);
+      break;
+    
+    //Command 4 set motor's max step travel  
+    case 4:
+      motor[subaddr-1].maxSteps( Node.ntoul(input_serial_buffer) );
+      response(true);
+      break;
+      
+    //Command 5 set motor's home position here 
+    case 5:
+      motor[subaddr-1].homeSet();
+      response(true);
+      break;
+    
+    //Command 6 set motor's backlash amount  
+    case 6:
+      motor[subaddr-1].backlash(input_serial_buffer[0]);
+      response(true);
+      break;
+      
+    
+    //Command 7 set motor's continous speed 
+    case 7:
+      motor[subaddr-1].contSpeed(Node.ntof(input_serial_buffer));
+      response(true);
+      break;
+   
+    //Command 8 set motor's easing mode  
+    case 8:
+      if( input_serial_buffer[0] == 1 )
+        motor[subaddr-1].easing(OM_MOT_LINEAR);
+      else if( input_serial_buffer[0] == 2 )
+        motor[subaddr-1].easing(OM_MOT_QUAD);
+      else if( input_serial_buffer[0] == 3 )
+        motor[subaddr-1].easing(OM_MOT_QUADINV);
+      else
+        response(false);
+      response(true);
+      break;
+      
+    //Command 9 set motor's delay start time  
+    case 9:
+      motor[subaddr-1].motorDelay = Node.ntoul(input_serial_buffer);
+      response(true);
+      break;
+      
+    //Command 10 set motor's steps for each interval  
+    case 10:
+      motor[subaddr-1].steps( Node.ntoui(input_serial_buffer) );
+      response(true);
+      break;
+      
+    //Command 11 move motor simple  
+    case 11:
+	  
+          // how many steps to take
+        
+	  byte dir = input_serial_buffer[0];
+	  input_serial_buffer++;
+        
+	  unsigned int steps   = Node.ntoul(input_serial_buffer);
+
+		// move
+	  motor[subaddr-1].move( dir, steps ); 
+	  startISR();
+      
+      response(true);
+      break;
+    
+    //Command 12 move motor complex  
+    case 12:
+      // move distance with specified arrival, accel, and decel times
+      serialComplexMove(subaddr, input_serial_buffer);
+	  startISR();       
+      response(true);      
+      break;
+      
+    //Command 13 set plan travel for motor
+    case 13:
+      // plan a move to occur across a specified number of shots in SMS mode
+      serialComplexPlan(subaddr, input_serial_buffer);
+      response(true);
+      break;
+      
+    //Command 14 clear motor's planned travel
+    case 14:
+      // clear current plan (also clears motor history, except distance from home!)   
+      motor[subaddr-1].clear();
+      motor[subaddr-1].mtpc = false;
+      motor[subaddr-1].mt_plan = false;
+      response(true);
+      break;
+      
+    //Command 15 set the microstep for the motor
+    case 15:
+      // set motor microstep (1,2,4,8,16)
+      motor[subaddr-1].ms( input_serial_buffer[0] );
+      response(true);
+      break;
+      
+    //Command 16 send motor home
+    case 16:
+      // send a motor home
+      motor[subaddr-1].home();
+	  startISR();
+      response(true);
+      break;
+      
+    //Command 17 stops motor now
+    case 17:
+      // stop motor now
+      motor[subaddr-1].stop();
+      response(true);
+      break;
+
+	//Command 18 sets the autopause for SMS
+	case 18:
+		// set autpause (only if using planned moves)
+	  	
+		if( ! motor[subaddr-1].mt_plan )
+				response(false);
+		else{
+			motor[subaddr-1].autoPause = input_serial_buffer[0];
+			response(true);
+		}
+		break;
+	  	
+	//Command 19 steps forward one planned cycle for SMS
+	case 19:
+		// step forward one interleaved (sms) plan cycle
+	  	
+		if( ! motor[subaddr-1].mt_plan ) {
+			response(false);
+		}
+		else {
+			// dig this?  We advance one frame by simply turning on autopausing
+			// and then playing.  This is a convienence function for clients,
+			// rather than forcing them to run both commands.
+		  	
+			// go ahead and make sure we fire immediately
+			camera_tm = millis() - camera_delay;
+
+			motor[subaddr-1].autoPause = true;
+			startProgram();
+			response(true);
+		}
+	  	
+		break;
+	  	
+	//command 20 steps back one sms planed cycle
+	case 20:
+	// step back one interleaved (sms) plan cycle
+	  	
+	// return an error if we don't actually have a planned move
+		if( ! motor[subaddr-1].mt_plan )
+			response(false);
+		else {
+			if( motor[subaddr-1].motorDelay > 0 && camera_fired < motor[subaddr-1].motorDelay ) {
+				// do not reverse the plan, the motor isn't supposed to move here
+			}
+			else {
+				// rollback one shot in the program
+				if( camera_fired > 0 )
+					camera_fired--;
+			  	
+				motor[subaddr-1].planReverse();
+				startISR();
+			}
+		  	
+			// need to decrease run time counter
+			{
+				unsigned long delayTime = ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
+			  	
+				if( run_time >= delayTime )
+					run_time -= delayTime;
+				else
+					run_time = 0;
+			}
+			response(true);
+		  	
+		} // end else (mt_plan
+	  	
+		break;
+      
+    
+
+    
+    //*****************MOTOR READ COMMANDS********************
+    
+    //Command 100 reads motor enable status
+    case 100:
+      response( true, (byte) motor[subaddr-1].enable() );
+      break;
+    
+    //Command 101 reads motor's direction
+    case 101:
+      response( true, (byte) motor[subaddr-1].dir() );
+      break;
+    
+    //Command 102 gets max steps for the motor  
+    case 102:
+      response( true, motor[subaddr-1].maxSteps() );     
+      break;
+      
+    //Command 103 gets motor's steps moved
+    case 103:
+      response( true, motor[subaddr-1].stepsMoved() );
+      break;
+      
+    //Command 104 reads the backlash amount for the motor 
+    case 104:
+      response( true, motor[subaddr-1].backlash() );
+      break;
+      
+    //Command 105 reads the continuous speed for the motor
+    case 105:
+      response(true, motor[subaddr-1].contSpeed());
+      break;
+      
+    //Command 106 reads the easing algorithm
+    case 106:
+      response(true, motor[subaddr-1].easing());
+      break;
+      
+    //Command 107 reads the time delay for the motor start
+    case 107:
+      response(true, motor[subaddr-1].motorDelay);
+      break;
+      
+    //Command 108 reads the number of steps per interval for the motor
+    case 108:
+      response( true, motor[subaddr-1].steps() );
+      break;
+      
+    //Command 109 reads the steps from home for the motor
+    case 109:
+      response( true, motor[subaddr-1].homeDistance() );
+      break;
+      
+    //Command 110 reads the microstep setting of the motor
+    case 110:
+      response( true, motor[subaddr-1].ms() );
+      break;
+	  
+	//Command 111 reads the auto pause setting of the motor
+	case 111:
+	    response( true, motor[subaddr-1].autoPause );
+	    break;
+            
+    //Error    
+    default: 
+      response(false);
+      break;
+  } 
+  
+}
+
+/*=========================================
+              Camera Functions
+=========================================== */
+
+
+void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
+  
+  switch(command) {
+    
+    //Command 2 set camera enable  
+    case 2:
+      Camera.cameraEnable = input_serial_buffer[0];
+      response(true);
+      break;
+    
+    //Command 3 expose camera now 
+    case 3:
+      Camera.expose( Node.ntoul(input_serial_buffer) );
+      response(true);
+      break;
+    
+    //Command 4 set camera's exposure time  
+    case 4:
+      Camera.exposeTime( Node.ntoul(input_serial_buffer) );
+      response(true);
+      break;
+      
+    //Command 5 set camera's focus time
+    case 5:
+      Camera.focusTime( Node.ntoui(input_serial_buffer) ); 
+      response(true);
+      break;
+    
+    //Command 6 set camera's max shots 
+    case 6:
+      Camera.cameraMaxShots  = Node.ntoui(input_serial_buffer);
+      response(true);
+      break;
+
+    //Command 7 set camera's exposure delay
+    case 7:
+      Camera.waitTime( Node.ntoui(input_serial_buffer) );
+      response(true);
+      break;
+   
+    //Command 8 set camera's focus w shutter  
+    case 8:
+      Camera.exposureFocus((boolean) input_serial_buffer[0]);
+      break;
+      
+    //Command 9 repeat cycles
+    case 9:
+      Camera.cameraRepeat = input_serial_buffer[0];
+      response(true);
+      break;
+      
+    //Command 10 set camera's interval  
+    case 10:
+      Camera.cameraDelay = Node.ntoul(input_serial_buffer);
+      response(true);
+      break;
+    
+    
+    //*****************CAMERA READ COMMANDS********************
+    
+    //Command 100 gets camera's enable status
+    case 100:
+      response( true, (byte) Camera.cameraEnable );
+      break;
+    
+    //Command 101 gets if it's exposing now or not
+    case 101:
+      response( true, (byte) Camera.busy() );
+      break;
+    
+    //Command 102 gets the camera's exposure time
+    case 102:
+      response(true, Camera.exposeTime());   
+      break;
+      
+    //Command 103 gets the camera's focus time
+    case 103:
+      response( true, Camera.focusTime() );
+      break;
+      
+    //Command 104 gets the camera's max shots
+    case 104:
+      response( true, Camera.cameraMaxShots );
+      break;
+      
+    //Command 105 gets the camera's exposure delay
+    case 105:
+      response(true, Camera.waitTime());
+      break;
+      
+    //Command 106 gets the focus with shutter status
+    case 106:
+      response(true, Camera.exposureFocus());
+      break;
+      
+    //Command 107 gets the repeat cycles count
+    case 107:
+      response(true, Camera.cameraRepeat);
+      break;
+      
+    //Command 108 gets the camera's interval time
+    case 108:
+      response(true, Camera.cameraDelay);
+      break;
+      
+            
+    //Error    
+    default: 
+      response(false);
+      break;
+  }
+  
+}
+
+
+           
+             
+           
+             
+
+
+void serialComplexMove(byte subaddr, byte* buf) {
    byte dir = buf[0];
    buf++;
    
@@ -929,11 +731,11 @@ void serialComplexMove(byte* buf) {
    
    unsigned long decel  = Node.ntoul(buf);
 
-   Motor.move(dir, dist, arrive, accel, decel); 
+   motor[subaddr-1].move(dir, dist, arrive, accel, decel); 
 }
 
 
-void serialComplexPlan(byte* buf) {
+void serialComplexPlan(byte subaddr, byte* buf) {
   
    byte dir = buf[0];
      // continuous or sms? 0 = continuous, 1 = sms
@@ -954,28 +756,28 @@ void serialComplexPlan(byte* buf) {
  
    if( which ) {
        // planned SMS move
-     Motor.plan(shots, dir, steps, accel, decel);
-     mt_plan = true;
+     motor[subaddr-1].plan(shots, dir, steps, accel, decel);
+     motor[subaddr-1].mt_plan = true;
        // always override shots here - we don't want to try to move further than planned, or waste time
        // camera_max_shots = shots;
-     mtpc = false;
+     motor[subaddr-1].mtpc = false;
    }
    else {
        // planned continuous move
-     mtpc = true;
-     mt_plan = false;
-     mtpc_dir   = dir;
-     mtpc_accel = accel;
-     mtpc_decel = decel;
-     mtpc_arrive = shots;
-     mtpc_steps  = steps;
+     motor[subaddr-1].mtpc = true;
+     motor[subaddr-1].mt_plan = false;
+     motor[subaddr-1].mtpc_dir   = dir;
+     motor[subaddr-1].mtpc_accel = accel;
+     motor[subaddr-1].mtpc_decel = decel;
+     motor[subaddr-1].mtpc_arrive = shots;
+     motor[subaddr-1].mtpc_steps  = steps;
    }
 }
 
-/*
+
 /*=========================================
           Node Response Functions
-===========================================
+===========================================*/
 
 void response(bool p_stat){
   if (node == 2)
@@ -985,55 +787,55 @@ void response(bool p_stat){
 } 
 
 void response(bool p_stat, uint8_t p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, unsigned int p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, int p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, unsigned long p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, long p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, float p_resp){
-    if (node == 2)
+  if (node == 2)
     NodeBlue.response(p_stat, p_resp);    
   else  
     Node.response(p_stat, p_resp); 
 }
 
 void response(bool p_stat, char* p_resp, int p_len){
-    if (node == 2)
-    NodeBlue.response(p_stat, p_resp, p_le);    
+  if (node == 2)
+    NodeBlue.response(p_stat, p_resp, p_len);    
   else  
-    Node.response(p_stat, p_resp, p_le); 
+    Node.response(p_stat, p_resp, p_len); 
 }
 
-*/
+
 
 
 
