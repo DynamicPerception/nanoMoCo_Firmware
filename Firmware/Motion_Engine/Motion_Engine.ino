@@ -196,7 +196,9 @@ OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION,
 
 
 void setup() {
- /* 
+
+   altSerial.begin(9600);
+	/*
   USBSerial.begin(9600);
   delay(100);
   
@@ -291,7 +293,7 @@ void loop() {
   Node.check();
   NodeBlue.check();
 /*
-   if ((millis()-time) > 500)
+   if ((millis()-time) > 500)   
    {   
 	   if (USBSerial.available()){
 		   	 motor[1].maxStepRate(2000);
