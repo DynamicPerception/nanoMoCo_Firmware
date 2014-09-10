@@ -30,10 +30,6 @@ See www.openmoco.org for more information
 
 void(*f_motSignal)(uint8_t) = 0;
 
-unsigned long m_asyncSteps = 0;
-float m_contSpd = 100.0;
-unsigned int m_curSampleRate = 200;
-unsigned int m_cyclesPerSpline = 5;
 char byteFired = 0;
 
 
@@ -143,39 +139,31 @@ void _fireCallback(uint8_t p_Param) {
  The rate specified as a number of steps per second (5000, 4000, 2000, or 1000)
  */
 
-void maxStepRate( unsigned int p_Rate ) {
+bool maxStepRate( unsigned int p_Rate ) {
 
 
 	if(  p_Rate != 10000 && p_Rate != 5000 && p_Rate != 4000 && p_Rate != 2000 && p_Rate != 1000 )
-		return;
+		return(false);
 
 
     motor[0].maxStepRate(p_Rate);
     motor[1].maxStepRate(p_Rate);
     motor[2].maxStepRate(p_Rate);
-
-
-		// convert from steps per second, to uSecond periods
-	m_curSampleRate = 1000000 / (unsigned long) p_Rate;
-
-		// timeslices are in 1mS, so how many
-		// stepping samples are there for one 1mS?  This is what
-		// limits us to a minimum of 500 steps per second rate
-
-	m_cyclesPerSpline = 1000 / m_curSampleRate;
+	return(true);
 
 }
 
 /** Get Maximum Stepping Rate
 
- Returns the current maximum stepping rate in steps per second.
+ Returns the current maximum stepping rate in steps per second. m_curSampleRate is a static variable, therefore
+ we can grab it from any of the motors.
 
  @return
  Maximum rate in steps per second
  */
 
 unsigned int maxStepRate() {
-	return( (long) 1000000 / (long) m_curSampleRate );
+	return( motor[0].maxStepRate() );
 }
 
 
@@ -236,7 +224,7 @@ void startISR() {
 	 if( !ISR_On ) {
            
            _fireCallback(OM_MOT_MOVING);
-    	   Timer1.initialize(m_curSampleRate);
+    	   Timer1.initialize(motor[0].curSamplePeriod());
            Timer1.attachInterrupt(_runISR);
            ISR_On = true;
 	 } // end if not running
@@ -249,29 +237,28 @@ void startISR() {
 
 void _runISR() {
     
-    byteFired = (1 << PORTF7);
-    
+    //steps all motors at once    
   
     PORTF |= byteFired;
-    delayMicroseconds(2);
+    delayMicroseconds(1);
     PORTF &= ~byteFired;
-    
-    //byteFired = 0;
+	
+	//resets the byteFired flag
+	byteFired = 0;
 
-    for(int i = 0; i<2; i++){
+    for(int i = 0; i<3; i++){
 
         if(motor[i].running()){
           
           motor[i].checkRefresh();
           if (motor[i].checkStep()){
-            //byteFired |= (1 << motor[i].stpflg);
+            byteFired |= (1 << motor[i].stpflg);
           }
 
         } // end if( motor[i].m_isRun
     } // end for loop
 
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
-      USBSerial.println("stopping all");
         stopAllMotors();
     }
 

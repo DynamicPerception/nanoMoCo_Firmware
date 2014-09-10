@@ -142,7 +142,6 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
          serMotor(subaddr, command, buf);
          break;
    case 4:
-   case 5:
          //serial camera commands
          serCamera(subaddr, command, buf);
          break;
@@ -251,9 +250,22 @@ void serMain(byte command, byte* input_serial_buffer) {
       OMEEPROM::write(EE_NAME, *device_name, 16);
       response(true);
       break;
+	  
+	//Command 9 sets new address for device
+	case 9:
+	  if ( input_serial_buffer[0] < 2 || input_serial_buffer[0] > 255) {
+		  response(false);
+	  } else {
+		  device_address= input_serial_buffer[0];
+		  Node.address(device_address);
+		  NodeBlue.address(device_address);
+		  OMEEPROM::write(EE_ADDR, device_address);
+		  response(true);
+	  }
+	  break;
       
-    //Command 9 sets a common line for step pulsing  
-    case 9:
+    //Command 10 sets a common line for step pulsing  
+    case 10:
       if( input_serial_buffer[0] > 2 ) {
         response(false);
       }
@@ -265,6 +277,30 @@ void serMain(byte command, byte* input_serial_buffer) {
       }
       response(true);
       break;
+	  
+	//Command 11 send all motors home
+	case 11:
+		// send a motor home
+		motor[0].home();
+		motor[1].home();
+		motor[2].home();
+		startISR();
+		response(true);
+		break;
+		
+	//Command 12 set the max step rate of the motor
+	case 12:
+		response(maxStepRate( Node.ntoui(input_serial_buffer) ));
+		break;
+		
+	//Command 13 sets motors' continuous mode
+	case 13:
+		motor[0].continuous( input_serial_buffer[0] );
+		motor[1].continuous( input_serial_buffer[0] );
+		motor[2].continuous( input_serial_buffer[0] );
+		response(true);
+		break;
+
         
     
     //*****************MAIN READ COMMANDS********************
@@ -305,7 +341,36 @@ void serMain(byte command, byte* input_serial_buffer) {
       // device name
       response(true, (char*)device_name, 16);
       break;
-            
+    
+	//Command 106 reads max step rate for the motors, can pull from any motor        
+    case 106:
+		response(true, motor[0].maxStepRate());
+		break;
+		
+	//Command 107 reads voltage in
+	case 107:
+	{
+		int voltage=analogRead(VOLTAGE_PIN);
+		float converted = (float)voltage/1023*25;
+		response(true, converted);
+		break;
+	}
+		
+	//Command 108 reads current to the motors
+	case 108:
+	{
+		int current = analogRead(CURRENT_PIN);
+		float converted = (float)current/1023*5;
+		response(true, converted);
+		break;
+	}
+		
+	//Command 109 reads motors' continous mode setting
+	case 109:
+		response(true, motor[0].continuous());
+		break;
+
+	
     //Error    
     default: 
       response(false);
@@ -387,6 +452,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 11 move motor simple  
     case 11:
+    {
 	  
           // how many steps to take
         
@@ -401,6 +467,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       
       response(true);
       break;
+    }
     
     //Command 12 move motor complex  
     case 12:
@@ -432,24 +499,36 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       motor[subaddr-1].ms( input_serial_buffer[0] );
       response(true);
       break;
+	
+	//Command 16 set the sleep mode of the motor
+	case 16:
+      motor[subaddr-1].sleep( input_serial_buffer[0] );
+	  response(true);
+	  break;
+	
+	//Command 17 set the max step speed of the motor
+	case 17:
+	  motor[subaddr-1].maxSpeed( Node.ntoui(input_serial_buffer));
+	  response(true);
+	  break;
       
-    //Command 16 send motor home
-    case 16:
+    //Command 18 send motor home
+    case 18:
       // send a motor home
       motor[subaddr-1].home();
 	  startISR();
       response(true);
       break;
       
-    //Command 17 stops motor now
-    case 17:
+    //Command 19 stops motor now
+    case 19:
       // stop motor now
       motor[subaddr-1].stop();
       response(true);
       break;
 
-	//Command 18 sets the autopause for SMS
-	case 18:
+	//Command 20 sets the autopause for SMS
+	case 20:
 		// set autpause (only if using planned moves)
 	  	
 		if( ! motor[subaddr-1].mt_plan )
@@ -460,8 +539,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		}
 		break;
 	  	
-	//Command 19 steps forward one planned cycle for SMS
-	case 19:
+	//Command 21 steps forward one planned cycle for SMS
+	case 21:
 		// step forward one interleaved (sms) plan cycle
 	  	
 		if( ! motor[subaddr-1].mt_plan ) {
@@ -473,7 +552,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			// rather than forcing them to run both commands.
 		  	
 			// go ahead and make sure we fire immediately
-			camera_tm = millis() - camera_delay;
+			camera_tm = millis() - Camera.delay;
 
 			motor[subaddr-1].autoPause = true;
 			startProgram();
@@ -482,8 +561,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	  	
 		break;
 	  	
-	//command 20 steps back one sms planed cycle
-	case 20:
+	//command 22 steps back one sms planed cycle
+	case 22:
 	// step back one interleaved (sms) plan cycle
 	  	
 	// return an error if we don't actually have a planned move
@@ -504,7 +583,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		  	
 			// need to decrease run time counter
 			{
-				unsigned long delayTime = ( camera_delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? camera_delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
+				unsigned long delayTime = ( Camera.delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? Camera.delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
 			  	
 				if( run_time >= delayTime )
 					run_time -= delayTime;
@@ -581,6 +660,11 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 111:
 	    response( true, motor[subaddr-1].autoPause );
 	    break;
+		
+	//Command 112 reads max speed of the motor
+	case 112:
+		response( true, motor[subaddr-1].maxSpeed() );
+		break;
             
     //Error    
     default: 
@@ -601,7 +685,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 2 set camera enable  
     case 2:
-      Camera.cameraEnable = input_serial_buffer[0];
+      Camera.enable = input_serial_buffer[0];
       response(true);
       break;
     
@@ -625,7 +709,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 6 set camera's max shots 
     case 6:
-      Camera.cameraMaxShots  = Node.ntoui(input_serial_buffer);
+      Camera.maxShots  = Node.ntoui(input_serial_buffer);
       response(true);
       break;
 
@@ -642,13 +726,13 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 9 repeat cycles
     case 9:
-      Camera.cameraRepeat = input_serial_buffer[0];
+      Camera.repeat = input_serial_buffer[0];
       response(true);
       break;
       
     //Command 10 set camera's interval  
     case 10:
-      Camera.cameraDelay = Node.ntoul(input_serial_buffer);
+      Camera.delay = Node.ntoul(input_serial_buffer);
       response(true);
       break;
     
@@ -657,7 +741,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 100 gets camera's enable status
     case 100:
-      response( true, (byte) Camera.cameraEnable );
+      response( true, (byte) Camera.enable );
       break;
     
     //Command 101 gets if it's exposing now or not
@@ -677,7 +761,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 104 gets the camera's max shots
     case 104:
-      response( true, Camera.cameraMaxShots );
+      response( true, Camera.maxShots );
       break;
       
     //Command 105 gets the camera's exposure delay
@@ -692,12 +776,12 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 107 gets the repeat cycles count
     case 107:
-      response(true, Camera.cameraRepeat);
+      response(true, Camera.repeat);
       break;
       
     //Command 108 gets the camera's interval time
     case 108:
-      response(true, Camera.cameraDelay);
+      response(true, Camera.delay);
       break;
       
             

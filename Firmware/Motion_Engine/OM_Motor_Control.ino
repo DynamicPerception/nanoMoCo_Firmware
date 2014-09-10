@@ -39,6 +39,7 @@ const byte MT_COM_DIR2 = 100;
 
 
 void move_motor() {
+	USBSerial.println("move motor");
 
     // do we revert back to "ready" or "waiting" if there
     // is nothing to do, or block for? - Based on master/slave status
@@ -52,40 +53,40 @@ void move_motor() {
    }
    
    for(int i = 0; i < 3; i++){
-	   
-	   if( motor[i].continuous() ) {
-		   // continuous motion mode
-		   if( ! motor[i].running() ) {
-			   motor[i].move( motor[i].dir(), 0 );
+	   //only check the motors that are enable
+	   if( motor[i].enable()){
+		   if( motor[i].continuous() ) {
+			   // continuous motion mode
+			   if( ! motor[i].running() ) {
+				   motor[i].move( motor[i].dir(), 0 );
+			   }
+			   Engine.state(continue_state);
 		   }
-		   Engine.state(continue_state);
-	   }
-	   else if( motor[i].mt_plan == true ) {
-		   // planned SMS move
-		   motor[i].planRun();
-		   // block camera while motor is moving
-		   Engine.state(ST_RUN);
-	   }
-	   else if( motor[i].mtpc == true ) {
-		   // planned continuous move
-		   if( motor[i].mtpc_start == false ) {
-			   // a planned continuous move has not been started...
-			   motor[i].mtpc_start = true;
-			   motor[i].move(motor[i].mtpc_dir, motor[i].mtpc_steps, motor[i].mtpc_arrive, motor[i].mtpc_accel, motor[i].mtpc_decel);
+		   else if( motor[i].mt_plan == true ) {
+			   // planned SMS move
+			   motor[i].planRun();
+			   // block camera while motor is moving
+			   Engine.state(ST_RUN);
 		   }
-		   Engine.state(continue_state);
-	   }
-	   else if( motor[i].steps() == 0 ) {
-		   // not a planned move and nothing to do
-		   Engine.state(continue_state);
-	   }
-	   else if (motor[i].enable()){
-		   // move using Motor.steps() and Motor.dir()
-		   motor[i].move();
-		   // we need to block the camera while the motor is running
-		   Engine.state(ST_RUN);
-	   } else {
-		   //check next motor without doing anything to this motor
+		   else if( motor[i].mtpc == true ) {
+			   // planned continuous move
+			   if( motor[i].mtpc_start == false ) {
+				   // a planned continuous move has not been started...
+				   motor[i].mtpc_start = true;
+				   motor[i].move(motor[i].mtpc_dir, motor[i].mtpc_steps, motor[i].mtpc_arrive, motor[i].mtpc_accel, motor[i].mtpc_decel);
+			   }
+			   Engine.state(continue_state);
+		   }
+		   else if( motor[i].steps() == 0 ) {
+			   // not a planned move and nothing to do
+			   Engine.state(continue_state);
+		   }
+		   else {
+			   // move using Motor.steps() and Motor.dir()
+			   motor[i].move();
+			   // we need to block the camera while the motor is running
+			   Engine.state(ST_RUN);
+		   } 
 	   }
 
    }

@@ -35,9 +35,6 @@ See dynamicperception.com for more information
 
 
 unsigned long  camera_tm         = 0;
-unsigned long  camera_delay      = 1;
-boolean        camera_on         = false;
-boolean        control_autoPause = false;
 
 
 void setupControlCycle() {
@@ -54,7 +51,7 @@ void setupControlCycle() {
 void cycleCamera() {
 
     // stop program if max shots exceeded    
-  if( camera_max_shots > 0  && camera_fired >= camera_max_shots ) {
+  if( Camera.maxShots > 0  && camera_fired >= Camera.maxShots ) {
            // stop program running w/o clearing variables
       stopProgram(false);
       return;
@@ -64,16 +61,17 @@ void cycleCamera() {
 
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
+
   
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= camera_delay  ) {
-    
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.delay  ) {
     
             // skip camera actions if camera disabled  
-      if( ! camera_on ) {
+      if( ! Camera.enable ) {
         Engine.state(ST_MOVE);
         camera_tm = millis();  
         return;
       }
+	  
 
       // trigger focus, if needed, which will set off the chain of
       // callback executions that will walk us through the complete exposure cycle.
@@ -95,6 +93,7 @@ void cycleCamera() {
 void cycleClearToMove() {
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();
+	   USBSerial.println("Check to move motor");
        
        // do not move if a motor delay is programmed...
 	   for(int i = 0; i < 3; i++){
@@ -119,7 +118,6 @@ void cycleCheckMotor() {
         return;
 	 }
 
-
     // no longer running, ok to fire camera
 
     
@@ -128,7 +126,7 @@ void cycleCheckMotor() {
       Engine.state(ST_CLEAR);    
         
         // if autopause is enabled then pause upon completion of movement
-      if( control_autoPause == true ) {
+      if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
             pauseProgram();
       }
     }

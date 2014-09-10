@@ -32,7 +32,7 @@ See dynamicperception.com for more information
 #include <AltSoftSerial.h>
 
   // openmoco standard libraries
-#include <OMComHandler_AT90USB.h>
+#include <OMComHandler.h>
 #include <OMMotorMaster.h>
 #include <OMMotorFunctions.h>
 #include <OMState.h>
@@ -60,13 +60,16 @@ const byte CAM_DEFAULT_EXP      = 120;
 const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
-const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
+const unsigned int MOT_DEFAULT_MAX_STEP  = 4000;
 const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
 
  // digital I/O line definitions
 
-const byte DE_PIN       = 28;//5;
-const byte DEBUG_PIN    = 12;//18;
+const byte DE_PIN					= 28;
+const byte DEBUG_PIN				= 12;
+const byte VOLTAGE_PIN				= 42;
+const byte CURRENT_PIN				= 41;
+const byte BLUETOOTH_ENABLE_PIN		= 0;
 
 
 
@@ -161,7 +164,7 @@ OMMotorFunctions motor[3] = {
  	OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG)};
 
 OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
-OMComHandler_AT90USB ComMgr = OMComHandler_AT90USB();
+OMComHandler ComMgr = OMComHandler();
     // there are 6 possible states in 
     // our engine (0-5)
 OMState      Engine = OMState(6);
@@ -181,15 +184,6 @@ int incomingByte = 0;
 AltSoftSerial altSerial;
 OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 
-const byte blueToothEnablePin = 0;
-char inData[255]; // Allocate some space for the string
-char inChar1; // Where to store the character read
-char inChar2; 
-byte index = 0; // Index into array; where to store the character
-int a = 50;
-int voltage =0;
-byte sendBlueFlag = false;
-byte sendSerialFlag = false;
 
 
 /* 
@@ -202,7 +196,7 @@ byte sendSerialFlag = false;
 
 
 void setup() {
-  
+ /* 
   USBSerial.begin(9600);
   delay(100);
   
@@ -210,13 +204,13 @@ void setup() {
   altSerial.println("Hello World");
   USBSerial.println("HI");
   time = millis();
-
+*/
 
   pinMode(DEBUG_PIN, OUTPUT);
-  pinMode(blueToothEnablePin, OUTPUT);
-  digitalWrite(blueToothEnablePin,HIGH);
-  pinMode(42, INPUT);
-  pinMode(41, INPUT);
+  pinMode(BLUETOOTH_ENABLE_PIN, OUTPUT);
+  digitalWrite(BLUETOOTH_ENABLE_PIN,HIGH);
+  pinMode(VOLTAGE_PIN, INPUT);
+  pinMode(CURRENT_PIN, INPUT);
 
     
   // restore/store eeprom memory
@@ -266,12 +260,12 @@ void setup() {
   
   // defaults for motor
  for( int i = 0; i < 3; i++){
-	  motor[i].enable(true);
+	  motor[i].enable(false);
 	  motor[i].continuous(false);
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].sleep(true);
-	  motor[i].ms(16);
+	  motor[i].ms(4);
 	 
  }
 
@@ -296,25 +290,31 @@ void loop() {
    // check to see if we have any commands waiting      
   Node.check();
   NodeBlue.check();
-
+/*
    if ((millis()-time) > 500)
    {   
-     for (int i = 0; i < index; i++)
-     {
-       //digitalWrite(28, HIGH);
-       //USBSerial.print(inData[i]);
-       //digitalWrite(28, LOW);
-     }
+	   if (USBSerial.available()){
+		   	 motor[1].maxStepRate(2000);
+	   }	 
      time = millis();
      //altSerial.print(j);
-     voltage=analogRead(42);  
-     a=analogRead(41);
+     int voltage=analogRead(VOLTAGE_PIN);  
+     int current=analogRead(CURRENT_PIN);
      USBSerial.print("Voltage is ");
      USBSerial.print((float)voltage/1023*5*5);
      USBSerial.print(" Current is ");
-     USBSerial.println((float)a/1023*5);
-     index = 0;
+     USBSerial.print((float)current/1023*5);
+	USBSerial.print(" curSamplePeriod(): ");
+	USBSerial.print(motor[2].curSamplePeriod());
+	USBSerial.print(" maxSpeed(): ");
+	USBSerial.print(motor[2].maxSpeed());
+	USBSerial.print(" dir(): ");
+	USBSerial.println(motor[2].dir());
+	//USBSerial.print(" maxsSpeed is: ");
+	//USBSerial.println(motor[0].maxSpeed());
+
    }
+   */
    
       // if our program is currently running...
       
@@ -360,6 +360,7 @@ void stopProgram(boolean force_clear) {
               
    // stop/clear program
    
+   stopAllMotors();
   if( force_clear == true ) {
     run_time     = 0;
     camera_fired = 0;

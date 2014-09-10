@@ -32,12 +32,7 @@ See dynamicperception.com for more information
   
 */
 
-  
-
- // necessary camera control variables
-
-unsigned int  camera_max_shots = 0;
-byte          camera_repeat    = 0;
+ 
 
 
 void camExpose() {
@@ -72,6 +67,7 @@ void camCallBack(byte code) {
   // function is called in an interrupt and can daisy-chain under certain configurations,
   // which can result in unexpected behavior
   
+  
   if( code == OM_CAM_FFIN ) {
     Engine.state(ST_EXP);
   }
@@ -95,12 +91,12 @@ void checkCameraRepeat() {
     
       // if we don't have camera repeat function enabled,
       // then go ahead and clear for a move
-    if( camera_repeat == 0 ) {
+    if( Camera.repeat == 0 ) {
       Engine.state(ST_MOVE);
       return;
     }
     
-   if( repdone >= camera_repeat ) {
+   if( repdone >= Camera.repeat ) {
        // we've done all of the repeat cycles
      repdone = 0;
        // clear for moving
