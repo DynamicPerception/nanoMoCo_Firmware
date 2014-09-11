@@ -172,8 +172,13 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	  
 	  //resets controller to default address/name, flashes the debug LED 10 times to indicate restart required      
     case OM_BCAST_SET_ADDRESS:
-      OMEEPROM::saved(false);
-	  flasher(DEBUG_PIN, 10);
+	  if (buf[0] <= 255 && buf[0] >= 2){
+		  	device_address = buf[0];
+			eepromWrite();
+			Node.address(device_address);
+			NodeBlue.address(device_address);
+			flasher(DEBUG_PIN, 5);	
+	  }
       break;
       
     default:
