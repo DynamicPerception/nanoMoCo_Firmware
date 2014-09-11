@@ -843,7 +843,7 @@ void serialComplexPlan(byte subaddr, byte* buf) {
      motor[subaddr-1].plan(shots, dir, steps, accel, decel);
      motor[subaddr-1].mt_plan = true;
        // always override shots here - we don't want to try to move further than planned, or waste time
-       // camera_max_shots = shots;
+     Camera.maxShots = shots;
      motor[subaddr-1].mtpc = false;
    }
    else {
