@@ -30,7 +30,7 @@ See www.openmoco.org for more information
 
 void(*f_motSignal)(uint8_t) = 0;
 
-char byteFired = 0;
+
 
 
 
@@ -236,32 +236,40 @@ void startISR() {
  // of the motor
 
 void _runISR() {
-    
-    //steps all motors at once    
-  
+	
+	//PORTF |= (1 << motor[2].stpflg);
+	//delayMicroseconds(1);
+	
+	
+    //steps all motors at once   
+	for(int i = 0; i<3; i++){
+		if(motor[i].running()){				    
+			motor[i].checkRefresh();
+			if (motor[i].checkStep()){
+				byteFired |= (1 << motor[i].stpflg);
+			}
+		} // end if( motor[i].m_isRun
+
+	} // end for loop		
+		
+	
+	//byteFired |= (1 << motor[0].stpflg);
     PORTF |= byteFired;
     delayMicroseconds(1);
     PORTF &= ~byteFired;
 	
+
+	
 	//resets the byteFired flag
 	byteFired = 0;
+	
 
-    for(int i = 0; i<3; i++){
-
-        if(motor[i].running()){
-          
-          motor[i].checkRefresh();
-          if (motor[i].checkStep()){
-            byteFired |= (1 << motor[i].stpflg);
-          }
-
-        } // end if( motor[i].m_isRun
-    } // end for loop
 
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
         stopAllMotors();
     }
 
+	//PORTF &= ~(1 << motor[2].stpflg);
 
 }
 

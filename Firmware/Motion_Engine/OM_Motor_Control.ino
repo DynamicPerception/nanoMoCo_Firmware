@@ -39,7 +39,6 @@ const byte MT_COM_DIR2 = 100;
 
 
 void move_motor() {
-	USBSerial.println("move motor");
 
     // do we revert back to "ready" or "waiting" if there
     // is nothing to do, or block for? - Based on master/slave status

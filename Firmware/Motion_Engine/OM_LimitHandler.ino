@@ -25,50 +25,283 @@ See dynamicperception.com for more information
 */
 
 
-// These defines are used for the Limit Switch Pin Change Registers
+// debounce threshold time
+const int ALT_TRIG_THRESH  = 750;
+  
 
-// // for port PCINT32/PD7/AIN1
-//#define LIMIT_ENABLE  PCIE2
-//#define LIMIT_MASK    PCMSK2
-//#define LIMIT_INT     PCINT23
-//#define LIMIT_VECT    PCINT2_vect
-//#define LIMIT_PREG    PIND
-//#define LIMIT_PIN     PIND7
-//
-//
-//volatile byte ls_pc_hist = 0xFF;
-//
-//void limitSwitch(bool p_enable) {
-//
-//    // limit switch is hard-defined to PBT_PIN, which is digital 7, or PCINT23
-//    
-//    if( p_enable ) {
-//      
-//      attachInterrupt(LIMIT_PIN, ISR(), CHANGE);
-//      
-//      PCICR |= (1 << LIMIT_ENABLE);
-//      LIMIT_MASK |= (1 << LIMIT_INT);
-//    }
-//    else {
-//      PCICR ^= (1 << LIMIT_ENABLE);
-//      LIMIT_MASK ^= (1 << LIMIT_INT);
-//    }
-//      
-//  
-//}
-//
-//
-// // Our ISR for the pin change
-// 
-//ISR(LIMIT_VECT) {
-//
-//    // if we've just switched low (pin was previouslty high, and our current state is LOW)
-//  if( ! ( LIMIT_PREG & (1 << LIMIT_PIN))  && (ls_pc_hist & (1 << LIMIT_PIN) ) ) {
-//    force_stop = true;
-//    digitalWrite(DEBUG_PIN, HIGH);
-//  }
-//    
-//  ls_pc_hist = LIMIT_PREG;
-//    
-//}
+
+
+//Limit switch inputs (0 = detached, 1 = attached RISING, 2 = attached FALLING, 3 = attached CHANGE)
+byte					 ring = 0;
+byte					  tip = 0;
+
+//Pins for the I/O
+const byte           AUX_RING = 24;				//PD0
+const byte            AUX_TIP = 25;				//PD1
+
+
+
+//timer for the I/O interrupt
+unsigned long trigLast = millis();
+
+
+
+void limitSwitchAttach(byte p_altDirection) { 
+	
+	
+	switch(p_altDirection){
+		case 0: 
+			altDirection = RISING;
+			break;
+		case 1:
+			altDirection = FALLING;
+			break;
+		case 2:
+			altDirection = CHANGE;
+			break;
+		default:
+			break;
+	}
+}
+
+
+ /** Alt I/O Setup 
+ 
+*/
+void altSetup() {
+  altConnect(0 ,  altInputs[0]);
+  altConnect(1,  altInputs[1]); 
+
+    // check if any inputs are set to ext intervalometer
+  boolean doExt = false;
+  
+  for( byte i = 0; i < 2; i++ )
+    if( altInputs[i] == ALT_EXTINT )
+      doExt = true;
+      
+  altExtInt = doExt;
+  
+}
+
+/** Handler For Alt I/O Action Trigger
+
+ Given a particular Alt I/O line being triggered in input mode, this function
+ debounces and executes any required action for an Alt I/O line.
+ 
+ @param p_which
+ The I/O line that triggered, 0 or 1.
+ 
+ @author
+ C. A. Church
+ */
+
+void altHandler(byte p_which) {
+    
+  if((millis() - trigLast) >= ALT_TRIG_THRESH ) {
+    
+    trigLast = millis();
+	USBSerial.print("In altHandler loop with p_which");
+	USBSerial.println(p_which);
+    
+    if( altInputs[p_which] == ALT_START) 
+        startProgram();
+    else if( altInputs[p_which] == ALT_STOP_MOTORS && running == true)
+		stopAllMotors();
+    else if( altInputs[p_which] == ALT_STOP)
+        stopProgram();
+    else if( altInputs[p_which] == ALT_TOGGLE) {
+        if( running )
+          stopProgram();
+        else
+          startProgram();
+    }
+    else if( altInputs[p_which] == ALT_EXTINT ) {
+          // set camera ok to fire
+        altForceShot = true;
+          // do not clear the state, as we may be in the middle of a move
+          // when a trigger is received! (or some other activity, for that matter)
+        // Engine.state(ST_CLEAR);
+    }
+    else if( altInputs[p_which] == ALT_DIR) {
+        motor[0].dir( !motor[0].dir() );
+		motor[1].dir( !motor[1].dir() );
+		motor[2].dir( !motor[2].dir() );
+	} else if (altInputs[p_which] == ALT_SET_HOME){
+		stopAllMotors();
+		motor[0].homeSet();
+		motor[1].homeSet();
+		motor[2].homeSet();
+	} else if (altInputs[p_which] == ALT_SET_END){
+		stopAllMotors();
+		motor[0].maxSteps(abs(motor[0].homeDistance()));
+		motor[1].maxSteps(abs(motor[1].homeDistance()));
+		motor[2].maxSteps(abs(motor[2].homeDistance()));
+	}
+        
+  } //end if millis...
+}
+
+/** Handler for ISR One */ 
+void altISROne() {
+	USBSerial.println("Interrupt one!!!");
+  altHandler(0);
+}
+
+/** Handler for ISR Two */
+void altISRTwo() {
+	USBSerial.println("Interrupt two!!!");
+  altHandler(1);
+}
+
+/** Connect (or Disconnect) an Alt I/O Line
+
+ This function attches or detaches the required interrupt
+ given an I/O line and a mode.
+ 
+ @param p_which
+ Which I/O, 0 or 1
+ 
+ @param p_mode
+ A valid altMode 
+ 
+ @author
+ C. A. Church
+ */
+
+void altConnect(byte p_which, byte p_mode) {
+  
+  
+	altInputs[p_which] = p_mode;
+	//sets the pin affected
+	byte pin = AUX_RING;
+	if (p_which == 1)
+		pin = AUX_TIP;
+  
+	if( p_which == 0) {
+		detachInterrupt(2);
+	} else if ( p_which == 1) {
+		detachInterrupt(3);
+	} 
+
+	// disable the input?
+ 
+	if( p_mode == ALT_OFF ) {
+		pinMode(pin, INPUT);
+		return;
+	}
+  
+	// only attach interrupts for input modes
+	if( p_mode != ALT_OUT_BEFORE && p_mode != ALT_OUT_AFTER ) {
+		// set pin as input
+		pinMode(pin, INPUT);
+		// enable pull-up resistor
+		digitalWrite(pin, HIGH);
+  
+		// regarding 6 and 7 below - don't ask me.. ask who ever did that wierd order in WInterrupts.c
+		switch( p_which ) {
+				USBSerial.print("p_which in attaching interrupts is: ");
+				USBSerial.println(p_which);
+			case 0: //sets interrupt attached to ring
+				attachInterrupt(2, altISROne, altDirection);
+				break;
+			case 1:	//sets interrupt attached to tip
+				attachInterrupt(3, altISRTwo, altDirection);
+				break;
+		}
+	} else {
+    
+		// it's an output mode
+    
+		pinMode(pin, OUTPUT);
+		digitalWrite(pin, ! altOutTrig);
+    
+	}
+ 
+  
+}    
+  
+ 
+/** Trigger Outputs
+
+ Triggers all configured outputs for the given mode, for the given length
+ of time.  Blocks state engine while output is triggered, and registers callback
+ to bring output down.
+ 
+ @param p_mode
+ Either ALT_TRIG_A or ALT_TRIG_B, specifying after or before types
+ 
+ @author
+ C. A. Church
+ 
+ */
+ 
+
+void altOutStart(byte p_mode) {
+  
+  boolean altStarted = false;
+  
+  unsigned int adelay = p_mode == ALT_OUT_BEFORE ? altBeforeMs  : altAfterMs;
+  
+  for(byte i = 0; i < 2; i++) {
+       if( p_mode == altInputs[i]) {
+         
+           // note that alt 3 is on a different register..
+          if( i == 0 )
+            digitalWrite(AUX_RING, altOutTrig); 
+          else
+            digitalWrite(AUX_TIP, altOutTrig);
+            
+          altStarted = true;
+       }
+  }
+    
+  if( altStarted ) {
+    MsTimer2::set(adelay, altOutStop);
+    MsTimer2::start();
+    Engine.state(ST_BLOCK);
+  }
+  else if( p_mode == ALT_OUT_BEFORE ) {
+	  //clear to shoot
+    Engine.state(ST_CLEAR);
+  }
+  else {
+      // clear to move
+    Engine.state(ST_MOVE);
+  }
+  
+}
+
+/** Bring Down any Triggered Outputs 
+
+ @author 
+ C. A. Church
+ */
+ 
+void altOutStop() {
+ 
+  MsTimer2::stop();
+  
+   
+  for(byte i = 0; i < 2; i++) {
+       if( ALT_OUT_BEFORE == altInputs[i] || ALT_OUT_AFTER == altInputs[i] ) {
+           // note that alt 3 is on a different register..
+          if( i == 0 )
+            digitalWrite(AUX_RING, ! altOutTrig); 
+          else
+            digitalWrite(AUX_TIP, ! altOutTrig);
+       }
+  }
+  
+  // set correct state to either clear to fire, or clear to move
+  
+  if( altBlock == ALT_OUT_BEFORE )
+  {
+    Engine.state(ST_CLEAR);
+  }
+  else
+  {
+    Engine.state(ST_MOVE);
+  }
+    
+}
 

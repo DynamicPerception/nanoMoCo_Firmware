@@ -47,7 +47,7 @@ See dynamicperception.com for more information
 const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-const byte SERIAL_VERSION = 5;
+const byte SERIAL_VERSION = 6;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
@@ -108,10 +108,14 @@ void stopProgram(boolean force_clear = true);
 
 unsigned long run_time    = 0;
 unsigned long last_time   = 0;
-
-
 boolean running = false;
 volatile byte force_stop = false;
+
+//Variables for manual move, if manualMove is true the system expects a command at least once
+//every manualMoveTimeMax (mS), if it doesn't receive a command it'll stop the motors
+boolean manualMove = false;
+const int manualMoveTimeMax = 1000;
+unsigned long commandTime = 0;
 
   // do we generate timing for all devices on the network?
   // i.e. -are we the timing master?
@@ -145,6 +149,7 @@ byte node =1;
   ST_RUN   - motor is currently running
   ST_EXP   - clear to expose camera (or not...)
   ST_WAIT  - in camera wait 
+  ST_ALTP  - check for alt output post 
   
  */
  
@@ -154,7 +159,8 @@ const byte ST_MOVE  = 2;
 const byte ST_RUN   = 3;
 const byte ST_EXP   = 4;
 const byte ST_WAIT  = 5;
-unsigned long time = 0;
+const byte ST_ALTP  = 6;
+unsigned long time  = 0;
 
  // initialize core objects
 OMCamera     Camera = OMCamera();
@@ -167,9 +173,42 @@ OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*
 OMComHandler ComMgr = OMComHandler();
     // there are 6 possible states in 
     // our engine (0-5)
-OMState      Engine = OMState(6);
+OMState      Engine = OMState(7);
 
 int incomingByte = 0;
+
+/* 
+
+ =========================================
+ Aux I/O Variables
+ =========================================
+ 
+*/
+
+// I/O modes
+const byte         ALT_OFF = 0;		//Turns off the I/O
+const byte       ALT_START = 1;		//INPUT  - starts program
+const byte        ALT_STOP = 2;		//INPUT  - stops program
+const byte      ALT_TOGGLE = 3;		//INPUT  - starts the program if it's stop, stops the program if it's running
+const byte      ALT_EXTINT = 4;		//INPUT  - external interrupt that triggers the camera to shoot
+const byte         ALT_DIR = 5;		//INPUT  - switch the direction of the motors
+const byte  ALT_OUT_BEFORE = 6;		//OUTPUT - triggers output before camera shot
+const byte   ALT_OUT_AFTER = 7;		//OUTPUT - triggers output after camera shot
+const byte ALT_STOP_MOTORS = 8;		//INPUT  - stops the motors, lets the camera run if it's not done
+const byte	  ALT_SET_HOME = 9;		//INPUT  - sets the motor's home position
+const byte	   ALT_SET_END = 10;	//INPUT  - sets the motor's end position
+
+// These defines are used for the Limit Switch Pin Change Registers
+
+byte            altInputs[] = { ALT_OFF, ALT_OFF };
+unsigned int altBeforeDelay = 100;
+unsigned int  altAfterDelay = 100;
+unsigned int    altBeforeMs = 1000;
+unsigned int     altAfterMs = 1000;
+boolean        altForceShot = false;
+boolean           altExtInt = false;
+byte           altDirection = FALLING;
+byte             altOutTrig = HIGH;
 
 
 /* 
@@ -184,7 +223,8 @@ int incomingByte = 0;
 AltSoftSerial altSerial;
 OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 
-
+int timeStart = 0;
+int timeEnd = 0;
 
 /* 
 
@@ -195,10 +235,13 @@ OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION,
 */
 
 
+boolean stepReady = false;
+char byteFired = 0;
+
 void setup() {
 
-   altSerial.begin(9600);
-	/*
+   //altSerial.begin(9600);
+	
   USBSerial.begin(9600);
   delay(100);
   
@@ -206,7 +249,7 @@ void setup() {
   altSerial.println("Hello World");
   USBSerial.println("HI");
   time = millis();
-*/
+
 
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(BLUETOOTH_ENABLE_PIN, OUTPUT);
@@ -277,6 +320,7 @@ void setup() {
  
   // startup LED signal
  flasher(DEBUG_PIN, START_FLASH_CNT);
+ //startISR();
 
  
   
@@ -287,12 +331,15 @@ void setup() {
 
 
 void loop() {
+	
+	if(USBSerial.available())
+		incomingByte = 1;
   
 
    // check to see if we have any commands waiting      
   Node.check();
   NodeBlue.check();
-/*
+
    if ((millis()-time) > 500)   
    {   
 	   if (USBSerial.available()){
@@ -302,25 +349,46 @@ void loop() {
      //altSerial.print(j);
      int voltage=analogRead(VOLTAGE_PIN);  
      int current=analogRead(CURRENT_PIN);
-     USBSerial.print("Voltage is ");
-     USBSerial.print((float)voltage/1023*5*5);
-     USBSerial.print(" Current is ");
-     USBSerial.print((float)current/1023*5);
-	USBSerial.print(" curSamplePeriod(): ");
-	USBSerial.print(motor[2].curSamplePeriod());
-	USBSerial.print(" maxSpeed(): ");
-	USBSerial.print(motor[2].maxSpeed());
-	USBSerial.print(" dir(): ");
-	USBSerial.println(motor[2].dir());
+     USBSerial.print("start time is ");
+     USBSerial.print(timeStart);
+     USBSerial.print(" end time is ");
+     USBSerial.print(timeEnd);
+	USBSerial.print(" auxInput[0]: ");
+	USBSerial.print(altInputs[0]);
+	USBSerial.print(" auxInput[1]: ");
+	USBSerial.print(altInputs[1]);
+	USBSerial.print(" altExtInt: ");
+	USBSerial.println(altExtInt);
 	//USBSerial.print(" maxsSpeed is: ");
 	//USBSerial.println(motor[0].maxSpeed());
 
    }
-   */
    
-      // if our program is currently running...
+
+	//Check to see if manual move is on and motors are moving
+	//must see a command from the master every second or it'll stop
+	if ((motor[0].running() || motor[1].running() || motor[2].running()) && manualMove){
+		if(millis() - commandTime > manualMoveTimeMax) {
+			stopAllMotors();
+		}
+	}
+   
       
+	  	   
+	for(int i = 0; i<3; i++){
+		if(motor[i].running()){
+			motor[i].updateSpline();
+		}// end if( motor[i].m_isRun
+	} // end for loop
+	  	   
+	  
+	  
+	  
+	// if our program is currently running...      
    if( running ) {
+	   
+
+
      
             // update run timer
      unsigned long cur_time = millis();  
@@ -376,9 +444,7 @@ void stopProgram(boolean force_clear) {
   
     // clear out motor moved data
     // and stop motor 
-	for( int i = 0; i < 3; i++){
-		  motor[i].clear();
-	}
+	clearAll();
 	
 
   Camera.stop();

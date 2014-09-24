@@ -35,6 +35,7 @@ See dynamicperception.com for more information
 
 
 unsigned long  camera_tm         = 0;
+byte altBlock = 0;
 
 
 void setupControlCycle() {
@@ -44,6 +45,7 @@ void setupControlCycle() {
  Engine.setHandler(ST_RUN, cycleCheckMotor);
  Engine.setHandler(ST_EXP, camExpose);
  Engine.setHandler(ST_WAIT, camWait);
+ Engine.setHandler(ST_ALTP, cycleCheckAltPost);
 }
 
 
@@ -57,12 +59,23 @@ void cycleCamera() {
       return;
   }
   
-
-
+	// if in external interval mode, don't do anything is a force shot isn't
+	// registered
+    
+	if( altExtInt && ! altForceShot )
+		return;
+		
+	// trigger any outputs that need to go before the exposure
+	if( (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) ) {
+		altBlock = ALT_OUT_BEFORE;
+		altOutStart(ALT_OUT_BEFORE);
+		return;
+	}
+	
+	
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  
   if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.delay  ) {
     
             // skip camera actions if camera disabled  
@@ -80,8 +93,9 @@ void cycleCamera() {
     
     if( ! Camera.busy() ) {
         // only execute cycle if the camera is not currently busy
-        
       Engine.state(ST_BLOCK);
+	  altBlock = ALT_OFF;
+	  altForceShot = false;
       camera_tm = millis();  
       Camera.focus();
     } 
@@ -90,10 +104,59 @@ void cycleCamera() {
   
 }
 
+/** OK To Start a Shot Sequence?
+
+ Checks whether or not a shot sequence (or pre-shot alt out trigger) is ok to execute.
+ 
+ @param p_prealt
+ Whether to check for a pre-shot alt out trigger (true) or normal shot sequence (false)
+ 
+ @return
+ True if good to go, false otherwise
+ 
+ @author
+ C. A. Church
+ */
+ 
+boolean cycleShotOK(boolean p_prealt) {
+  
+
+    // if we're in alt i/o as external intervalometer mode...
+	  if( altExtInt ) {
+			// don't do a pre-output clearance if alt_block is true...
+		  if( p_prealt && altBlock )
+			return false;
+        
+			// determine whether or not to fire based on alt_force_shot
+		  if( altForceShot == true )
+			 return true;
+		  else
+			 return false;
+	  }
+  
+	// pre--output clearance check
+	if(altBeforeDelay >= Camera.delay && !altBlock){  //Camera.delay is less than the altBeforeDelay, go as fast as possible
+		return true;
+	} else if( (millis() - camera_tm) >= (Camera.delay - altBeforeDelay)  && ! altBlock )
+		return true;
+
+  
+	return false;
+  
+}
+
+/** Move Motors Callback Handler
+
+  Executes any required move
+  
+  @author
+  C. A. Church
+  */
+ 
+
 void cycleClearToMove() {
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();
-	   USBSerial.println("Check to move motor");
        
        // do not move if a motor delay is programmed...
 	   for(int i = 0; i < 3; i++){
@@ -107,6 +170,20 @@ void cycleClearToMove() {
          // ok to run motors, if needed
       move_motor(); 
 }
+
+
+/** Check Motor Status Callback Handler
+
+ This callback handler handles the ST_RUN state.  
+ 
+ If continuous motion is requested, sets back to clear to fire state, no matter if motors
+ are running.
+ 
+ If interleaved (SMS) motion is requested, blocks fire state until all movement is complete.
+ 
+ @author
+ C. A. Church
+ */
 
 
 void cycleCheckMotor() {
@@ -134,6 +211,38 @@ void cycleCheckMotor() {
         // we are a slave - block until next slaveClear signal
       Engine.state(ST_BLOCK);
      }
+}
+
+
+/** Check Alt Output Post Trigger
+
+ This callback handler handle the ST_ALTP state.
+ 
+ If one or more I/Os are configured as post-exposure outputs, this state
+ will cause a (non-blocking) run delay for the specified output delay time, and then
+ trigger the outputs to fire.
+ 
+ @author
+ C. A. Church
+ */
+
+void cycleCheckAltPost() {
+  
+  static unsigned long alt_tm = millis();
+  
+    // no output after set, move on to move...
+  if( ! (ALT_OUT_AFTER == altInputs[0] || ALT_OUT_AFTER == altInputs[1]))
+  {
+    Engine.state(ST_MOVE);
+  } else if(  ! altBlock ) {		//output after is set but hasn't been initiated yet 
+    altBlock = ALT_OUT_AFTER;
+    alt_tm = millis();
+  }
+  else if( ( millis() - alt_tm ) > altAfterDelay ) {	//output after is set and enough time has pass to initiate it
+    altBlock = ALT_OFF;
+    altOutStart(ALT_OUT_AFTER);
+  }
+  
 }
 
 

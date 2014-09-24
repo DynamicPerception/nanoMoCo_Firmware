@@ -79,7 +79,18 @@ See dynamicperception.com for more information
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
+  commandTime = millis();
   serCommandHandler(subaddr, command, buf);
+  USBSerial.print("Sub addr is: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" length: ");
+  USBSerial.print(buf[0]);
+  USBSerial.print(" data: ");
+  for (int i = 0; i <= buf[0]; i++){
+	  USBSerial.print(buf[i+1]);
+  }
 }
 
 /* Handles Node 2 Commands
@@ -91,7 +102,19 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
+  commandTime = millis();
   serCommandHandler(subaddr, command, buf);
+    USBSerial.print("Sub addr is: ");
+    USBSerial.print(subaddr);
+    USBSerial.print(" command: ");
+    USBSerial.print(command);
+    USBSerial.print(" length: ");
+    USBSerial.print(NodeBlue.bufferLen());
+    USBSerial.print(" data: ");
+    for (int i = 0; i <= NodeBlue.bufferLen(); i++){
+	    USBSerial.print(buf[i]);
+		USBSerial.print(" ");
+    }
 }
 
 
@@ -305,7 +328,60 @@ void serMain(byte command, byte* input_serial_buffer) {
 		motor[2].continuous( input_serial_buffer[0] );
 		response(true);
 		break;
-
+	//Command 14 sets limit switch mode (0 - enable on RISING edge, 1 - enable on FALLING edge, 2 - enable on CHANGE edge)
+	case 14:
+		limitSwitchAttach(input_serial_buffer[0]);
+		altSetup();
+		response(true);
+		break;
+	//Command 15 sets aux I/O mode
+	case 15:
+		altConnect(0, input_serial_buffer[0]);
+		altConnect(1, input_serial_buffer[1]);
+		altSetup();
+		response(true);
+		break;
+	//Command 16 sets motors' manual move flag
+	case 16:
+	    manualMove = input_serial_buffer[0];
+		response(true);
+		break;
+	//Command 17 Set Alt Output Before Shot Delay
+	case 17:
+		altBeforeDelay = Node.ntoui(input_serial_buffer);
+		altSetup();
+		response(true);
+		break;
+	//Command 18 Set Alt Output After Shot Delay
+	case 18:
+		altAfterDelay = Node.ntoui(input_serial_buffer);
+		altSetup();
+		response(true);
+		break;
+	//Command 19 Set Alt Output Before Shot Time
+	case 19:
+		altBeforeMs = Node.ntoui(input_serial_buffer);
+		altSetup();
+		response(true);
+		break;
+	//Command 20 Set Alt Output After Shot Time
+	case 20:
+		altAfterMs = Node.ntoui(input_serial_buffer);
+		altSetup();
+		response(true);
+		break;
+		
+	//Command 21 Set Alt Output Trigger Level
+	case 21:
+		if (input_serial_buffer[0] == 1){
+			altOutTrig = HIGH;
+			response(true);
+		} else if (input_serial_buffer[0] == 0){
+			altOutTrig = LOW;
+			response(true);
+		} else
+			response(false);
+		break;
         
     
     //*****************MAIN READ COMMANDS********************
@@ -370,11 +446,49 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 		
-	//Command 109 reads motors' continous mode setting
+	//Command 109 reads motors' continuous mode setting
 	case 109:
 		response(true, motor[0].continuous());
 		break;
-
+		
+	//Command 110 reads limit switch input edge setting
+	case 110:
+		response(true, altDirection);
+		break;
+	
+	//Command 111 reads limit switch mode
+	case 111:
+		//response(true, altInputs[0], altInputs[1]);
+		break;
+	
+	//Command 112 reads limit switch status high or low (1 or 0)
+	case 112:
+		//response(true, digitalRead(AUX_RING), digitalRead(AUX_TIP));
+		break;
+	
+	//Command 113 reads Alt Output Before Shot Delay Time
+	case 113:
+		response(true, altBeforeDelay);
+		break;
+	
+	//Command 114 reads Alt Output After Shot Delay Time
+	case 114:
+		response(true, altAfterDelay);
+		break;
+	//Command 115 reads Alt Output Before Shot Time
+	case 115:
+		response(true, altBeforeMs);
+		break;
+	//Command 116 reads Alt Output After Shot Time
+	case 116:
+		response(true, altAfterMs);
+		break;
+		
+	//Command 117 reads Alt Output Trigger Level
+	case 117:
+		response(true, altOutTrig);
+		break;
+	
 	
     //Error    
     default: 
@@ -458,6 +572,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 11 move motor simple  
     case 11:
     {
+	  USBSerial.print("Simple move dir: ");
+	  USBSerial.print(input_serial_buffer[0]);
+	  USBSerial.print(" steps: ");
 	  
           // how many steps to take
         
@@ -465,6 +582,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	  input_serial_buffer++;
         
 	  unsigned int steps   = Node.ntoul(input_serial_buffer);
+	  USBSerial.println(steps);
 
 		// move
 	  motor[subaddr-1].move( dir, steps ); 
@@ -485,6 +603,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 13 set plan travel for motor
     case 13:
       // plan a move to occur across a specified number of shots in SMS mode
+	  USBSerial.println("Plan Travel!");
       serialComplexPlan(subaddr, input_serial_buffer);
       response(true);
       break;
