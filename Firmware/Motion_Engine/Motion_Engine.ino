@@ -122,6 +122,8 @@ unsigned long commandTime = 0;
 boolean timing_master = true;
 
 boolean debug_led_enable = false;
+boolean stepReady = false;
+char byteFired = 0;
 
 
 
@@ -177,6 +179,35 @@ OMState      Engine = OMState(7);
 
 int incomingByte = 0;
 
+
+/* 
+
+ =========================================
+ USB Serial Variables
+ =========================================
+ 
+*/
+
+OMMoCoNode   NodeUSB   = OMMoCoNode(&USBSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
+
+
+/* 
+
+ =========================================
+ Bluetooth Test Variables
+ =========================================
+ 
+*/
+
+
+AltSoftSerial altSerial;
+OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
+
+int timeStart = 0;
+int timeEnd = 0;
+
+
+
 /* 
 
  =========================================
@@ -214,29 +245,12 @@ byte             altOutTrig = HIGH;
 /* 
 
  =========================================
- Bluetooth Test Variables
- =========================================
- 
-*/
-
-
-AltSoftSerial altSerial;
-OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
-
-int timeStart = 0;
-int timeEnd = 0;
-
-/* 
-
- =========================================
  Setup and loop functions
  =========================================
  
 */
 
 
-boolean stepReady = false;
-char byteFired = 0;
 
 void setup() {
 
@@ -246,8 +260,6 @@ void setup() {
   delay(100);
   
   altSerial.begin(9600);
-  altSerial.println("Hello World");
-  USBSerial.println("HI");
   time = millis();
 
 
@@ -295,12 +307,23 @@ void setup() {
  NodeBlue.setBCastHandler(serBroadcastHandler);
  NodeBlue.setSoftSerial(true);
 
+
+  // setup MoCoBus Node object for USB Serial
+
+  NodeUSB.address(device_address);
+  NodeUSB.setHandler(serNodeUSBHandler);
+  NodeUSB.setNotUsHandler(serNotUsNodeUSBHandler);
+  NodeUSB.setBCastHandler(serBroadcastHandler);
+  NodeUSB.setSoftSerial(true);
+
  
  
   // Listen for address change
  Node.addressCallback(changeNodeAddr);
  
  NodeBlue.addressCallback(changeNodeAddr);
+ 
+ NodeUSB.addressCallback(changeNodeAddr);
  
   
   // defaults for motor
@@ -339,7 +362,8 @@ void loop() {
    // check to see if we have any commands waiting      
   Node.check();
   NodeBlue.check();
-
+  NodeUSB.check();
+/*
    if ((millis()-time) > 500)   
    {   
 	   if (USBSerial.available()){
@@ -363,7 +387,7 @@ void loop() {
 	//USBSerial.println(motor[0].maxSpeed());
 
    }
-   
+   */
 
 	//Check to see if manual move is on and motors are moving
 	//must see a command from the master every second or it'll stop

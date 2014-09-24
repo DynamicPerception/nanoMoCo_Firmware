@@ -81,6 +81,7 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
   commandTime = millis();
   serCommandHandler(subaddr, command, buf);
+  /*
   USBSerial.print("Sub addr is: ");
   USBSerial.print(subaddr);
   USBSerial.print(" command: ");
@@ -91,6 +92,7 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   for (int i = 0; i <= buf[0]; i++){
 	  USBSerial.print(buf[i+1]);
   }
+  */
 }
 
 /* Handles Node 2 Commands
@@ -118,6 +120,34 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
 }
 
 
+
+/* Handles Node USB Commands
+
+  only NodeUSB goes through this function, determines which node
+  to respond to
+
+  */
+
+void serNodeUSBHandler(byte subaddr, byte command, byte*buf) {
+  node = 3;
+  commandTime = millis();
+  serCommandHandler(subaddr, command, buf);
+  /*
+  USBSerial.print("Sub addr is: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" length: ");
+  USBSerial.print(buf[0]);
+  USBSerial.print(" data: ");
+  for (int i = 0; i <= buf[0]; i++){
+	  USBSerial.print(buf[i+1]);
+  }
+  */
+}
+
+
+
 /* Handles Node Packets not for this device
 
   only Node goes through this function, repeats the packet to NodeBlue
@@ -127,6 +157,7 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
 void serNotUsNode1Handler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
 
   NodeBlue.sendPacket(addr,subaddr,command,bufLen,buf);
+  NodeUSB.sendPacket(addr,subaddr,command,bufLen,buf);
 }
 
 
@@ -137,6 +168,19 @@ void serNotUsNode1Handler(byte addr, byte subaddr, byte command, byte bufLen, by
   */
 
 void serNotUsNodeBlueHandler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
+  
+
+  Node.sendPacket(addr,subaddr,command,bufLen,buf);
+}
+
+
+/* Handles Node USB Commands
+
+  only NodeUSB goes through this function, repeats the packet to Node1
+
+  */
+
+void serNotUsNodeUSBHandler(byte addr, byte subaddr, byte command, byte bufLen, byte*buf) {
   
 
   Node.sendPacket(addr,subaddr,command,bufLen,buf);
@@ -988,59 +1032,133 @@ void serialComplexPlan(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response(bool p_stat){
-  if (node == 2)
-    NodeBlue.response(p_stat);    
-  else  
-    Node.response(p_stat); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat);
+			break;
+		case 2:
+			NodeBlue.response(p_stat); 
+			break;
+		case 1:
+			Node.response(p_stat); 
+			break;
+		default:
+			break;
+	}
+    
 } 
 
 void response(bool p_stat, uint8_t p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp); 
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, unsigned int p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp);
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, int p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp);
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, unsigned long p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp);
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, long p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp);
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, float p_resp){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp);    
-  else  
-    Node.response(p_stat, p_resp); 
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp);
+			break;
+		case 1:
+			Node.response(p_stat, p_resp);
+			break;
+		default:
+			break;
+	}
 }
 
 void response(bool p_stat, char* p_resp, int p_len){
-  if (node == 2)
-    NodeBlue.response(p_stat, p_resp, p_len);    
-  else  
-    Node.response(p_stat, p_resp, p_len); 
+	
+	switch(node){
+		case 3:
+			NodeUSB.response(p_stat, p_resp, p_len);
+			break;
+		case 2:
+			NodeBlue.response(p_stat, p_resp, p_len);  
+			break;
+		case 1:
+			Node.response(p_stat, p_resp, p_len);
+			break;
+		default:
+			break;
+	}
 }
 
 
