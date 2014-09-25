@@ -106,6 +106,7 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
   serCommandHandler(subaddr, command, buf);
+  /*
     USBSerial.print("Sub addr is: ");
     USBSerial.print(subaddr);
     USBSerial.print(" command: ");
@@ -117,6 +118,7 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
 	    USBSerial.print(buf[i]);
 		USBSerial.print(" ");
     }
+	*/
 }
 
 
@@ -797,6 +799,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 105 reads the continuous speed for the motor
     case 105:
       response(true, motor[subaddr-1].contSpeed());
+	  USBSerial.println(motor[subaddr-1].contSpeed());
       break;
       
     //Command 106 reads the easing algorithm

@@ -60,7 +60,7 @@ const byte CAM_DEFAULT_EXP      = 120;
 const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
-const unsigned int MOT_DEFAULT_MAX_STEP  = 4000;
+const unsigned int MOT_DEFAULT_MAX_STEP  = 1000;
 const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
 
  // digital I/O line definitions
@@ -369,7 +369,15 @@ void loop() {
 	   if (USBSerial.available()){
 		   	 motor[1].maxStepRate(2000);
 	   }	 
-     time = millis();
+	 float a = 1.23456789;
+	 USBSerial.print("float is: ");
+	 USBSerial.print(a,8);
+	 USBSerial.print(" in hex it: ");
+	 USBSerial.println(a, HEX);
+	 time = millis();
+	}
+	 /*
+     
      //altSerial.print(j);
      int voltage=analogRead(VOLTAGE_PIN);  
      int current=analogRead(CURRENT_PIN);
