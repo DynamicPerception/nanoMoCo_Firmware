@@ -219,6 +219,9 @@ void clearAll() {
 
  // execute an async move, when specifying a direction
 void startISR() {
+	
+	USBSerial.print("Start time: ");
+	USBSerial.println(millis());
 
 	 // is async control not already running?
 	 if( !ISR_On ) {
@@ -267,6 +270,8 @@ void _runISR() {
 
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
         stopAllMotors();
+			USBSerial.print("End time: ");
+			USBSerial.println(millis());
     }
 
 	//PORTF &= ~(1 << motor[2].stpflg);

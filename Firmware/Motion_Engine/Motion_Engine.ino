@@ -139,6 +139,10 @@ unsigned int  camera_fired     = 0;
  // maximum run time
 unsigned long max_time = 0;
 
+// time delay for program starting
+unsigned long start_delay = 0;
+
+
  // default device name, exactly 15 characters + null terminator
 byte device_name[] = "DEFAULT        ";
 
@@ -366,17 +370,19 @@ void loop() {
   Node.check();
   NodeBlue.check();
   NodeUSB.check();
-/*
+
    if ((millis()-time) > 500)   
    {   
-	   if (USBSerial.available()){
-		   	 motor[1].maxStepRate(2000);
-	   }	 
-	 float a = 1.23456789;
-	 USBSerial.print("float is: ");
-	 USBSerial.print(a,8);
-	 USBSerial.print(" in hex it: ");
-	 USBSerial.println(a, HEX);
+	 static int a = 0;
+	 a = motor[0].stepsMoved();
+	 static int b = 0;
+	 USBSerial.print("Current Steps ");
+	 USBSerial.print(a);
+	 USBSerial.print(" Delay: ");
+	 USBSerial.print(run_time);
+	 USBSerial.print(" running ");
+	 USBSerial.println(motor[0].running());
+	 b = a;
 	 time = millis();
 	}
 	 /*
@@ -421,30 +427,28 @@ void loop() {
 	  
 	// if our program is currently running...      
    if( running ) {
-	   
 
+		// update run timer
+		unsigned long cur_time = millis();  
+		run_time += cur_time - last_time;
+		last_time = cur_time;
 
-     
-            // update run timer
-     unsigned long cur_time = millis();  
-     run_time += cur_time - last_time;
-     last_time = cur_time;
-
-      // Got an external stop somewhere, that wasn't a command?
-     if( force_stop == true )
-       stopProgram(false);
+		// Got an external stop somewhere, that wasn't a command?
+		if( force_stop == true )
+			stopProgram(false);
        
-       // hit max runtime? done!
-     if( ComMgr.master() && max_time > 0 && run_time > max_time )
-       stopProgram();
+		// hit max runtime? done!
+		if( ComMgr.master() && max_time > 0 && run_time > max_time )
+			stopProgram();
        
-       // if we're the slave and a interrupt has been triggered by the master,
-       // set to clear to fire mode (for multi-node sync)
-     if( ComMgr.master() == false && ComMgr.slaveClear() == true ) 
-       Engine.state(ST_CLEAR);
+		// if we're the slave and a interrupt has been triggered by the master,
+		// set to clear to fire mode (for multi-node sync)
+		if( ComMgr.master() == false && ComMgr.slaveClear() == true ) 
+			Engine.state(ST_CLEAR);
      
-       // check current engine state and handle appropriately
-     Engine.checkCycle();
+		// if the start delay is done then check current engine state and handle appropriately
+		if(run_time >= start_delay)			
+			Engine.checkCycle();
    }
 
  

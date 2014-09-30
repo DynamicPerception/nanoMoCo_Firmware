@@ -428,6 +428,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		} else
 			response(false);
 		break;
+		
+	//Command 22 set start time delay (input is in seconds)
+	case 22:
+		start_delay = (Node.ntoul(input_serial_buffer))*1000;//converts the input to milliseconds
+		response(true);
+		break;
         
     
     //*****************MAIN READ COMMANDS********************
@@ -533,6 +539,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 117 reads Alt Output Trigger Level
 	case 117:
 		response(true, altOutTrig);
+		break;
+		
+	//Command 118 reads start time delay (seconds)
+	case 118:
+		response(true, start_delay/1000);
 		break;
 	
 	
@@ -835,6 +846,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		} // end else (mt_plan
 	  	
 		break;
+		
+	//Command 23 sets the acceleration for the motor while in continuous motion
+	case 23:
+		motor[subaddr-1].contAccel(Node.ntof(input_serial_buffer));
+		response(true);
+		break;
+
       
     
 
@@ -906,7 +924,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 112:
 		response( true, motor[subaddr-1].maxSpeed() );
 		break;
-            
+		
+	//Command 23 sets the acceleration for the motor while in continuous motion
+	case 113:
+		response(true, motor[subaddr-1].contAccel());
+		break;
+		
     //Error    
     default: 
       response(false);
