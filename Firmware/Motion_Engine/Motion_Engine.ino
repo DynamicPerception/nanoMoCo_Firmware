@@ -60,8 +60,8 @@ const byte CAM_DEFAULT_EXP      = 120;
 const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
-const unsigned int MOT_DEFAULT_MAX_STEP  = 1000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
+const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 4000;
 
  // digital I/O line definitions
 
@@ -70,6 +70,9 @@ const byte DEBUG_PIN				= 12;
 const byte VOLTAGE_PIN				= 42;
 const byte CURRENT_PIN				= 41;
 const byte BLUETOOTH_ENABLE_PIN		= 0;
+
+// motor count constant
+const byte MOTOR_COUNT				= 3;
 
 
 
@@ -497,7 +500,7 @@ void startProgram() {
   }
   
     // set ready to check for camera
-    // we only do thhis for master nodes, not slaves
+    // we only do this for master nodes, not slaves
     // as slaves get their ok to fire state from OMComHandler
   if( ComMgr.master() == true )
     Engine.state(ST_CLEAR); 
