@@ -132,7 +132,6 @@ to respond to
 
 void serNodeUSBHandler(byte subaddr, byte command, byte*buf) {
 	node = 3;
-	commandTime = millis();
 	serCommandHandler(subaddr, command, buf);
 	/*
 	USBSerial.print("Sub addr is: ");
@@ -198,7 +197,6 @@ all else generates error
 */
 
 void serCommandHandler(byte subaddr, byte command, byte* buf) {
-
 
 	//update the last time a command was received 
 	commandTime = millis();
@@ -380,14 +378,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-
 		//Command 14 sets limit switch mode (0 - enable on RISING edge, 1 - enable on FALLING edge, 2 - enable on CHANGE edge)
 	case 14:
 		limitSwitchAttach(input_serial_buffer[0]);
 		altSetup();
 		response(true);
 		break;
-
 
 		//Command 15 sets aux I/O mode
 	case 15:
@@ -397,13 +393,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-
 		//Command 16 sets motors' manual move flag
 	case 16:
 		manualMove = input_serial_buffer[0];
 		response(true);
 		break;
-
 
 		//Command 17 Set Alt Output Before Shot Delay
 	case 17:
@@ -412,7 +406,6 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-
 		//Command 18 Set Alt Output After Shot Delay
 	case 18:
 		altAfterDelay = Node.ntoui(input_serial_buffer);
@@ -420,14 +413,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-
 		//Command 19 Set Alt Output Before Shot Time
 	case 19:
 		altBeforeMs = Node.ntoui(input_serial_buffer);
 		altSetup();
 		response(true);
 		break;
-
 		//Command 20 Set Alt Output After Shot Time
 	case 20:
 		altAfterMs = Node.ntoui(input_serial_buffer);
@@ -655,17 +646,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		//Command 11 move motor simple  
 	case 11:
 	{
-			   //USBSerial.print("Simple move dir: ");
-			   //USBSerial.print(input_serial_buffer[0]);
-			   //USBSerial.print(" steps: ");
-
 			   // how many steps to take
 
 			   byte dir = input_serial_buffer[0];
 			   input_serial_buffer++;
 
 			   unsigned int steps = Node.ntoul(input_serial_buffer);
-			   //USBSerial.println(steps);
 
 			   // move
 			   motor[subaddr - 1].move(dir, steps);
@@ -675,9 +661,24 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   break;
 	}
 
-
-		//Command 12 clear motor's planned travel
+		//Command 12 move motor complex  
 	case 12:
+		// move distance with specified arrival, accel, and decel times
+		serialComplexMove(subaddr, input_serial_buffer);
+		startISR();
+		response(true);
+		break;
+
+		//Command 13 set plan travel for motor
+	case 13:
+		// plan a move to occur across a specified number of shots in SMS mode
+		USBSerial.println("Plan Travel!");
+		serialComplexPlan(subaddr, input_serial_buffer);
+		response(true);
+		break;
+
+		//Command 14 clear motor's planned travel
+	case 14:
 		// clear current plan (also clears motor history, except distance from home!)   
 		motor[subaddr - 1].clear();
 		motor[subaddr - 1].mtpc = false;
@@ -685,153 +686,42 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-		// Planned travel sequence of commands.Commands 13 - 17 must be executed in that order for each motor to be moved
-		// in planned travel move. Not motors must be set, but the entire sequence must be transmitted for each motor used.
-
-		//Command 13 set planned travel cont./SMS mode
-	case 13:
-
-		// Set all motors to the same SMS state, regardless of which motor was targeted with the command
-		uint8_t sms = input_serial_buffer[0];
-		for (byte i = 0; i < MOTOR_COUNT; i++)
-			motor[i].mt_sms = input_serial_buffer[0];
-
-		if (sms) {
-			motor[subaddr - 1].mtpc = true;		 // set continuous plan flag true
-			motor[subaddr - 1].mt_plan = false;  // set SMS plan flag false
-		}
-		else {
-			motor[subaddr - 1].mtpc = false;	// set continuous plan flag false
-			motor[subaddr - 1].mt_plan = true;  // set SMS plan flag true
-		}
-		break;
-
-		//Command 14 set planned travel direction
-	case 14:
-		motor[subaddr - 1].mtpc_dir = input_serial_buffer[0];
-		break;
-
-		//Command 15 set planned travel SMS shots (#) / total travel time (ms)
+		//Command 15 set the microstep for the motor
 	case 15:
-		// for SMS shots
-		if (motor[0].mt_sms)
-			motor[subaddr - 1].mtpc_shots = Node.ntoul(input_serial_buffer);
-		// for continuous shots
-		else
-			motor[subaddr - 1].mtpc_steps = Node.ntoul(input_serial_buffer);
-		break;
-
-		//Command 16 set planned travel acceleration time (ms)
-	case 16:
-
-		motor[subaddr - 1].mtpc_accel = Node.ntoul(input_serial_buffer);
-		break;
-
-		//Command 17 set planned travel decleration time (ms)
-	case 17:
-		motor[subaddr - 1].mtpc_decel = Node.ntoul(input_serial_buffer);
-
-
-		break;
-
-
-		void serialComplexPlan(byte subaddr, byte* buf) {
-
-			byte dir = buf[0];
-			// continuous or sms? 0 = continuous, 1 = sms
-			byte which = buf[1];
-			// one padding byte added
-			buf += 3;
-
-			unsigned long steps = Node.ntoul(buf);
-			buf += 5; // one padding byte added
-
-			unsigned long shots = Node.ntoul(buf);
-			buf += 5; // one padding byte added
-
-			unsigned long accel = Node.ntoul(buf);
-			buf += 5; // one padding byte added
-
-			unsigned long decel = Node.ntoul(buf);
-
-			if (which) {
-				// planned SMS move
-				motor[subaddr - 1].plan(shots, dir, steps, accel, decel);
-				motor[subaddr - 1].mt_plan = true;
-				// always override shots here - we don't want to try to move further than planned, or waste time
-				Camera.maxShots = shots;
-				motor[subaddr - 1].mtpc = false;
-			}
-			else {
-				// planned continuous move
-				motor[subaddr - 1].mtpc = true;
-				motor[subaddr - 1].mt_plan = false;
-				motor[subaddr - 1].mtpc_dir = dir;
-				motor[subaddr - 1].mtpc_accel = accel;
-				motor[subaddr - 1].mtpc_decel = decel;
-				motor[subaddr - 1].mtpc_arrive = shots;
-				motor[subaddr - 1].mtpc_steps = steps;
-			}
-		}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		//Command 18 set the microstep for the motor
-	case 18:
-
 		// set motor microstep (1,2,4,8,16)
 		motor[subaddr - 1].ms(input_serial_buffer[0]);
 		response(true);
 		break;
 
-		//Command 19 set the sleep mode of the motor
-	case 19:
-
+		//Command 16 set the sleep mode of the motor
+	case 16:
 		motor[subaddr - 1].sleep(input_serial_buffer[0]);
 		response(true);
 		break;
 
-		//Command 20 set the max step speed of the motor
-	case 20:
-
+		//Command 17 set the max step speed of the motor
+	case 17:
 		motor[subaddr - 1].maxSpeed(Node.ntoui(input_serial_buffer));
 		response(true);
 		break;
 
-		//Command 21 send motor home
-	case 21:
-
+		//Command 18 send motor home
+	case 18:
 		// send a motor home
 		motor[subaddr - 1].home();
 		startISR();
 		response(true);
 		break;
 
-		//Command 22 stops motor now
-	case 22:
+		//Command 19 stops motor now
+	case 19:
 		// stop motor now
 		motor[subaddr - 1].stop();
 		response(true);
 		break;
 
-		//Command 23 sets the autopause for SMS
-	case 23:
-
+		//Command 20 sets the autopause for SMS
+	case 20:
 		// set autpause (only if using planned moves)
 
 		if (!motor[subaddr - 1].mt_plan)
@@ -842,8 +732,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		}
 		break;
 
-		//Command 24 steps forward one planned cycle for SMS
-	case 24:
+		//Command 21 steps forward one planned cycle for SMS
+	case 21:
 		// step forward one interleaved (sms) plan cycle
 
 		if (!motor[subaddr - 1].mt_plan) {
@@ -864,8 +754,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 		break;
 
-		//command 25 steps back one sms planed cycle
-	case 25:
+		//command 22 steps back one sms planed cycle
+	case 22:
 		// step back one interleaved (sms) plan cycle
 
 		// return an error if we don't actually have a planned move
@@ -939,7 +829,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		//Command 105 reads the continuous speed for the motor
 	case 105:
 		response(true, motor[subaddr - 1].contSpeed());
-		//USBSerial.println(motor[subaddr-1].contSpeed());
+		USBSerial.println(motor[subaddr - 1].contSpeed());
 		break;
 
 		//Command 106 reads the easing algorithm
@@ -1116,30 +1006,23 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
 
 
-//void serialComplexMove(byte subaddr, byte* buf) { // ************************************************************** <------- REVIEW AND REMOVE COMMAND
+void serialComplexMove(byte subaddr, byte* buf) {
+	byte dir = buf[0];
+	buf++;
 
-//   byte dir = buf[0];
-//   buf++;
-//   
+	unsigned long dist = Node.ntoul(buf);
+	buf += 5; // one padding byte added
 
-//   unsigned long dist  = Node.ntoul(buf);
-//   buf += 5; // one padding byte added
-//   
+	unsigned long arrive = Node.ntoul(buf);
+	buf += 5; // one padding byte added
 
-//   unsigned long arrive  = Node.ntoul(buf);
-//   buf += 5; // one padding byte added
-//   
+	unsigned long accel = Node.ntoul(buf);
+	buf += 5; // one padding byte added
 
-//   unsigned long accel  = Node.ntoul(buf);
-//   buf += 5; // one padding byte added
-//   
+	unsigned long decel = Node.ntoul(buf);
 
-//   unsigned long decel  = Node.ntoul(buf);
-//
-
-//   motor[subaddr-1].move(dir, dist, arrive, accel, decel); 
-//}
-
+	motor[subaddr - 1].move(dir, dist, arrive, accel, decel);
+}
 
 
 void serialComplexPlan(byte subaddr, byte* buf) {
@@ -1315,8 +1198,3 @@ void response(bool p_stat, char* p_resp, int p_len){
 		break;
 	}
 }
-
-
-
-
-
