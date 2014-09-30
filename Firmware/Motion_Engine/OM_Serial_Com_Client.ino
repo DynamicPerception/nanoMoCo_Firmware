@@ -132,7 +132,6 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
 
 void serNodeUSBHandler(byte subaddr, byte command, byte*buf) {
   node = 3;
-  commandTime = millis();
   serCommandHandler(subaddr, command, buf);
   /*
   USBSerial.print("Sub addr is: ");
@@ -198,6 +197,9 @@ void serNotUsNodeUSBHandler(byte addr, byte subaddr, byte command, byte bufLen, 
   */
   
 void serCommandHandler(byte subaddr, byte command, byte* buf) {
+	
+	//update the last time a command was received 
+	commandTime = millis();
 
  switch(subaddr) {   
    case 0:
@@ -374,12 +376,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 		motor[2].continuous( input_serial_buffer[0] );
 		response(true);
 		break;
+		
 	//Command 14 sets limit switch mode (0 - enable on RISING edge, 1 - enable on FALLING edge, 2 - enable on CHANGE edge)
 	case 14:
 		limitSwitchAttach(input_serial_buffer[0]);
 		altSetup();
 		response(true);
 		break;
+		
 	//Command 15 sets aux I/O mode
 	case 15:
 		altConnect(0, input_serial_buffer[0]);
@@ -387,23 +391,27 @@ void serMain(byte command, byte* input_serial_buffer) {
 		altSetup();
 		response(true);
 		break;
+		
 	//Command 16 sets motors' manual move flag
 	case 16:
 	    manualMove = input_serial_buffer[0];
 		response(true);
 		break;
+		
 	//Command 17 Set Alt Output Before Shot Delay
 	case 17:
 		altBeforeDelay = Node.ntoui(input_serial_buffer);
 		altSetup();
 		response(true);
 		break;
+		
 	//Command 18 Set Alt Output After Shot Delay
 	case 18:
 		altAfterDelay = Node.ntoui(input_serial_buffer);
 		altSetup();
 		response(true);
 		break;
+		
 	//Command 19 Set Alt Output Before Shot Time
 	case 19:
 		altBeforeMs = Node.ntoui(input_serial_buffer);
@@ -510,12 +518,18 @@ void serMain(byte command, byte* input_serial_buffer) {
 	
 	//Command 111 reads limit switch mode
 	case 111:
-		//response(true, altInputs[0], altInputs[1]);
+		temp = 0;
+		temp |= altInputs[0]<<8;
+		temp |= altInputs[1];
+		response(true, temp);
 		break;
 	
 	//Command 112 reads limit switch status high or low (1 or 0)
 	case 112:
-		//response(true, digitalRead(AUX_RING), digitalRead(AUX_TIP));
+		temp = 0;
+		temp |= digitalRead(AUX_RING)<<8;
+		temp |= digitalRead(AUX_TIP);
+		response(true, temp);
 		break;
 	
 	//Command 113 reads Alt Output Before Shot Delay Time
@@ -629,17 +643,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 11 move motor simple  
     case 11:
     {
-	  USBSerial.print("Simple move dir: ");
-	  USBSerial.print(input_serial_buffer[0]);
-	  USBSerial.print(" steps: ");
-	  
-          // how many steps to take
+	  // how many steps to take
         
 	  byte dir = input_serial_buffer[0];
 	  input_serial_buffer++;
         
 	  unsigned int steps   = Node.ntoul(input_serial_buffer);
-	  USBSerial.println(steps);
 
 		// move
 	  motor[subaddr-1].move( dir, steps ); 
