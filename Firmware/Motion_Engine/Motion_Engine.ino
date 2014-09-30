@@ -248,6 +248,9 @@ boolean           altExtInt = false;
 byte           altDirection = FALLING;
 byte             altOutTrig = HIGH;
 
+//Temp variable for storing information for node response
+int temp = 0;
+
 
 /* 
 
