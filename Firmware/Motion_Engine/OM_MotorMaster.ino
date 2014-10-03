@@ -179,7 +179,9 @@ void stopAllMotors() {
         // set motors not moving in async mode
 
       for (int i = 0; i < MOTOR_COUNT; i++) {
-          motor[i].stop();
+		motor[i].stop();		  
+		//update current position to EEPROM
+		EEPROM.write(EE_POS_0 + (i) * 16, motor[i].currentPos());
       }
       
       ISR_On = false;
@@ -188,9 +190,6 @@ void stopAllMotors() {
       _fireCallback(OM_MOT_DONE);
                   // let go of interrupt cycle
       Timer1.detachInterrupt();
-	  
-	  //update current position to EEPROM
-	  EEPROM::write(EE_POS_0 + (subaddr - 1) * 16, motor[subaddr - 1].currentPos());
 
 }
 

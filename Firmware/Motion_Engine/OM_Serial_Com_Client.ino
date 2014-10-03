@@ -639,7 +639,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 10:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
-		EEPROM::write(EE_END_0 + (subaddr - 1) * 16, motor[subaddr - 1].endPos());
+		EEPROM.write(EE_END_0 + (subaddr - 1) * 16, motor[subaddr - 1].endPos());
 		response(true);
 		break;
 
@@ -691,14 +691,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 16 set program start point
 	case 16:
 		motor[subaddr - 1].startPos(Node.ntol(input_serial_buffer));
-		EEPROM::write(EE_START_0 + (subaddr - 1) * 16, motor[subaddr - 1].startPos());
+		EEPROM.write(EE_START_0 + (subaddr - 1) * 16, motor[subaddr - 1].startPos());
 		response(true);
 		break;
 
 	//Command 17 set program stop point
 	case 17:
 		motor[subaddr - 1].stopPos(Node.ntol(input_serial_buffer));
-		EEPROM::write(EE_STOP_0 + (subaddr - 1) * 16, motor[subaddr - 1].stopPos());
+		EEPROM.write(EE_STOP_0 + (subaddr - 1) * 16, motor[subaddr - 1].stopPos());
 		response(true);
 		break;
    
