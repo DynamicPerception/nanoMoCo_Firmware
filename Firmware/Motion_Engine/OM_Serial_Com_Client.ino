@@ -309,7 +309,7 @@ void serMain(byte command, byte* input_serial_buffer) {
       {  
          memset(device_name, 0, 16);
                
-           for(byte i = 0; i <= 15; i++) {
+           for(byte i = 0; i <= 10; i++) {
              if( input_serial_buffer[i] != 0 ) 
                device_name[i] = input_serial_buffer[i];
            }
@@ -357,9 +357,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 		
-	//Command 11 set the max step rate of the motor
+	//Command 11 set the max step rate of all motors
 	case 11:
-		response(maxStepRate( Node.ntoui(input_serial_buffer) ));
+		maxStepRate(Node.ntoui(input_serial_buffer));
+		response(true);
 		break;
 		
 		
@@ -432,9 +433,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 21 sets motors' continuous mode
 	case 21:
-		motor[0].continuous(input_serial_buffer[0]);
-		motor[1].continuous(input_serial_buffer[0]);
-		motor[2].continuous(input_serial_buffer[0]);
+		motor[0].planType(input_serial_buffer[0]);
+		motor[1].planType(input_serial_buffer[0]);
+		motor[2].planType(input_serial_buffer[0]);
 		response(true);
 		break;
 		
@@ -484,7 +485,7 @@ void serMain(byte command, byte* input_serial_buffer) {
       response(true, (char*)device_name, 16);
       break;
     
-	//Command 106 reads max step rate for the motors, can pull from any motor        
+	//Command 106 reads max step rate for the motors, can poll any motor        
     case 106:
 		response(true, motor[0].maxStepRate());
 		break;
@@ -560,7 +561,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 118:
 		response(true, start_delay/1000);
 		break;
-	
+
+	//Command 119 reads whether the controller has been powercycled since last query
+	case 119:
+		response(true, powerCycled());
+		break;
 	
     //Error    
     default: 
@@ -616,45 +621,55 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		motor[subaddr - 1].maxSpeed(Node.ntoui(input_serial_buffer));
 		response(true);
 		break;
+
+	//Command 8 set motor direction  
+	case 8:
+		motor[subaddr - 1].dir(input_serial_buffer[0]);
+		response(true);
+		break;
+
   
-    //Command 8 set motor's home limit here 
-    case 8:
+    //Command 9 set motor's home limit
+    case 9:
       motor[subaddr-1].homeSet();
       response(true);
       break;	
 
-	//Command 9 Set End Limit
-	case 9:
+	//Command 10 set motor's end limit
+	case 10:
+		motor[subaddr - 1].endPosSet();
+		response(true);
 		break;
 
-	//Command 10 send motor home
-	case 10:
+	//Command 11 send motor to home limit
+	case 11:
 		// send a motor home
 		motor[subaddr - 1].home();
 		startISR();
 		response(true);
 		break;
 
-	//Command 11 set motor direction  
-	case 11:
-		motor[subaddr - 1].dir(input_serial_buffer[0]);
+	//Command 12 send motor to end limit
+	case 12:
+		motor[subaddr - 1].moveToEnd();
+		startISR();
 		response(true);
 		break;
-
-    //Command 12 set motor's continous speed 
-    case 12:
+	
+    //Command 13 set motor's continous speed 
+    case 13:
       motor[subaddr-1].contSpeed(Node.ntof(input_serial_buffer));
       response(true);
       break;
 
-	//Command 13 sets the acceleration for the motor while in continuous motion
-	case 13:
+	//Command 14 sets the acceleration for the motor while in continuous motion
+	case 14:
 		motor[subaddr - 1].contAccel(Node.ntof(input_serial_buffer));
 		response(true);
 		break;
 
-	 //Command 14 move motor simple  
-	case 14:
+	 //Command 15 move motor simple  
+	case 15:
 	{
 			   // how many steps to take
 
@@ -670,9 +685,21 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   response(true);
 			   break;
 	}
+
+	//Command 16 set program start point
+	case 16:
+		motor[subaddr - 1].startPos(Node.ntol(input_serial_buffer));
+		response(true);
+		break;
+
+	//Command 17 set program stop point
+	case 17:
+		motor[subaddr - 1].stopPos(Node.ntol(input_serial_buffer));
+		response(true);
+		break;
    
-    //Command 15 set motor's easing mode  
-	case 15:
+    //Command 18 set motor's easing mode  
+	case 18:
       if( input_serial_buffer[0] == 1 )
         motor[subaddr-1].easing(OM_MOT_LINEAR);
       else if( input_serial_buffer[0] == 2 )
@@ -684,42 +711,44 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       response(true);
       break;
 
-	//Command 16 set program start point
-	case 16:
-		break;
-    
-	//Command 17 set program stop point
-	case 17:
-		break;
-
-	//Command 18 set shots (SMS) / motor travel time (cont.)
-	case 18:
-		break;
-
-	//Command 19 set program acceleration rate
+	//Command 19 set motor's lead-in shots (number of shots to wait after program start to begin moving)
 	case 19:
+		motor[subaddr - 1].planLeadIn(Node.ntoi(input_serial_buffer));
+		response(true);
 		break;
-	
-	//Command 20 set program deceleration rate
+
+	//Command 20 set shots (SMS) / motor travel time (cont.)
 	case 20:
+		motor[subaddr - 1].planTravelLength(Node.ntoul(input_serial_buffer));
+		response(true);
 		break;
 
-    //Command 21 set motor's shots delay (number of shots to wait after program start to begin moving)
-    case 21:
-      /*motor[subaddr-1].motorDelay = Node.ntoul(input_serial_buffer);
-      response(true);*/
-      break;
-      
-	//Commnad 22 send motor to program start point
-	case 22:
+	//Command 21 set program acceleration period
+	case 21:
+		motor[subaddr - 1].planAccelLength(Node.ntoul(input_serial_buffer));
+		response(true);
 		break;
 	
-	//Commnad 23 send motor to program stop point
+	//Command 22 set program deceleration period
+	case 22:
+		motor[subaddr - 1].planDecelLength(Node.ntoul(input_serial_buffer));
+		response(true);
+		break;
+      
+	//Commnad 23 send motor to program start point
 	case 23:
+		motor[subaddr - 1].moveToStart();
+		response(true);
+		break;
+	
+	//Commnad 24 send motor to program stop point
+	case 24:
+		motor[subaddr - 1].moveToStop();
+		response(true);
 		break;
 
-	//Command 24 steps forward one planned cycle for SMS
-	case 24:
+	//Command 25 steps forward one planned cycle for SMS
+	case 25:
 		// step forward one interleaved (sms) plan cycle
 	  	
 		if( ! motor[subaddr-1].mt_plan ) {
@@ -740,8 +769,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	  	
 		break;
 	  	
-	//command 25 steps back one sms planed cycle
-	case 25:
+	//command 26 steps back one sms planed cycle
+	case 26:
 	// step back one interleaved (sms) plan cycle
 	  	
 	// return an error if we don't actually have a planned move
@@ -798,63 +827,74 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, motor[subaddr - 1].ms());
 		break;
 
-	//Command 103 reads max speed of the motor
+	//Command 103 reads motor's direction
 	case 103:
+		response(true, (byte)motor[subaddr - 1].dir());
+		break;
+
+	//Command 104 reads max step speed of the motor
+	case 104:
 		response(true, motor[subaddr - 1].maxSpeed());
 		break;
 
-	//Command 104 reads end limit position
-	case 104:
+	//Command 105 reads end limit position
+	case 105:
+		response(true, motor[subaddr - 1].endPos());
 		break;
 
-	//Command 105 reads the motor's current position (steps from home limit)
-	case 105:
+	//Command 106 reads the motor's current position (steps from home limit)
+	case 106:
 		response(true, motor[subaddr - 1].homeDistance());
 		break;
-    
-    //Command 106 reads motor's direction
-    case 106:
-      response( true, (byte) motor[subaddr-1].dir() );
-      break;
 
-	//Command 107 reads the continuous speed for the motor
+	//Command 107 reads whether the motor is currently running
 	case 107:
+		response(true, motor[subaddr - 1].running());
+
+	//Command 108 reads the continuous speed for the motor
+	case 108:
 		response(true, motor[subaddr - 1].contSpeed());
 		USBSerial.println(motor[subaddr - 1].contSpeed());
 		break;
 
-	//Command 108 reads the accel/decel value continuous motion
-	case 108:
+	//Command 109 reads the accel/decel value continuous motion
+	case 109:
 		response(true, motor[subaddr - 1].contAccel());
 		break;
 
-	//Command 109 reads the easing algorithm
-	case 109:
-		response(true, motor[subaddr - 1].easing());
-		break;
-
-	//Command 110 reads the program shots (SMS) / motor travel time (cont.)
+	//Command 110 reads the easing algorithm
 	case 110:
+		response(true, motor[subaddr - 1].easing());
 		break;
 
 	//Command 111 reads the program start point position
 	case 111:
+		response(true, motor[subaddr - 1].startPos());
 		break;
 
 	//Command 112 reads the program stop point position
 	case 112:
+		response(true, motor[subaddr - 1].stopPos());
 		break;
 
-	//Command 113 reads the program acceleration rate
+	//Command 113 reads the program shots (SMS) / motor travel time (cont.)
 	case 113:
-		break;
+		response(true, motor[subaddr - 1].planTravelLength());
+		break;	
 
-	//Command 114 reads the program deceleration rate
+	//Command 114 reads the motor's lead-in shots count
 	case 114:
+		response(true, motor[subaddr - 1].planLeadIn());
 		break;
 
-	//Command 114 reads the program shots delay
+	//Command 115 reads the program acceleration rate
 	case 115:
+		response(true, motor[subaddr - 1].planAccelLength());
+		break;
+
+	//Command 116 reads the program deceleration rate
+	case 116:
+		response(true, motor[subaddr - 1].planDecelLength());
 		break;
    
     //Error    
@@ -913,6 +953,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 8 set camera's focus w shutter  
     case 8:
       Camera.exposureFocus((boolean) input_serial_buffer[0]);
+	  response(true);
       break;
       
     //Command 9 repeat cycles
@@ -1007,46 +1048,6 @@ void serialComplexMove(byte subaddr, byte* buf) {
    unsigned long decel  = Node.ntoul(buf);
 
    motor[subaddr-1].move(dir, dist, arrive, accel, decel); 
-}
-
-
-void serialComplexPlan(byte subaddr, byte* buf) {
-  
-   byte dir = buf[0];
-     // continuous or sms? 0 = continuous, 1 = sms
-   byte which = buf[1];
-     // one padding byte added
-   buf += 3;
-   
-   unsigned long steps  = Node.ntoul(buf);
-   buf += 5; // one padding byte added
-   
-   unsigned long shots  = Node.ntoul(buf);
-   buf += 5; // one padding byte added
-
-   unsigned long accel  = Node.ntoul(buf);
-   buf += 5; // one padding byte added
-   
-   unsigned long decel  = Node.ntoul(buf);
- 
-   if( which ) {
-       // planned SMS move
-     motor[subaddr-1].plan(shots, dir, steps, accel, decel);
-     motor[subaddr-1].mt_plan = true;
-       // always override shots here - we don't want to try to move further than planned, or waste time
-     Camera.maxShots = shots;
-     motor[subaddr-1].mtpc = false;
-   }
-   else {
-       // planned continuous move
-     motor[subaddr-1].mtpc = true;
-     motor[subaddr-1].mt_plan = false;
-     motor[subaddr-1].mtpc_dir   = dir;
-     motor[subaddr-1].mtpc_accel = accel;
-     motor[subaddr-1].mtpc_decel = decel;
-     motor[subaddr-1].mtpc_arrive = shots;
-     motor[subaddr-1].mtpc_steps  = steps;
-   }
 }
 
 

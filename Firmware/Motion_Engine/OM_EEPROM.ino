@@ -79,6 +79,21 @@ void eepromWrite() {
   write(EE_ADDR, device_address);
   write(EE_NAME, *device_name, 16);
 
+  write(EE_POS_0, motor[0].currentPos());
+  write(EE_END_0, motor[0].endPos());
+  write(EE_START_0, motor[0].startPos());
+  write(EE_STOP_0, motor[0].stopPos());
+  
+  write(EE_POS_1, motor[1].currentPos());
+  write(EE_END_1, motor[1].endPos());
+  write(EE_START_1, motor[1].startPos());
+  write(EE_STOP_1, motor[1].stopPos());
+  
+  write(EE_POS_2, motor[2].currentPos());
+  write(EE_END_2, motor[2].endPos());
+  write(EE_START_2, motor[2].startPos());
+  write(EE_STOP_2, motor[2].stopPos());
+
   
 }
 
@@ -90,6 +105,21 @@ void eepromRestore() {
   
   read(EE_ADDR, device_address);
   read(EE_NAME, *device_name, 16);
+
+  read(EE_POS_0, motor[0].currentPos());
+  read(EE_END_0, motor[0].endPos());
+  read(EE_START_0, motor[0].startPos());
+  read(EE_STOP_0, motor[0].stopPos());
+
+  read(EE_POS_1, motor[1].currentPos());
+  read(EE_END_1, motor[1].endPos());
+  read(EE_START_1, motor[1].startPos());
+  read(EE_STOP_1, motor[1].stopPos());
+
+  read(EE_POS_2, motor[2].currentPos());
+  read(EE_END_2, motor[2].endPos());
+  read(EE_START_2, motor[2].startPos());
+  read(EE_STOP_2, motor[2].stopPos());
   
 }
 
