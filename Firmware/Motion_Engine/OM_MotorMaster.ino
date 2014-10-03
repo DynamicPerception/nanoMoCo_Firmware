@@ -188,6 +188,9 @@ void stopAllMotors() {
       _fireCallback(OM_MOT_DONE);
                   // let go of interrupt cycle
       Timer1.detachInterrupt();
+	  
+	  //update current position to EEPROM
+	  EEPROM::write(EE_POS_0 + (subaddr - 1) * 16, motor[subaddr - 1].currentPos());
 
 }
 
