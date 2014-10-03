@@ -97,7 +97,7 @@ const byte MOTOR_COUNT				= 3;
 const int EE_ADDR       = 0;				// device_address (2 bytes)
 const int EE_NAME       = 2;				// device name (16 bytes)
 
-const int EE_POS_0 = EE_NAME + 16;			// Motor 0 current position (long int)
+const int EE_POS_0 = EE_NAME + 10;			// Motor 0 current position (long int)
 const int EE_END_0 = EE_POS_0 + 4;			// Motor 0 end limit position (long int)
 const int EE_START_0 = EE_END_0 + 4;		// Motor 0 program start position (long int)
 const int EE_STOP_0 = EE_START_0 + 4;		// Motor 0 program stop position (long int)
@@ -107,13 +107,15 @@ const int EE_END_1 = EE_POS_1 + 4;			// Motor 1 end limit position (long int)
 const int EE_START_1 = EE_END_1 + 4;		// Motor 1 program start position (long int)
 const int EE_STOP_1 = EE_START_1 + 4;		// Motor 1 program stop position (long int)
 
-const int EE_POS_2 = EE_STOP_1 + 16;		// Motor 2 current position (long int)
+const int EE_POS_2 = EE_STOP_1 + 4;		    // Motor 2 current position (long int)
 const int EE_END_2 = EE_POS_2 + 4;			// Motor 2 end limit position (long int)
 const int EE_START_2 = EE_END_2 + 4;		// Motor 2 program start position (long int)
 const int EE_STOP_2 = EE_START_2 + 4;		// Motor 2 program stop position (long int)
 
+long tempPos = 0;
+
 // default device address
-byte device_address = 3;
+int device_address = 3;
 
 //Motor variables
 boolean ISR_On = false;
@@ -158,8 +160,8 @@ unsigned long max_time = 0;
 unsigned long start_delay = 0;
 
 
- // default device name, exactly 15 characters + null terminator
-byte device_name[] = "DEFAULT        ";
+ // default device name, exactly 9 characters + null terminator
+byte device_name[] = "DEFAULT   ";
 
 
  // default node to use (Hardware Serial = 1; AltSoftSerial = 2)
@@ -188,7 +190,7 @@ unsigned long time  = 0;
 
  // initialize core objects
 OMCamera     Camera = OMCamera();
-OMMotorFunctions motor[3] = {
+OMMotorFunctions motor[MOTOR_COUNT] = {
     OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG),
  	OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG),
  	OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG)};
@@ -352,7 +354,7 @@ void setup() {
  
   
   // defaults for motor
- for( int i = 0; i < 3; i++){
+ for( int i = 0; i < MOTOR_COUNT; i++){
 	  motor[i].enable(false);
 	  motor[i].continuous(false);
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
@@ -434,7 +436,7 @@ void loop() {
    
       
 	  	   
-	for(int i = 0; i<3; i++){
+	for(int i = 0; i<MOTOR_COUNT; i++){
 		if(motor[i].running()){
 			motor[i].updateSpline();
 		}// end if( motor[i].m_isRun
@@ -491,7 +493,7 @@ void stopProgram(boolean force_clear) {
   if( force_clear == true ) {
     run_time     = 0;
     camera_fired = 0;
-	for( int i = 0; i < 3; i++){
+	for( int i = 0; i < MOTOR_COUNT; i++){
 		motor[i].mtpc_start = false;
 	}
 

@@ -307,7 +307,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 7 sets the name of the device  
     case 7:
       {  
-         memset(device_name, 0, 16);
+         memset(device_name, 0, 10);
                
            for(byte i = 0; i <= 10; i++) {
              if( input_serial_buffer[i] != 0 ) 
@@ -316,7 +316,7 @@ void serMain(byte command, byte* input_serial_buffer) {
       }             
       
       // save to eeprom
-      OMEEPROM::write(EE_NAME, *device_name, 16);
+      OMEEPROM::write(EE_NAME, *device_name, 10);
       response(true);
       break;
 	  
@@ -482,7 +482,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 105 reads device name 
     case 105:
       // device name
-      response(true, (char*)device_name, 16);
+      response(true, (char*)device_name, 10);
       break;
     
 	//Command 106 reads max step rate for the motors, can poll any motor        
@@ -637,7 +637,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 10 set motor's end limit
 	case 10:
-		motor[subaddr - 1].endPosSet();
+		tempPos = motor[subaddr - 1].currentPos();
+		motor[subaddr - 1].endPos(tempPos);
 		response(true);
 		break;
 
@@ -777,7 +778,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		if( ! motor[subaddr-1].mt_plan )
 			response(false);
 		else {
-			if( motor[subaddr-1].motorDelay > 0 && camera_fired < motor[subaddr-1].motorDelay ) {
+			if( motor[subaddr-1].planLeadIn() > 0 && camera_fired < motor[subaddr-1].planLeadIn() ) {
 				// do not reverse the plan, the motor isn't supposed to move here
 			}
 			else {
@@ -844,7 +845,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 106 reads the motor's current position (steps from home limit)
 	case 106:
-		response(true, motor[subaddr - 1].homeDistance());
+		response(true, motor[subaddr - 1].currentPos());
 		break;
 
 	//Command 107 reads whether the motor is currently running

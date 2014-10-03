@@ -133,9 +133,9 @@ void altHandler(byte p_which) {
 		motor[2].homeSet();
 	} else if (altInputs[p_which] == ALT_SET_END){
 		stopAllMotors();
-		motor[0].maxSteps(abs(motor[0].homeDistance()));
-		motor[1].maxSteps(abs(motor[1].homeDistance()));
-		motor[2].maxSteps(abs(motor[2].homeDistance()));
+		motor[0].maxSteps((motor[0].currentPos()));
+		motor[1].maxSteps((motor[1].currentPos()));
+		motor[2].maxSteps((motor[2].currentPos()));
 	}
         
   } //end if millis...

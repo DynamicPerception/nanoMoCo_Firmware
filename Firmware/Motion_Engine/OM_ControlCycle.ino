@@ -155,13 +155,15 @@ boolean cycleShotOK(boolean p_prealt) {
  
 
 void cycleClearToMove() {
+	
+	
+	
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();
        
        // do not move if a motor delay is programmed...
-	   for(int i = 0; i < 3; i++){
-		  if( (motor[i].enable() && motor[i].mt_plan == true && motor[i].motorDelay > 0 && camera_fired < motor[i].motorDelay ) ||
-			  (motor[i].enable() && motor[i].mt_plan == false && motor[i].motorDelay > 0 && run_time < motor[i].motorDelay)   ) {
+	   for(int i = 0; i < MOTOR_COUNT; i++){
+		  if( (motor[i].enable() && motor[i].mtpc != 0 && motor[i].planLeadIn() > 0 && camera_fired < motor[i].planLeadIn())) {
 			  Engine.state(ST_CLEAR);
 			  return;
 		  }    
@@ -190,7 +192,7 @@ void cycleCheckMotor() {
          // still running
      
      // do not block on continuous motion of any sort
-	 for (int i = 0; i < 3; i++){
+	 for (int i = 0; i < MOTOR_COUNT; i++){
       if( motor[i].continuous() == false && motor[i].mtpc == false && motor[i].running() == true )
         return;
 	 }

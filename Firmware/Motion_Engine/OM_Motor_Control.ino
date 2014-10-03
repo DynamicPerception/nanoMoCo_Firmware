@@ -52,7 +52,7 @@ void move_motor() {
    }
    
    for(int i = 0; i < MOTOR_COUNT; i++){
-	   //only check the motors that are enabled
+	   //only check the motors that are enable
 	   if( motor[i].enable()){
 		   if( motor[i].continuous() ) {
 			   // continuous motion mode
@@ -61,13 +61,13 @@ void move_motor() {
 			   }
 			   Engine.state(continue_state);
 		   }
-		   else if( motor[i].mt_plan == true ) {
+		   else if( motor[i].mtpc == 1 ) {
 			   // planned SMS move
 			   motor[i].planRun();
 			   // block camera while motor is moving
 			   Engine.state(ST_RUN);
 		   }
-		   else if( motor[i].mtpc == true ) {
+		   else if( motor[i].mtpc == 2 ) {
 			   // planned continuous move
 			   if( motor[i].mtpc_start == false ) {
 				   // a planned continuous move has not been started...
@@ -91,7 +91,7 @@ void move_motor() {
    }
    
    
-   //Start interrupt service rotuine to start motors moving
+   //Start interrupt service routine to start motors moving
    startISR();
  
  

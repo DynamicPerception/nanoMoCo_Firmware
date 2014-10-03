@@ -178,7 +178,7 @@ void stopAllMotors() {
 
         // set motors not moving in async mode
 
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < MOTOR_COUNT; i++) {
           motor[i].stop();
       }
       
@@ -210,7 +210,7 @@ void clearAll() {
 	if( motor[0].running() || motor[1].running() || motor[2].running() )
 		stopAllMotors();
 
-	for (int i = 0; i < 3; i++){
+	for (int i = 0; i < MOTOR_COUNT; i++){
 
         motor[i].clear();
 	}
@@ -220,11 +220,13 @@ void clearAll() {
  // execute an async move, when specifying a direction
 void startISR() {
 	
-	USBSerial.print("Start time: ");
-	USBSerial.println(millis());
+
 
 	 // is async control not already running?
 	 if( !ISR_On ) {
+		 
+		 	USBSerial.print("Start time: ");
+		 	USBSerial.println(millis());
            
            _fireCallback(OM_MOT_MOVING);
     	   Timer1.initialize(motor[0].curSamplePeriod());
@@ -245,7 +247,7 @@ void _runISR() {
 	
 	
     //steps all motors at once   
-	for(int i = 0; i<3; i++){
+	for(int i = 0; i<MOTOR_COUNT; i++){
 		if(motor[i].running()){				    
 			motor[i].checkRefresh();
 			if (motor[i].checkStep()){

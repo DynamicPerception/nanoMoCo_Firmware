@@ -77,24 +77,24 @@ void eepromWrite() {
   version(MEMORY_VERSION);
   
   write(EE_ADDR, device_address);
-  write(EE_NAME, *device_name, 16);
+  write(EE_NAME, *device_name, 10);
 
-  write(EE_POS_0, motor[0].currentPos());
-  write(EE_END_0, motor[0].endPos());
-  write(EE_START_0, motor[0].startPos());
-  write(EE_STOP_0, motor[0].stopPos());
+  EEPROM.write(EE_POS_0, motor[0].currentPos());
+  EEPROM.write(EE_END_0, motor[0].endPos());
+  EEPROM.write(EE_START_0, motor[0].startPos());
+  EEPROM.write(EE_STOP_0, motor[0].stopPos());
   
-  write(EE_POS_1, motor[1].currentPos());
-  write(EE_END_1, motor[1].endPos());
-  write(EE_START_1, motor[1].startPos());
-  write(EE_STOP_1, motor[1].stopPos());
+  EEPROM.write(EE_POS_1, motor[1].currentPos());
+  EEPROM.write(EE_END_1, motor[1].endPos());
+  EEPROM.write(EE_START_1, motor[1].startPos());
+  EEPROM.write(EE_STOP_1, motor[1].stopPos());
   
-  write(EE_POS_2, motor[2].currentPos());
-  write(EE_END_2, motor[2].endPos());
-  write(EE_START_2, motor[2].startPos());
-  write(EE_STOP_2, motor[2].stopPos());
+  EEPROM.write(EE_POS_2, motor[2].currentPos());
+  EEPROM.write(EE_END_2, motor[2].endPos());
+  EEPROM.write(EE_START_2, motor[2].startPos());
+  EEPROM.write(EE_STOP_2, motor[2].stopPos());
 
-  
+ 
 }
 
 
@@ -103,24 +103,29 @@ void eepromWrite() {
 void eepromRestore() {
   using namespace OMEEPROM;
   
-  read(EE_ADDR, device_address);
-  read(EE_NAME, *device_name, 16);
+	read(EE_ADDR, device_address);
+	read(EE_NAME, *device_name, 10);
+		
+	long tempPos = 0;
+	long tempEnd = 0;
+	long tempStart = 0;
+	long tempStop = 0;
+	
+	
+	for (int i = 0; i < MOTOR_COUNT; i++){
 
-  read(EE_POS_0, motor[0].currentPos());
-  read(EE_END_0, motor[0].endPos());
-  read(EE_START_0, motor[0].startPos());
-  read(EE_STOP_0, motor[0].stopPos());
+		tempPos = EEPROM.read(EE_POS_0+16*i);
+		tempEnd = EEPROM.read(EE_END_0+16*i);
+		tempStart = EEPROM.read(EE_START_0+16*i);
+		tempStop = EEPROM.read(EE_STOP_0+16*i);
+		
+		motor[i].currentPos(tempPos);
+		motor[i].endPos(tempEnd);
+		motor[i].startPos(tempStart);
+		motor[i].stopPos(tempStop);
+			
+	}
 
-  read(EE_POS_1, motor[1].currentPos());
-  read(EE_END_1, motor[1].endPos());
-  read(EE_START_1, motor[1].startPos());
-  read(EE_STOP_1, motor[1].stopPos());
-
-  read(EE_POS_2, motor[2].currentPos());
-  read(EE_END_2, motor[2].endPos());
-  read(EE_START_2, motor[2].startPos());
-  read(EE_STOP_2, motor[2].stopPos());
-  
 }
 
 
