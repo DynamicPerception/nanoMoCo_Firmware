@@ -51,8 +51,8 @@ void move_motor() {
      return;
    }
    
-   for(int i = 0; i < 3; i++){
-	   //only check the motors that are enable
+   for(int i = 0; i < MOTOR_COUNT; i++){
+	   //only check the motors that are enabled
 	   if( motor[i].enable()){
 		   if( motor[i].continuous() ) {
 			   // continuous motion mode

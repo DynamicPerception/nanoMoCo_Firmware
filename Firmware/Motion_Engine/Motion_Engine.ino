@@ -60,8 +60,8 @@ const byte CAM_DEFAULT_EXP      = 120;
 const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
-const unsigned int MOT_DEFAULT_MAX_STEP  = 1000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 800;
+const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 4000;
 
  // digital I/O line definitions
 
@@ -70,6 +70,9 @@ const byte DEBUG_PIN				= 12;
 const byte VOLTAGE_PIN				= 42;
 const byte CURRENT_PIN				= 41;
 const byte BLUETOOTH_ENABLE_PIN		= 0;
+
+// motor count constant
+const byte MOTOR_COUNT				= 3;
 
 
 
@@ -91,8 +94,23 @@ const byte BLUETOOTH_ENABLE_PIN		= 0;
  
 */
 
-const int EE_ADDR       = 0; // device_address
-const int EE_NAME       = 2; // device name (16 bytes)
+const int EE_ADDR       = 0;				// device_address (2 bytes)
+const int EE_NAME       = 2;				// device name (16 bytes)
+
+const int EE_POS_0 = EE_NAME + 16;			// Motor 0 current position (long int)
+const int EE_END_0 = EE_POS_0 + 4;			// Motor 0 end limit position (long int)
+const int EE_START_0 = EE_END_0 + 4;		// Motor 0 program start position (long int)
+const int EE_STOP_0 = EE_START_0 + 4;		// Motor 0 program stop position (long int)
+
+const int EE_POS_1 = EE_STOP_0 + 4;			// Motor 1 current position (long int)
+const int EE_END_1 = EE_POS_1 + 4;			// Motor 1 end limit position (long int)
+const int EE_START_1 = EE_END_1 + 4;		// Motor 1 program start position (long int)
+const int EE_STOP_1 = EE_START_1 + 4;		// Motor 1 program stop position (long int)
+
+const int EE_POS_2 = EE_STOP_1 + 16;		// Motor 2 current position (long int)
+const int EE_END_2 = EE_POS_2 + 4;			// Motor 2 end limit position (long int)
+const int EE_START_2 = EE_END_2 + 4;		// Motor 2 program start position (long int)
+const int EE_STOP_2 = EE_START_2 + 4;		// Motor 2 program stop position (long int)
 
 // default device address
 byte device_address = 3;
@@ -504,7 +522,7 @@ void startProgram() {
   }
   
     // set ready to check for camera
-    // we only do thhis for master nodes, not slaves
+    // we only do this for master nodes, not slaves
     // as slaves get their ok to fire state from OMComHandler
   if( ComMgr.master() == true )
     Engine.state(ST_CLEAR); 
@@ -522,6 +540,17 @@ void flasher(byte pin, int count) {
       delay(250); 
    }
    
+}
+
+byte powerCycled() {
+	
+	// This function will response true the first time it is
+	// called after a power cycle and false thereafter
+	static byte cycled = true;
+	byte response = cycled;
+	cycled = false;
+
+	return(response);
 }
 
 
