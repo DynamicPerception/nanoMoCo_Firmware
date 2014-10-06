@@ -181,7 +181,14 @@ void stopAllMotors() {
       for (int i = 0; i < MOTOR_COUNT; i++) {
 		motor[i].stop();		  
 		//update current position to EEPROM
-		EEPROM.write(EE_POS_0 + (i) * 16, motor[i].currentPos());
+		long tempPosition= motor[i].currentPos();
+		OMEEPROM::write(EE_POS_0 + (i) * 16, tempPosition);
+		USBSerial.print("Memory Location: ");
+		USBSerial.print(EE_POS_0 + (i) * 16);
+		USBSerial.print(" Stored at Location: ");
+		tempPosition= 0;
+		OMEEPROM::read(EE_POS_0 + (i) * 16, tempPosition);
+		USBSerial.println(tempPosition);
       }
       
       ISR_On = false;
@@ -249,7 +256,7 @@ void _runISR() {
 	
 	
     //steps all motors at once   
-	for(int i = 0; i<MOTOR_COUNT; i++){
+	for(int i = 0; i < MOTOR_COUNT; i++){
 		if(motor[i].running()){				    
 			motor[i].checkRefresh();
 			if (motor[i].checkStep()){

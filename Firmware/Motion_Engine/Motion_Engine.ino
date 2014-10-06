@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 4000;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 500;
 
  // digital I/O line definitions
 
@@ -297,8 +297,7 @@ void setup() {
   pinMode(CURRENT_PIN, INPUT);
 
     
-  // restore/store eeprom memory
- eepromCheck();
+
 
   // initalize state engine
  setupControlCycle();
@@ -364,6 +363,8 @@ void setup() {
 	 
  }
 
+  // restore/store eeprom memory
+  eepromCheck();
  
   // enable limit switch handler
 // limitSwitch(true);
@@ -393,17 +394,15 @@ void loop() {
 
    if ((millis()-time) > 500)   
    {   
-	 static int a = 0;
-	 a = motor[0].stepsMoved();
-	 static int b = 0;
-	 USBSerial.print("Current Steps ");
-	 USBSerial.print(a);
-	 USBSerial.print(" Delay: ");
-	 USBSerial.print(run_time);
-	 USBSerial.print(" running ");
-	 USBSerial.println(motor[0].running());
-	 b = a;
-	 time = millis();
+		USBSerial.print("Current Steps ");
+		USBSerial.print(motor[0].currentPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.print(motor[0].endPos());
+		USBSerial.print(" startPost: ");
+		USBSerial.print(motor[0].startPos());
+		USBSerial.print(" stopPos: ");
+		USBSerial.println(motor[0].stopPos());
+		time = millis();
 	}
 	 /*
      

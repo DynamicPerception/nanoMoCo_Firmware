@@ -639,7 +639,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 10:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
-		EEPROM.write(EE_END_0 + (subaddr - 1) * 16, motor[subaddr - 1].endPos());
+		OMEEPROM::write(EE_END_0 + (subaddr - 1) * 16, tempPos);
 		response(true);
 		break;
 
@@ -678,7 +678,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   byte dir = input_serial_buffer[0];
 			   input_serial_buffer++;
 
-			   unsigned int steps = Node.ntoul(input_serial_buffer);
+			   unsigned long steps = Node.ntoul(input_serial_buffer);
 
 			   // move
 			   motor[subaddr - 1].move(dir, steps);
@@ -690,15 +690,17 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 16 set program start point
 	case 16:
-		motor[subaddr - 1].startPos(Node.ntol(input_serial_buffer));
-		EEPROM.write(EE_START_0 + (subaddr - 1) * 16, motor[subaddr - 1].startPos());
+		tempPos = Node.ntol(input_serial_buffer);
+		motor[subaddr - 1].startPos(tempPos);
+		OMEEPROM::write(EE_START_0 + (subaddr - 1) * 16, tempPos);
 		response(true);
 		break;
 
 	//Command 17 set program stop point
 	case 17:
-		motor[subaddr - 1].stopPos(Node.ntol(input_serial_buffer));
-		EEPROM.write(EE_STOP_0 + (subaddr - 1) * 16, motor[subaddr - 1].stopPos());
+		tempPos = Node.ntol(input_serial_buffer);
+		motor[subaddr - 1].stopPos(tempPos);
+		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * 16, tempPos);
 		response(true);
 		break;
    

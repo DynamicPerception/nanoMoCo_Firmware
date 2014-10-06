@@ -38,7 +38,7 @@ See dynamicperception.com for more information
 
 
 // EEPROM Memory Layout Version, change this any time you modify what is stored
-const unsigned int MEMORY_VERSION = 2;
+const unsigned int MEMORY_VERSION = 3;
 
 
 
@@ -78,22 +78,25 @@ void eepromWrite() {
   
   write(EE_ADDR, device_address);
   write(EE_NAME, *device_name, 10);
-
-  EEPROM.write(EE_POS_0, motor[0].currentPos());
-  EEPROM.write(EE_END_0, motor[0].endPos());
-  EEPROM.write(EE_START_0, motor[0].startPos());
-  EEPROM.write(EE_STOP_0, motor[0].stopPos());
   
-  EEPROM.write(EE_POS_1, motor[1].currentPos());
-  EEPROM.write(EE_END_1, motor[1].endPos());
-  EEPROM.write(EE_START_1, motor[1].startPos());
-  EEPROM.write(EE_STOP_1, motor[1].stopPos());
-  
-  EEPROM.write(EE_POS_2, motor[2].currentPos());
-  EEPROM.write(EE_END_2, motor[2].endPos());
-  EEPROM.write(EE_START_2, motor[2].startPos());
-  EEPROM.write(EE_STOP_2, motor[2].stopPos());
+	long tempPos = 0;
+	long tempEnd = 0;
+	long tempStart = 0;
+	long tempStop = 0;
+	
+	for (int i = 0; i < MOTOR_COUNT; i++){
+		
+		tempPos = motor[i].currentPos();
+		tempEnd = motor[i].endPos();
+		tempStart = motor[i].startPos();
+		tempStop = motor[i].stopPos();
 
+		write(EE_POS_0+16*i,tempPos);
+		write(EE_END_0+16*i, tempEnd);
+		write(EE_START_0+16*i, tempStart);
+		write(EE_STOP_0+16*i, tempStop);
+		
+	}
  
 }
 
@@ -114,10 +117,10 @@ void eepromRestore() {
 	
 	for (int i = 0; i < MOTOR_COUNT; i++){
 
-		tempPos = EEPROM.read(EE_POS_0+16*i);
-		tempEnd = EEPROM.read(EE_END_0+16*i);
-		tempStart = EEPROM.read(EE_START_0+16*i);
-		tempStop = EEPROM.read(EE_STOP_0+16*i);
+		read(EE_POS_0+16*i,tempPos);
+		read(EE_END_0+16*i, tempEnd);
+		read(EE_START_0+16*i, tempStart);
+		read(EE_STOP_0+16*i, tempStop);
 		
 		motor[i].currentPos(tempPos);
 		motor[i].endPos(tempEnd);
