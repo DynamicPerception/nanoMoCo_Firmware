@@ -425,17 +425,17 @@ void serMain(byte command, byte* input_serial_buffer) {
 			response(false);
 		break;
 
-	//Command 20 sets the max run time  
+	//Command 20 sets motors' continuous mode
 	case 20:
-		max_time = Node.ntoul(input_serial_buffer);
-		response(true);
-		break;
-
-	//Command 21 sets motors' continuous mode
-	case 21:
 		motor[0].planType(input_serial_buffer[0]);
 		motor[1].planType(input_serial_buffer[0]);
 		motor[2].planType(input_serial_buffer[0]);
+		response(true);
+		break;
+
+	//Command 21 sets the max run time  
+	case 21:
+		max_time = Node.ntoul(input_serial_buffer);
 		response(true);
 		break;
 		
@@ -552,14 +552,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, altOutTrig);
 		break;
 
-	//Command 117 reads motors' continuous mode setting
+	//Command 117 reads start time delay (seconds)
 	case 117:
-		response(true, motor[0].continuous());
+		response(true, start_delay/1000);
 		break;
 		
-	//Command 118 reads start time delay (seconds)
+	//Command 118 reads motors' continuous mode setting
 	case 118:
-		response(true, start_delay/1000);
+		response(true, motor[0].continuous());
 		break;
 
 	//Command 119 reads whether the controller has been powercycled since last query
@@ -744,12 +744,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Commnad 23 send motor to program start point
 	case 23:
 		motor[subaddr - 1].moveToStart();
+		startISR();
 		response(true);
 		break;
 	
 	//Commnad 24 send motor to program stop point
 	case 24:
 		motor[subaddr - 1].moveToStop();
+		startISR();
 		response(true);
 		break;
 
@@ -808,6 +810,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		  	
 		} // end else (mt_plan
 	  	
+		break;
+
+	//command 27 reset limits and program positions
+	case 27:
+		motor[subaddr - 1].homeSet();
+		motor[subaddr - 1].endPos(0);
+		motor[subaddr - 1].startPos(0);
+		motor[subaddr - 1].stopPos(0);
+		response(true);
 		break;
 		
 	

@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 500;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
 
  // digital I/O line definitions
 

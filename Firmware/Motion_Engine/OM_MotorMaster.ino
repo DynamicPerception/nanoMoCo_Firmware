@@ -231,17 +231,20 @@ void startISR() {
 	
 
 
-	 // is async control not already running?
-	 if( !ISR_On ) {
-		 
-		 	USBSerial.print("Start time: ");
-		 	USBSerial.println(millis());
-           
-           _fireCallback(OM_MOT_MOVING);
-    	   Timer1.initialize(motor[0].curSamplePeriod());
-           Timer1.attachInterrupt(_runISR);
-           ISR_On = true;
-	 } // end if not running
+	if ((motor[0].running() || motor[1].running() || motor[2].running())){
+
+		// is async control not already running?
+		if (!ISR_On) {
+
+			USBSerial.print("Start time: ");
+			USBSerial.println(millis());
+
+			_fireCallback(OM_MOT_MOVING);
+			Timer1.initialize(motor[0].curSamplePeriod());
+			Timer1.attachInterrupt(_runISR);
+			ISR_On = true;
+		} // end if not running
+	}
 
 }
 
