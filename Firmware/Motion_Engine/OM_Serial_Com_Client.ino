@@ -424,24 +424,24 @@ void serMain(byte command, byte* input_serial_buffer) {
 		} else
 			response(false);
 		break;
-
-	//Command 20 sets motors' continuous mode
+		
+	//Command 20 sets the max run time  
 	case 20:
-		motor[0].planType(input_serial_buffer[0]);
-		motor[1].planType(input_serial_buffer[0]);
-		motor[2].planType(input_serial_buffer[0]);
-		response(true);
-		break;
-
-	//Command 21 sets the max run time  
-	case 21:
 		max_time = Node.ntoul(input_serial_buffer);
 		response(true);
 		break;
-		
-	//Command 22 set start time delay (input is in seconds)
-	case 22:
+	
+	//Command 21 set start time delay (input is in seconds)
+	case 21:
 		start_delay = (Node.ntoul(input_serial_buffer))*1000;//converts the input to milliseconds
+		response(true);
+		break;
+
+	//Command 22 sets motors' continuous mode
+	case 22:
+		motor[0].planType(input_serial_buffer[0]);
+		motor[1].planType(input_serial_buffer[0]);
+		motor[2].planType(input_serial_buffer[0]);
 		response(true);
 		break;
         

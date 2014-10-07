@@ -182,12 +182,12 @@ void stopAllMotors() {
 		motor[i].stop();		  
 		//update current position to EEPROM
 		long tempPosition= motor[i].currentPos();
-		OMEEPROM::write(EE_POS_0 + (i) * 16, tempPosition);
+		OMEEPROM::write(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
 		USBSerial.print("Memory Location: ");
-		USBSerial.print(EE_POS_0 + (i) * 16);
+		USBSerial.print(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE);
 		USBSerial.print(" Stored at Location: ");
 		tempPosition= 0;
-		OMEEPROM::read(EE_POS_0 + (i) * 16, tempPosition);
+		OMEEPROM::read(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
 		USBSerial.println(tempPosition);
       }
       
@@ -229,16 +229,14 @@ void clearAll() {
  // execute an async move, when specifying a direction
 void startISR() {
 	
-
-
 	if ((motor[0].running() || motor[1].running() || motor[2].running())){
 
 		// is async control not already running?
-		if (!ISR_On) {
-
+		if( !ISR_On ) {
+		 
 			USBSerial.print("Start time: ");
 			USBSerial.println(millis());
-
+           
 			_fireCallback(OM_MOT_MOVING);
 			Timer1.initialize(motor[0].curSamplePeriod());
 			Timer1.attachInterrupt(_runISR);
@@ -280,8 +278,6 @@ void _runISR() {
 	//resets the byteFired flag
 	byteFired = 0;
 	
-
-
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
         stopAllMotors();
 			USBSerial.print("End time: ");

@@ -61,13 +61,13 @@ void move_motor() {
 			   }
 			   Engine.state(continue_state);
 		   }
-		   else if( motor[i].mtpc == 1 ) {
+		   else if( motor[i].mtpc == 0 ) {
 			   // planned SMS move
 			   motor[i].programMove(); //motor[i].planRun();
 			   // block camera while motor is moving
 			   Engine.state(ST_RUN);
 		   }
-		   else if( motor[i].mtpc == 2 ) {
+		   else if( motor[i].mtpc == 1 ) {
 			   // planned continuous move
 			   motor[i].programMove();
 			   Engine.state(continue_state);

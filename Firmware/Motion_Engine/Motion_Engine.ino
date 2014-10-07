@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 500;
 
  // digital I/O line definitions
 
@@ -97,22 +97,28 @@ const byte MOTOR_COUNT				= 3;
 const int EE_ADDR       = 0;				// device_address (2 bytes)
 const int EE_NAME       = 2;				// device name (16 bytes)
 
-const int EE_POS_0 = EE_NAME + 10;			// Motor 0 current position (long int)
-const int EE_END_0 = EE_POS_0 + 4;			// Motor 0 end limit position (long int)
-const int EE_START_0 = EE_END_0 + 4;		// Motor 0 program start position (long int)
-const int EE_STOP_0 = EE_START_0 + 4;		// Motor 0 program stop position (long int)
+const int EE_POS_0   = EE_NAME    + 10;		// Motor 0 current position (long int)
+const int EE_END_0   = EE_POS_0   + 4;		// Motor 0 end limit position (long int)
+const int EE_START_0 = EE_END_0   + 4;		// Motor 0 program start position (long int)
+const int EE_STOP_0  = EE_START_0 + 4;		// Motor 0 program stop position (long int)
+const int EE_MS_0    = EE_STOP_0  + 4;		// Motor 0 microstep value (byte)
 
-const int EE_POS_1 = EE_STOP_0 + 4;			// Motor 1 current position (long int)
-const int EE_END_1 = EE_POS_1 + 4;			// Motor 1 end limit position (long int)
-const int EE_START_1 = EE_END_1 + 4;		// Motor 1 program start position (long int)
-const int EE_STOP_1 = EE_START_1 + 4;		// Motor 1 program stop position (long int)
+const int EE_POS_1   = EE_MS_0    + 1;		// Motor 1 current position (long int)
+const int EE_END_1   = EE_POS_1   + 4;		// Motor 1 end limit position (long int)
+const int EE_START_1 = EE_END_1   + 4;		// Motor 1 program start position (long int)
+const int EE_STOP_1  = EE_START_1 + 4;		// Motor 1 program stop position (long int)
+const int EE_MS_1    = EE_STOP_1  + 4;		// Motor 1 microstep value (byte)
 
-const int EE_POS_2 = EE_STOP_1 + 4;		    // Motor 2 current position (long int)
-const int EE_END_2 = EE_POS_2 + 4;			// Motor 2 end limit position (long int)
-const int EE_START_2 = EE_END_2 + 4;		// Motor 2 program start position (long int)
-const int EE_STOP_2 = EE_START_2 + 4;		// Motor 2 program stop position (long int)
+const int EE_POS_2   = EE_MS_1    + 1;		// Motor 2 current position (long int)
+const int EE_END_2   = EE_POS_2   + 4;		// Motor 2 end limit position (long int)
+const int EE_START_2 = EE_END_2   + 4;		// Motor 2 program start position (long int)
+const int EE_STOP_2  = EE_START_2 + 4;		// Motor 2 program stop position (long int)
+const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
+
+const int EE_MOTOR_MEMORY_SPACE = 17;		//Number of bytes required for storage for each motor's variables
 
 long tempPos = 0;
+byte tempMS = 0;  
 
 // default device address
 int device_address = 3;
@@ -396,10 +402,10 @@ void loop() {
    {   
 		USBSerial.print("Current Steps ");
 		USBSerial.print(motor[0].currentPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.print(motor[0].endPos());
-		USBSerial.print(" startPost: ");
-		USBSerial.print(motor[0].startPos());
+		USBSerial.print(" camera_fired: ");
+		USBSerial.print(camera_fired);
+		USBSerial.print(" MS: ");
+		USBSerial.print(motor[0].ms());
 		USBSerial.print(" stopPos: ");
 		USBSerial.println(motor[0].stopPos());
 		time = millis();
