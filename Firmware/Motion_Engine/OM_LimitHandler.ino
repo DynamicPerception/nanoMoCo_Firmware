@@ -100,8 +100,6 @@ void altHandler(byte p_which) {
   if((millis() - trigLast) >= ALT_TRIG_THRESH ) {
     
     trigLast = millis();
-	USBSerial.print("In altHandler loop with p_which");
-	USBSerial.println(p_which);
     
     if( altInputs[p_which] == ALT_START) 
         startProgram();
@@ -143,13 +141,11 @@ void altHandler(byte p_which) {
 
 /** Handler for ISR One */ 
 void altISROne() {
-	USBSerial.println("Interrupt one!!!");
   altHandler(0);
 }
 
 /** Handler for ISR Two */
 void altISRTwo() {
-	USBSerial.println("Interrupt two!!!");
   altHandler(1);
 }
 
@@ -199,8 +195,6 @@ void altConnect(byte p_which, byte p_mode) {
   
 		// regarding 6 and 7 below - don't ask me.. ask who ever did that wierd order in WInterrupts.c
 		switch( p_which ) {
-				USBSerial.print("p_which in attaching interrupts is: ");
-				USBSerial.println(p_which);
 			case 0: //sets interrupt attached to ring
 				attachInterrupt(2, altISROne, altDirection);
 				break;

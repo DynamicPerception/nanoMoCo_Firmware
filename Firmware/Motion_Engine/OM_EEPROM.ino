@@ -127,12 +127,12 @@ void eepromRestore() {
 		read(EE_STOP_0  + EE_MOTOR_MEMORY_SPACE * i, tempStop);
 		read(EE_MS_0    + EE_MOTOR_MEMORY_SPACE * i, tempMS);
 		
-		
+		motor[i].ms(tempMS);
 		motor[i].currentPos(tempPos);
 		motor[i].endPos(tempEnd);
 		motor[i].startPos(tempStart);
 		motor[i].stopPos(tempStop);
-		motor[i].ms(tempMS);
+		
 			
 	}
 

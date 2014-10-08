@@ -81,18 +81,6 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
   commandTime = millis();
   serCommandHandler(subaddr, command, buf);
-  /*
-  USBSerial.print("Sub addr is: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  USBSerial.print(" length: ");
-  USBSerial.print(buf[0]);
-  USBSerial.print(" data: ");
-  for (int i = 0; i <= buf[0]; i++){
-	  USBSerial.print(buf[i+1]);
-  }
-  */
 }
 
 /* Handles Node 2 Commands
@@ -106,19 +94,6 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
   serCommandHandler(subaddr, command, buf);
-  /*
-    USBSerial.print("Sub addr is: ");
-    USBSerial.print(subaddr);
-    USBSerial.print(" command: ");
-    USBSerial.print(command);
-    USBSerial.print(" length: ");
-    USBSerial.print(NodeBlue.bufferLen());
-    USBSerial.print(" data: ");
-    for (int i = 0; i <= NodeBlue.bufferLen(); i++){
-	    USBSerial.print(buf[i]);
-		USBSerial.print(" ");
-    }
-	*/
 }
 
 
@@ -133,18 +108,6 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
 void serNodeUSBHandler(byte subaddr, byte command, byte*buf) {
   node = 3;
   serCommandHandler(subaddr, command, buf);
-  /*
-  USBSerial.print("Sub addr is: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  USBSerial.print(" length: ");
-  USBSerial.print(buf[0]);
-  USBSerial.print(" data: ");
-  for (int i = 0; i <= buf[0]; i++){
-	  USBSerial.print(buf[i+1]);
-  }
-  */
 }
 
 
@@ -871,7 +834,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 108 reads the continuous speed for the motor
 	case 108:
 		response(true, motor[subaddr - 1].contSpeed());
-		USBSerial.println(motor[subaddr - 1].contSpeed());
 		break;
 
 	//Command 109 reads the accel/decel value continuous motion

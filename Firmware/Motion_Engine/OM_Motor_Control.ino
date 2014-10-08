@@ -54,44 +54,36 @@ void move_motor() {
    for(int i = 0; i < MOTOR_COUNT; i++){
 	   //only check the motors that are enable
 	   if( motor[i].enable()){
-		   if( motor[i].continuous() ) {
-			   // continuous motion mode
-			   if( ! motor[i].running() ) {
-				   motor[i].move( motor[i].dir(), 0 );
-			   }
-			   Engine.state(continue_state);
-		   }
-		   else if( motor[i].mtpc == 0 ) {
-			   // planned SMS move
-			   motor[i].programMove(); //motor[i].planRun();
-			   // block camera while motor is moving
-			   Engine.state(ST_RUN);
-		   }
-		   else if( motor[i].mtpc == 1 ) {
-			   // planned continuous move
-			   motor[i].programMove();
-			   Engine.state(continue_state);
-		   }
-		   else if( motor[i].steps() == 0 ) {
-			   // not a planned move and nothing to do
-			   Engine.state(continue_state);
-		   }
-		   else {
-			   // move using Motor.steps() and Motor.dir()
-			   motor[i].move();
-			   // we need to block the camera while the motor is running
-			   Engine.state(ST_RUN);
-		   } 
-	   }
+		   //check to see if there's a shot delay for the motor
+			if(!(motor[i].planLeadIn() > 0 && camera_fired <= motor[i].planLeadIn())){
+				if( motor[i].continuous() ) {
+					// continuous motion mode
+					if( ! motor[i].running() ) {
+						motor[i].move( motor[i].dir(), 0 );
+					}
+					Engine.state(continue_state);
+				}
+				else if( motor[i].mtpc == 0 ) {
+					// planned SMS move
+					motor[i].programMove(); //motor[i].planRun();
+					// block camera while motor is moving
+					Engine.state(ST_RUN);
+				}
+				else if( motor[i].mtpc == 1 ) {
+					// planned continuous move
+					motor[i].programMove();
+					Engine.state(continue_state);
+				} 
+			}
+			
+		} 
 
    }
    
    
    //Start interrupt service routine to start motors moving
    startISR();
- 
- 
-  
+
    
 }
 

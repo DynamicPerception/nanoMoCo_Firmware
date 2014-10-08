@@ -183,12 +183,6 @@ void stopAllMotors() {
 		//update current position to EEPROM
 		long tempPosition= motor[i].currentPos();
 		OMEEPROM::write(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
-		USBSerial.print("Memory Location: ");
-		USBSerial.print(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE);
-		USBSerial.print(" Stored at Location: ");
-		tempPosition= 0;
-		OMEEPROM::read(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
-		USBSerial.println(tempPosition);
       }
       
       ISR_On = false;
@@ -233,9 +227,6 @@ void startISR() {
 
 		// is async control not already running?
 		if( !ISR_On ) {
-		 
-			USBSerial.print("Start time: ");
-			USBSerial.println(millis());
            
 			_fireCallback(OM_MOT_MOVING);
 			Timer1.initialize(motor[0].curSamplePeriod());
@@ -280,8 +271,6 @@ void _runISR() {
 	
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
         stopAllMotors();
-			USBSerial.print("End time: ");
-			USBSerial.println(millis());
     }
 
 	//PORTF &= ~(1 << motor[2].stpflg);

@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 500;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
 
  // digital I/O line definitions
 
@@ -397,40 +397,20 @@ void loop() {
   Node.check();
   NodeBlue.check();
   NodeUSB.check();
-
+/*
    if ((millis()-time) > 500)   
    {   
 		USBSerial.print("Current Steps ");
 		USBSerial.print(motor[0].currentPos());
 		USBSerial.print(" camera_fired: ");
 		USBSerial.print(camera_fired);
-		USBSerial.print(" MS: ");
-		USBSerial.print(motor[0].ms());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[0].startPos());
 		USBSerial.print(" stopPos: ");
 		USBSerial.println(motor[0].stopPos());
 		time = millis();
 	}
-	 /*
-     
-     //altSerial.print(j);
-     int voltage=analogRead(VOLTAGE_PIN);  
-     int current=analogRead(CURRENT_PIN);
-     USBSerial.print("start time is ");
-     USBSerial.print(timeStart);
-     USBSerial.print(" end time is ");
-     USBSerial.print(timeEnd);
-	USBSerial.print(" auxInput[0]: ");
-	USBSerial.print(altInputs[0]);
-	USBSerial.print(" auxInput[1]: ");
-	USBSerial.print(altInputs[1]);
-	USBSerial.print(" altExtInt: ");
-	USBSerial.println(altExtInt);
-	//USBSerial.print(" maxsSpeed is: ");
-	//USBSerial.println(motor[0].maxSpeed());
-
-   }
-   */
-
+*/
 	//Check to see if manual move is on and motors are moving
 	//must see a command from the master every second or it'll stop
 	if ((motor[0].running() || motor[1].running() || motor[2].running()) && manualMove){

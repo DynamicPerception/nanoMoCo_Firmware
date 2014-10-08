@@ -161,13 +161,22 @@ void cycleClearToMove() {
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();
        
+	   int minPlanLead = 0;
+	   
        // do not move if a motor delay is programmed...
 	   for(int i = 0; i < MOTOR_COUNT; i++){
-		  if( (motor[i].enable() && motor[i].mtpc != 0 && motor[i].planLeadIn() > 0 && camera_fired < motor[i].planLeadIn())) {
-			  Engine.state(ST_CLEAR);
-			  return;
-		  }    
+		   
+		   if( (motor[i].enable() &&  motor[i].planLeadIn() > 0 )){
+			   if ((minPlanLead != 0 && motor[i].planLeadIn() < minPlanLead) || (i == 0))
+					minPlanLead = motor[i].planLeadIn();
+		   }  
+
 	   }
+	   
+	   	if( ( minPlanLead > 0 && camera_fired <= minPlanLead ) ) {
+		   	Engine.state(ST_CLEAR);
+		   	return;
+	   	}
       
          // ok to run motors, if needed
       move_motor(); 
@@ -193,7 +202,7 @@ void cycleCheckMotor() {
      
      // do not block on continuous motion of any sort
 	 for (int i = 0; i < MOTOR_COUNT; i++){
-      if( motor[i].continuous() == false && motor[i].mtpc != 2 && motor[i].running() == true )
+      if( motor[i].continuous() == false && motor[i].mtpc != 1 && motor[i].running() == true )
         return;
 	 }
 
