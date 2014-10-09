@@ -202,7 +202,7 @@ void cycleCheckMotor() {
      
      // do not block on continuous motion of any sort
 	 for (int i = 0; i < MOTOR_COUNT; i++){
-      if( motor[i].continuous() == false && motor[i].mtpc != 1 && motor[i].running() == true )
+      if( motor[i].mtpc == 0 && motor[i].running() == true )
         return;
 	 }
 

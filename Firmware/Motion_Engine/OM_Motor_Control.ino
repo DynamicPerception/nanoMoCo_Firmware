@@ -56,14 +56,7 @@ void move_motor() {
 	   if( motor[i].enable()){
 		   //check to see if there's a shot delay for the motor
 			if(!(motor[i].planLeadIn() > 0 && camera_fired <= motor[i].planLeadIn())){
-				if( motor[i].continuous() ) {
-					// continuous motion mode
-					if( ! motor[i].running() ) {
-						motor[i].move( motor[i].dir(), 0 );
-					}
-					Engine.state(continue_state);
-				}
-				else if( motor[i].mtpc == 0 ) {
+				if( motor[i].mtpc == 0 ) {
 					// planned SMS move
 					motor[i].programMove(); //motor[i].planRun();
 					// block camera while motor is moving

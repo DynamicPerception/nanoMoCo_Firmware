@@ -522,7 +522,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 	//Command 118 reads motors' continuous mode setting
 	case 118:
-		response(true, motor[0].continuous());
+		response(true, motor[0].planType());
 		break;
 
 	//Command 119 reads whether the controller has been powercycled since last query
@@ -624,6 +624,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 13 set motor's continous speed 
     case 13:
       motor[subaddr-1].contSpeed(Node.ntof(input_serial_buffer));
+	  tempFloat = Node.ntof(input_serial_buffer);
+	  USBSerial.println(tempFloat);
       response(true);
       break;
 

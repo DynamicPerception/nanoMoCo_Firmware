@@ -119,6 +119,7 @@ const int EE_MOTOR_MEMORY_SPACE = 17;		//Number of bytes required for storage fo
 
 long tempPos = 0;
 byte tempMS = 0;  
+float tempFloat = 0.0;
 
 // default device address
 int device_address = 3;
@@ -361,7 +362,6 @@ void setup() {
   // defaults for motor
  for( int i = 0; i < MOTOR_COUNT; i++){
 	  motor[i].enable(false);
-	  motor[i].continuous(false);
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].sleep(true);
@@ -397,7 +397,7 @@ void loop() {
   Node.check();
   NodeBlue.check();
   NodeUSB.check();
-/*
+
    if ((millis()-time) > 500)   
    {   
 		USBSerial.print("Current Steps ");
@@ -410,7 +410,7 @@ void loop() {
 		USBSerial.println(motor[0].stopPos());
 		time = millis();
 	}
-*/
+
 	//Check to see if manual move is on and motors are moving
 	//must see a command from the master every second or it'll stop
 	if ((motor[0].running() || motor[1].running() || motor[2].running()) && manualMove){
@@ -419,8 +419,8 @@ void loop() {
 		}
 	}
    
-      
-	  	   
+   
+   
 	for(int i = 0; i<MOTOR_COUNT; i++){
 		if(motor[i].running()){
 			motor[i].updateSpline();
