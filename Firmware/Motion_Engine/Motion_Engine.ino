@@ -63,6 +63,8 @@ const byte CAM_DEFAULT_FOCUS    = 0;
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
 const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
 
+const unsigned int MOT_DEFAULT_BACKLASH = 96;
+
  // digital I/O line definitions
 
 const byte DE_PIN					= 28;
@@ -117,9 +119,10 @@ const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
 
 const int EE_MOTOR_MEMORY_SPACE = 17;		//Number of bytes required for storage for each motor's variables
 
+
+//temp values for EEPROM
 long tempPos = 0;
 byte tempMS = 0;  
-float tempFloat = 0.0;
 
 // default device address
 int device_address = 3;
@@ -143,6 +146,7 @@ volatile byte force_stop = false;
 boolean manualMove = false;
 const int manualMoveTimeMax = 1000;
 unsigned long commandTime = 0;
+ 
 
   // do we generate timing for all devices on the network?
   // i.e. -are we the timing master?
@@ -365,6 +369,7 @@ void setup() {
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].sleep(true);
+	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
 	  motor[i].ms(4);
 	 
  }
@@ -404,8 +409,8 @@ void loop() {
 		USBSerial.print(motor[0].currentPos());
 		USBSerial.print(" camera_fired: ");
 		USBSerial.print(camera_fired);
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[0].startPos());
+		USBSerial.print(" backlash: ");
+		USBSerial.print(motor[0].backlash());
 		USBSerial.print(" stopPos: ");
 		USBSerial.println(motor[0].stopPos());
 		time = millis();

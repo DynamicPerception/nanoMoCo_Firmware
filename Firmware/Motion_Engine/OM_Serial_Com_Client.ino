@@ -568,14 +568,16 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 5 set motor's backlash amount  
 	case 5:
-		motor[subaddr - 1].backlash(input_serial_buffer[0]);
+		motor[subaddr - 1].backlash(Node.ntoui(input_serial_buffer));
 		response(true);
 		break;
     
 	//Command 6 set the microstep for the motor
 	case 6:
 		// set motor microstep (1,2,4,8,16)
-		motor[subaddr - 1].ms(input_serial_buffer[0]);
+		tempMS = input_serial_buffer[0];
+		motor[subaddr - 1].ms(tempMS);
+		OMEEPROM::write(EE_MS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempMS);
 		response(true);
 		break;
 	
@@ -595,6 +597,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 9 set motor's home limit
     case 9:
       motor[subaddr-1].homeSet();
+	  tempPos= motor[subaddr - 1].currentPos();
+	  OMEEPROM::write(EE_POS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
       response(true);
       break;	
 
@@ -624,8 +628,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 13 set motor's continous speed 
     case 13:
       motor[subaddr-1].contSpeed(Node.ntof(input_serial_buffer));
-	  tempFloat = Node.ntof(input_serial_buffer);
-	  USBSerial.println(tempFloat);
       response(true);
       break;
 
