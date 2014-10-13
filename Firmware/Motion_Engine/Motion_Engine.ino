@@ -411,8 +411,12 @@ void loop() {
 		USBSerial.print(camera_fired);
 		USBSerial.print(" backlash: ");
 		USBSerial.print(motor[0].backlash());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[0].startPos());
 		USBSerial.print(" stopPos: ");
-		USBSerial.println(motor[0].stopPos());
+		USBSerial.print(motor[0].stopPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.println(motor[0].endPos());
 		time = millis();
 	}
 
