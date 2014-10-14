@@ -53,7 +53,7 @@ void setupControlCycle() {
 void cycleCamera() {
 	
     // stop program if max shots exceeded    
-  if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((Camera.maxShots == 0 || !Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
+  if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((!Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
            // stop program running w/o clearing variables
 		stopProgram();
 		return;
