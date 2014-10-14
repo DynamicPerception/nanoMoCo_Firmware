@@ -56,24 +56,24 @@ void move_motor() {
 	   if( motor[i].enable()){
 		   //check to see if there's a shot delay for the motor
 			if(!(motor[i].planLeadIn() > 0 && camera_fired <= motor[i].planLeadIn())){
+				motor[i].programMove();
 				if( motor[i].mtpc == 0 ) {
 					// planned SMS move
-					motor[i].programMove(); //motor[i].planRun();
+					 //motor[i].planRun();
 					// block camera while motor is moving
 					Engine.state(ST_RUN);
 				}
-				else if( motor[i].mtpc == 1 ) {
+				else  {
 					// planned continuous move
-					motor[i].programMove();
 					Engine.state(continue_state);
-				} 
+				}
 			}
 			
 		} 
 
    }
-   
-   
+
+
    //Start interrupt service routine to start motors moving
    startISR();
 

@@ -384,10 +384,9 @@ void setup() {
  flasher(DEBUG_PIN, START_FLASH_CNT);
  //startISR();
 
- 
-  
-}
 
+ attachInterrupt(1, eStop, FALLING); 
+}
 
 
 
@@ -449,7 +448,7 @@ void loop() {
 
 		// Got an external stop somewhere, that wasn't a command?
 		if( force_stop == true )
-			stopProgram(false);
+			stopProgram();
        
 		// hit max runtime? done!
 		if( ComMgr.master() && max_time > 0 && run_time > max_time )
@@ -510,6 +509,10 @@ void startProgram() {
      // start program
   last_time = millis();
   running   = true;
+	for( int i = 0; i < MOTOR_COUNT; i++){
+		if(motor[i].enable())
+			motor[i].programDone(false);
+	}
   
     // debug pin may have been brought high with a force stop
   if( force_stop == true ) {
@@ -547,6 +550,13 @@ byte powerCycled() {
 	cycled = false;
 
 	return(response);
+}
+
+void eStop(){
+	if (running)
+		pauseProgram();
+	else
+		stopAllMotors();	
 }
 
 

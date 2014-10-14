@@ -647,6 +647,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
 
 			   // move
+			   if (steps == 0)
+				 motor[subaddr - 1].continuous(true);
+				
 			   motor[subaddr - 1].move(dir, steps);
 			   startISR();
 
@@ -784,6 +787,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		motor[subaddr - 1].endPos(0);
 		motor[subaddr - 1].startPos(0);
 		motor[subaddr - 1].stopPos(0);
+		eepromWrite();
 		response(true);
 		break;
 		

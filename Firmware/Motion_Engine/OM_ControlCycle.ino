@@ -51,13 +51,13 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-
+	
     // stop program if max shots exceeded    
-  if( Camera.maxShots > 0  && camera_fired >= Camera.maxShots ) {
+  if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((Camera.maxShots == 0 || !Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
            // stop program running w/o clearing variables
-      stopProgram(false);
-      return;
-  }
+		stopProgram();
+		return;
+  } 
   
 	// if in external interval mode, don't do anything is a force shot isn't
 	// registered
@@ -199,7 +199,7 @@ void cycleClearToMove() {
 
 void cycleCheckMotor() {
          // still running
-     
+
      // do not block on continuous motion of any sort
 	 for (int i = 0; i < MOTOR_COUNT; i++){
       if( motor[i].mtpc == 0 && motor[i].running() == true )

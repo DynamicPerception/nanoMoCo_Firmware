@@ -256,10 +256,10 @@ void _runISR() {
 			}
 		} // end if( motor[i].m_isRun
 
-	} // end for loop		
+	} // end for loop	
 		
 	
-	//byteFired |= (1 << motor[0].stpflg);
+	
     PORTF |= byteFired;
     delayMicroseconds(1);
     PORTF &= ~byteFired;
