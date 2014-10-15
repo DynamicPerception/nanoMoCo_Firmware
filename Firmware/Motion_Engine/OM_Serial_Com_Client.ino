@@ -605,7 +605,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 10:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
-		OMEEPROM::write(EE_END_0 + (subaddr - 1) * 16, tempPos);
+		OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 
@@ -661,7 +661,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 16:
 		tempPos = Node.ntol(input_serial_buffer);
 		motor[subaddr - 1].startPos(tempPos);
-		OMEEPROM::write(EE_START_0 + (subaddr - 1) * 16, tempPos);
+		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 
@@ -669,7 +669,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 17:
 		tempPos = Node.ntol(input_serial_buffer);
 		motor[subaddr - 1].stopPos(tempPos);
-		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * 16, tempPos);
+		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
    

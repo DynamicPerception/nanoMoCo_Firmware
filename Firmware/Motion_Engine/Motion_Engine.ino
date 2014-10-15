@@ -367,7 +367,7 @@ void setup() {
  for( int i = 0; i < MOTOR_COUNT; i++){
 	  motor[i].enable(false);
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
-	  motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
+	  motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].sleep(true);
 	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
 	  motor[i].ms(4);
@@ -405,17 +405,17 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 		USBSerial.print("Current Steps ");
-		USBSerial.print(motor[0].currentPos());
-		USBSerial.print(" camera_fired: ");
-		USBSerial.print(camera_fired);
+		USBSerial.print(motor[2].currentPos());
+		USBSerial.print(" continious Speed: ");
+		USBSerial.print(motor[2].contSpeed());
 		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[0].backlash());
+		USBSerial.print(motor[2].backlash());
 		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[0].startPos());
+		USBSerial.print(motor[2].startPos());
 		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[0].stopPos());
+		USBSerial.print(motor[2].stopPos());
 		USBSerial.print(" endPos: ");
-		USBSerial.println(motor[0].endPos());
+		USBSerial.println(motor[2].endPos());
 		time = millis();
 	}
 
