@@ -404,6 +404,32 @@ void loop() {
 
    if ((millis()-time) > 500)   
    {   
+
+	   USBSerial.print(motor[0].currentPos());
+	   USBSerial.print(" continious Speed: ");
+	   USBSerial.print(motor[0].contSpeed());
+	   USBSerial.print(" backlash: ");
+	   USBSerial.print(motor[0].backlash());
+	   USBSerial.print(" startPos: ");
+	   USBSerial.print(motor[0].startPos());
+	   USBSerial.print(" stopPos: ");
+	   USBSerial.print(motor[0].stopPos());
+	   USBSerial.print(" endPos: ");
+	   USBSerial.println(motor[0].endPos());
+
+	   USBSerial.print("Current Steps ");
+	   USBSerial.print(motor[1].currentPos());
+	   USBSerial.print(" continious Speed: ");
+	   USBSerial.print(motor[1].contSpeed());
+	   USBSerial.print(" backlash: ");
+	   USBSerial.print(motor[1].backlash());
+	   USBSerial.print(" startPos: ");
+	   USBSerial.print(motor[1].startPos());
+	   USBSerial.print(" stopPos: ");
+	   USBSerial.print(motor[1].stopPos());
+	   USBSerial.print(" endPos: ");
+	   USBSerial.println(motor[1].endPos());
+
 		USBSerial.print("Current Steps ");
 		USBSerial.print(motor[2].currentPos());
 		USBSerial.print(" continious Speed: ");
@@ -416,6 +442,7 @@ void loop() {
 		USBSerial.print(motor[2].stopPos());
 		USBSerial.print(" endPos: ");
 		USBSerial.println(motor[2].endPos());
+		USBSerial.println("");
 		time = millis();
 	}
 

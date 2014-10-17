@@ -790,6 +790,22 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		eepromWrite();
 		response(true);
 		break;
+
+	//Command 28 set program start point here
+	case 28:
+		tempPos = motor[subaddr - 1].currentPos();
+		motor[subaddr - 1].startPos(tempPos);
+		OMEEPROM::write(EE_START_0 + (subaddr - 1) * 16, tempPos);
+		response(true);
+		break;
+
+	//Command 29 set program stop point here
+	case 29:
+		tempPos = motor[subaddr - 1].currentPos();
+		motor[subaddr - 1].stopPos(tempPos);
+		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * 16, tempPos);
+		response(true);
+		break;
 		
 	
 
@@ -908,7 +924,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 3 expose camera now 
     case 3:
-      Camera.expose( Node.ntoul(input_serial_buffer) );
+      Camera.expose();
       response(true);
       break;
     
@@ -992,7 +1008,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       response(true, Camera.exposureFocus());
       break;
       
-    //Command 107 gets the repeat cycles count
+    //Command 107 gets the MUP state
     case 107:
       response(true, Camera.repeat);
       break;
