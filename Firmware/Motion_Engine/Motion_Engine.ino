@@ -62,6 +62,7 @@ const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
 const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
+const float MOT_DEFAULT_CONT_ACCEL	     = 15000.0;
 
 const unsigned int MOT_DEFAULT_BACKLASH = 96;
 
@@ -368,6 +369,7 @@ void setup() {
 	  motor[i].enable(false);
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
+	  motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
 	  motor[i].sleep(true);
 	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
 	  motor[i].ms(4);
