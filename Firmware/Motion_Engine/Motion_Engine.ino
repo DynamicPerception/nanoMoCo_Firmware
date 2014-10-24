@@ -137,7 +137,7 @@ void stopProgram(boolean force_clear = true);
 
  // program timer counters
 
-unsigned long run_time    = 0;
+unsigned long run_time    = 0;	// Amount of time since the program has started (ms)
 unsigned long last_time   = 0;
 boolean running = false;
 volatile byte force_stop = false;
@@ -407,7 +407,7 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	   USBSerial.print(motor[0].currentPos());
+	   /*USBSerial.print(motor[0].currentPos());
 	   USBSerial.print(" continious Speed: ");
 	   USBSerial.print(motor[0].contSpeed());
 	   USBSerial.print(" backlash: ");
@@ -444,7 +444,7 @@ void loop() {
 		USBSerial.print(motor[2].stopPos());
 		USBSerial.print(" endPos: ");
 		USBSerial.println(motor[2].endPos());
-		USBSerial.println("");
+		USBSerial.println("");*/
 		time = millis();
 	}
 
@@ -489,7 +489,7 @@ void loop() {
 			Engine.state(ST_CLEAR);
      
 		// if the start delay is done then check current engine state and handle appropriately
-		if(run_time >= start_delay)			
+		if(run_time >= start_delay)
 			Engine.checkCycle();
    }
 

@@ -57,7 +57,7 @@ void move_motor() {
 		   //check to see if there's a shot delay for the motor
 			if(!(motor[i].planLeadIn() > 0 && camera_fired <= motor[i].planLeadIn())){
 				motor[i].programMove();
-				if( motor[i].mtpc == 0 ) {
+				if( motor[i].planMoveType  == 0 ) {
 					// planned SMS move
 					 //motor[i].planRun();
 					// block camera while motor is moving

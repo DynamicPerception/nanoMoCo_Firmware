@@ -80,6 +80,23 @@ See dynamicperception.com for more information
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
   commandTime = millis();
+  USBSerial.print("MocoBus ");
+  USBSerial.print("SubAddr: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" buf[0]: ");
+  USBSerial.print(buf[0], HEX);
+  USBSerial.print(" buf[1]: ");
+  USBSerial.print(buf[1], HEX);
+  USBSerial.print(" buf[2]: ");
+  USBSerial.print(buf[2], HEX);
+  USBSerial.print(" buf[3]: ");
+  USBSerial.print(buf[3], HEX);
+  USBSerial.print(" buf[4]: ");
+  USBSerial.print(buf[4], HEX);
+  USBSerial.print(" time: ");
+  USBSerial.println(commandTime);
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -93,6 +110,23 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
+  USBSerial.print("Bluetooth ");
+  USBSerial.print("SubAddr: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" buf[0]: ");
+  USBSerial.print(buf[0], HEX);
+  USBSerial.print(" buf[1]: ");
+  USBSerial.print(buf[1], HEX);
+  USBSerial.print(" buf[2]: ");
+  USBSerial.print(buf[2], HEX);
+  USBSerial.print(" buf[3]: ");
+  USBSerial.print(buf[3], HEX);
+  USBSerial.print(" buf[4]: ");
+  USBSerial.print(buf[4], HEX);
+  USBSerial.print(" time: ");
+  USBSerial.println(commandTime);
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -400,7 +434,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 22 sets motors' continuous mode
+	//Command 22 sets motors' program move mode (
 	case 22:
 		motor[0].planType(input_serial_buffer[0]);
 		motor[1].planType(input_serial_buffer[0]);
@@ -795,7 +829,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 28:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].startPos(tempPos);
-		OMEEPROM::write(EE_START_0 + (subaddr - 1) * 16, tempPos);
+		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 
@@ -803,7 +837,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 29:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].stopPos(tempPos);
-		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * 16, tempPos);
+		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 		
