@@ -444,10 +444,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 		
-	//Command 23 toggles the motors' pingPongMode, if enabled it causes the motors to bounce back and forth
+	//Command 24 sets the motors' pingPongMode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
-	case 23:
-		pingPongMode = !pingPongMode;
+	case 24:
+		pingPongMode = input_serial_buffer[0];
+		USBSerial.print("Ping-pong mode: ");
+		USBSerial.println(pingPongMode);
 		response(true);
 		break;
         
