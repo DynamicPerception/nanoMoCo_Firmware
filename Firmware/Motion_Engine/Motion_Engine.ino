@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 1500;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 1000;
 const float MOT_DEFAULT_CONT_ACCEL	     = 15000.0;
 
 const unsigned int MOT_DEFAULT_BACKLASH = 96;
@@ -163,7 +163,9 @@ char byteFired = 0;
  
 unsigned int  camera_fired     = 0;
 
+//ping pong mode variable
 
+bool pingPongMode = false;
 
  // maximum run time
 unsigned long max_time = 0;
@@ -209,8 +211,8 @@ OMMotorFunctions motor[MOTOR_COUNT] = {
 
 OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
 OMComHandler ComMgr = OMComHandler();
-    // there are 6 possible states in 
-    // our engine (0-5)
+    // there are 7 possible states in 
+    // our engine (0-6)
 OMState      Engine = OMState(7);
 
 int incomingByte = 0;
@@ -230,7 +232,7 @@ OMMoCoNode   NodeUSB   = OMMoCoNode(&USBSerial, device_address, SERIAL_VERSION, 
 /* 
 
  =========================================
- Bluetooth Test Variables
+ Bluetooth Variables
  =========================================
  
 */
@@ -295,10 +297,10 @@ void setup() {
 
    //altSerial.begin(9600);
 	
-  USBSerial.begin(9600);
+  USBSerial.begin(19200);
   delay(100);
   
-  altSerial.begin(9600);
+  altSerial.begin(38400);
   time = millis();
 
 
@@ -407,7 +409,7 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	   /*USBSerial.print(motor[0].currentPos());
+	   USBSerial.print(motor[0].currentPos());
 	   USBSerial.print(" continious Speed: ");
 	   USBSerial.print(motor[0].contSpeed());
 	   USBSerial.print(" backlash: ");
@@ -417,8 +419,14 @@ void loop() {
 	   USBSerial.print(" stopPos: ");
 	   USBSerial.print(motor[0].stopPos());
 	   USBSerial.print(" endPos: ");
-	   USBSerial.println(motor[0].endPos());
-
+	   USBSerial.print(motor[0].endPos());
+	   	USBSerial.print(" Type: ");
+	   	USBSerial.print(motor[0].planType());
+		USBSerial.print(" shots: ");
+		USBSerial.print(camera_fired);
+		USBSerial.print(" leadIn: ");
+		USBSerial.println(motor[0].planLeadIn());
+/*
 	   USBSerial.print("Current Steps ");
 	   USBSerial.print(motor[1].currentPos());
 	   USBSerial.print(" continious Speed: ");
@@ -430,8 +438,12 @@ void loop() {
 	   USBSerial.print(" stopPos: ");
 	   USBSerial.print(motor[1].stopPos());
 	   USBSerial.print(" endPos: ");
-	   USBSerial.println(motor[1].endPos());
-
+	   USBSerial.print(motor[1].endPos());
+	   	USBSerial.print(" Type: ");
+	   	USBSerial.println(motor[1].planType());
+	   	USBSerial.print(" leadIn: ");
+	   	USBSerial.println(motor[1].planLeadIn());
+/*
 		USBSerial.print("Current Steps ");
 		USBSerial.print(motor[2].currentPos());
 		USBSerial.print(" continious Speed: ");
@@ -444,7 +456,8 @@ void loop() {
 		USBSerial.print(motor[2].stopPos());
 		USBSerial.print(" endPos: ");
 		USBSerial.println(motor[2].endPos());
-		USBSerial.println("");*/
+		USBSerial.println("");
+		*/
 		time = millis();
 	}
 
@@ -516,7 +529,8 @@ void stopProgram(boolean force_clear) {
     run_time     = 0;
     camera_fired = 0;
 	for( int i = 0; i < MOTOR_COUNT; i++){
-		motor[i].mtpc_start = false;
+		//resets the program move
+		motor[i].resetProgramMove();
 	}
 
   }
@@ -529,6 +543,8 @@ void stopProgram(boolean force_clear) {
 	
 
   Camera.stop();
+ 
+  
 }
 
 

@@ -110,12 +110,12 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
-  USBSerial.print("Bluetooth ");
+  /*USBSerial.print("Bluetooth ");
   USBSerial.print("SubAddr: ");
   USBSerial.print(subaddr);
   USBSerial.print(" command: ");
   USBSerial.print(command);
-  USBSerial.print(" buf[0]: ");
+  /*USBSerial.print(" buf[0]: ");
   USBSerial.print(buf[0], HEX);
   USBSerial.print(" buf[1]: ");
   USBSerial.print(buf[1], HEX);
@@ -125,8 +125,10 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   USBSerial.print(buf[3], HEX);
   USBSerial.print(" buf[4]: ");
   USBSerial.print(buf[4], HEX);
+  */
   USBSerial.print(" time: ");
   USBSerial.println(commandTime);
+  //*/
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -439,6 +441,13 @@ void serMain(byte command, byte* input_serial_buffer) {
 		motor[0].planType(input_serial_buffer[0]);
 		motor[1].planType(input_serial_buffer[0]);
 		motor[2].planType(input_serial_buffer[0]);
+		response(true);
+		break;
+		
+	//Command 23 toggles the motors' pingPongMode, if enabled it causes the motors to bounce back and forth
+	//from the start and stop position until the user stops the program.
+	case 23:
+		pingPongMode = !pingPongMode;
 		response(true);
 		break;
         

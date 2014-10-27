@@ -184,6 +184,7 @@ void stopAllMotors() {
 		long tempPosition= motor[i].currentPos();
 		OMEEPROM::write(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
       }
+	  
       
       ISR_On = false;
 
@@ -192,6 +193,27 @@ void stopAllMotors() {
                   // let go of interrupt cycle
       Timer1.detachInterrupt();
 
+}
+
+/** Reverse Move
+
+  Stops the motors, switches the start and stop positions, then restarts the motors.
+  Moves only if pingPongMode is enabled.
+  */
+
+void reverseStartStop(){
+	
+	
+	for (int i = 0; i < MOTOR_COUNT; i++){
+	
+		//Switches start and stop positions
+		long curStart = motor[i].startPos();
+		long curStop = motor[i].stopPos();
+		motor[i].startPos(curStop);
+		motor[i].stopPos(curStart);
+
+	}
+	
 }
 
 

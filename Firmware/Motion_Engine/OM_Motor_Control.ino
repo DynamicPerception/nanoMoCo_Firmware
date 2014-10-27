@@ -55,7 +55,7 @@ void move_motor() {
 	   //only check the motors that are enable
 	   if( motor[i].enable()){
 		   //check to see if there's a shot delay for the motor
-			if(!(motor[i].planLeadIn() > 0 && camera_fired <= motor[i].planLeadIn())){
+			if(!(motor[i].planLeadIn() > 0 && ((camera_fired <= motor[i].planLeadIn() && motor[i].planType()!=2) || (motor[i].planType()==2 && run_time <= motor[i].planLeadIn())))){
 				motor[i].programMove();
 				if( motor[i].planMoveType  == 0 ) {
 					// planned SMS move
