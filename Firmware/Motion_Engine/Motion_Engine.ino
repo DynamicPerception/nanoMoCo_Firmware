@@ -147,6 +147,7 @@ volatile byte force_stop = false;
 boolean manualMove = false;
 const int manualMoveTimeMax = 1000;
 unsigned long commandTime = 0;
+byte joystick_mode = false;
  
 
   // do we generate timing for all devices on the network?
@@ -300,7 +301,7 @@ void setup() {
   USBSerial.begin(19200);
   delay(100);
   
-  altSerial.begin(38400);
+  altSerial.begin(9600);
   time = millis();
 
 
@@ -409,55 +410,55 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	   USBSerial.print(motor[0].currentPos());
-	   USBSerial.print(" continious Speed: ");
-	   USBSerial.print(motor[0].contSpeed());
-	   USBSerial.print(" backlash: ");
-	   USBSerial.print(motor[0].backlash());
-	   USBSerial.print(" startPos: ");
-	   USBSerial.print(motor[0].startPos());
-	   USBSerial.print(" stopPos: ");
-	   USBSerial.print(motor[0].stopPos());
-	   USBSerial.print(" endPos: ");
-	   USBSerial.print(motor[0].endPos());
-	   	USBSerial.print(" Type: ");
-	   	USBSerial.print(motor[0].planType());
-		USBSerial.print(" shots: ");
-		USBSerial.print(camera_fired);
-		USBSerial.print(" leadIn: ");
-		USBSerial.println(motor[0].planLeadIn());
-/*
-	   USBSerial.print("Current Steps ");
-	   USBSerial.print(motor[1].currentPos());
-	   USBSerial.print(" continious Speed: ");
-	   USBSerial.print(motor[1].contSpeed());
-	   USBSerial.print(" backlash: ");
-	   USBSerial.print(motor[1].backlash());
-	   USBSerial.print(" startPos: ");
-	   USBSerial.print(motor[1].startPos());
-	   USBSerial.print(" stopPos: ");
-	   USBSerial.print(motor[1].stopPos());
-	   USBSerial.print(" endPos: ");
-	   USBSerial.print(motor[1].endPos());
-	   	USBSerial.print(" Type: ");
-	   	USBSerial.println(motor[1].planType());
-	   	USBSerial.print(" leadIn: ");
-	   	USBSerial.println(motor[1].planLeadIn());
-/*
-		USBSerial.print("Current Steps ");
-		USBSerial.print(motor[2].currentPos());
-		USBSerial.print(" continious Speed: ");
-		USBSerial.print(motor[2].contSpeed());
-		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[2].backlash());
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[2].startPos());
-		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[2].stopPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.println(motor[2].endPos());
-		USBSerial.println("");
-		*/
+	 //  USBSerial.print(motor[0].currentPos());
+	 //  USBSerial.print(" continious Speed: ");
+	 //  USBSerial.print(motor[0].contSpeed());
+	 //  USBSerial.print(" backlash: ");
+	 //  USBSerial.print(motor[0].backlash());
+	 //  USBSerial.print(" startPos: ");
+	 //  USBSerial.print(motor[0].startPos());
+	 //  USBSerial.print(" stopPos: ");
+	 //  USBSerial.print(motor[0].stopPos());
+	 //  USBSerial.print(" endPos: ");
+	 //  USBSerial.print(motor[0].endPos());
+	 //  	USBSerial.print(" Type: ");
+	 //  	USBSerial.print(motor[0].planType());
+		//USBSerial.print(" shots: ");
+		//USBSerial.print(camera_fired);
+		//USBSerial.print(" leadIn: ");
+		//USBSerial.println(motor[0].planLeadIn());
+//
+//	   USBSerial.print("Current Steps ");
+//	   USBSerial.print(motor[1].currentPos());
+//	   USBSerial.print(" continious Speed: ");
+//	   USBSerial.print(motor[1].contSpeed());
+//	   USBSerial.print(" backlash: ");
+//	   USBSerial.print(motor[1].backlash());
+//	   USBSerial.print(" startPos: ");
+//	   USBSerial.print(motor[1].startPos());
+//	   USBSerial.print(" stopPos: ");
+//	   USBSerial.print(motor[1].stopPos());
+//	   USBSerial.print(" endPos: ");
+//	   USBSerial.print(motor[1].endPos());
+//	   	USBSerial.print(" Type: ");
+//	   	USBSerial.println(motor[1].planType());
+//	   	USBSerial.print(" leadIn: ");
+//	   	USBSerial.println(motor[1].planLeadIn());
+///*
+//		USBSerial.print("Current Steps ");
+//		USBSerial.print(motor[2].currentPos());
+//		USBSerial.print(" continious Speed: ");
+//		USBSerial.print(motor[2].contSpeed());
+//		USBSerial.print(" backlash: ");
+//		USBSerial.print(motor[2].backlash());
+//		USBSerial.print(" startPos: ");
+//		USBSerial.print(motor[2].startPos());
+//		USBSerial.print(" stopPos: ");
+//		USBSerial.print(motor[2].stopPos());
+//		USBSerial.print(" endPos: ");
+//		USBSerial.println(motor[2].endPos());
+//		USBSerial.println("");
+//		
 		time = millis();
 	}
 

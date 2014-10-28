@@ -79,24 +79,24 @@ See dynamicperception.com for more information
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
-  commandTime = millis();
-  USBSerial.print("MocoBus ");
-  USBSerial.print("SubAddr: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  USBSerial.print(" buf[0]: ");
-  USBSerial.print(buf[0], HEX);
-  USBSerial.print(" buf[1]: ");
-  USBSerial.print(buf[1], HEX);
-  USBSerial.print(" buf[2]: ");
-  USBSerial.print(buf[2], HEX);
-  USBSerial.print(" buf[3]: ");
-  USBSerial.print(buf[3], HEX);
-  USBSerial.print(" buf[4]: ");
-  USBSerial.print(buf[4], HEX);
-  USBSerial.print(" time: ");
-  USBSerial.println(commandTime);
+  //commandTime = millis();
+  //USBSerial.print("MocoBus ");
+  //USBSerial.print("SubAddr: ");
+  //USBSerial.print(subaddr);
+  //USBSerial.print(" command: ");
+  //USBSerial.print(command);
+  //USBSerial.print(" buf[0]: ");
+  //USBSerial.print(buf[0], HEX);
+  //USBSerial.print(" buf[1]: ");
+  //USBSerial.print(buf[1], HEX);
+  //USBSerial.print(" buf[2]: ");
+  //USBSerial.print(buf[2], HEX);
+  //USBSerial.print(" buf[3]: ");
+  //USBSerial.print(buf[3], HEX);
+  //USBSerial.print(" buf[4]: ");
+  //USBSerial.print(buf[4], HEX);
+  //USBSerial.print(" time: ");
+  //USBSerial.println(commandTime);
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -109,26 +109,25 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
-  commandTime = millis();
-  /*USBSerial.print("Bluetooth ");
-  USBSerial.print("SubAddr: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  /*USBSerial.print(" buf[0]: ");
-  USBSerial.print(buf[0], HEX);
-  USBSerial.print(" buf[1]: ");
-  USBSerial.print(buf[1], HEX);
-  USBSerial.print(" buf[2]: ");
-  USBSerial.print(buf[2], HEX);
-  USBSerial.print(" buf[3]: ");
-  USBSerial.print(buf[3], HEX);
-  USBSerial.print(" buf[4]: ");
-  USBSerial.print(buf[4], HEX);
-  */
-  USBSerial.print(" time: ");
-  USBSerial.println(commandTime);
-  //*/
+  //commandTime = millis();
+  //USBSerial.print("Bluetooth ");
+  //USBSerial.print("SubAddr: ");
+  //USBSerial.print(subaddr);
+  //USBSerial.print(" command: ");
+  //USBSerial.print(command);
+  //USBSerial.print(" buf[0]: ");
+  //USBSerial.print(buf[0], HEX);
+  //USBSerial.print(" buf[1]: ");
+  //USBSerial.print(buf[1], HEX);
+  //USBSerial.print(" buf[2]: ");
+  //USBSerial.print(buf[2], HEX);
+  //USBSerial.print(" buf[3]: ");
+  //USBSerial.print(buf[3], HEX);
+  //USBSerial.print(" buf[4]: ");
+  //USBSerial.print(buf[4], HEX);
+  //USBSerial.print(" time: ");
+  //USBSerial.println(commandTime);
+  
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -202,12 +201,29 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
  switch(subaddr) {   
    case 0:
-           // program control
+
+	   // Check for joystick mode and return on non-valid commands if true
+	   if (joystick_mode == true && command != 23 && command != 120) {
+		   //USBSerial.println("Invalid general command");
+		   response(false);
+		   return;   
+	   }
+
+         // program control
          serMain(command, buf);
          break;
    case 1:
    case 2:
    case 3:
+
+	   // Check for joystick mode and return on non-valid commands if true
+	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 15) {
+		   //USBSerial.println("Invalid motor command");
+		   response(false);
+		   return;
+		   
+	   }
+
          //serial motor commands
          serMotor(subaddr, command, buf);
          break;
@@ -287,12 +303,18 @@ void serMain(byte command, byte* input_serial_buffer) {
     
     //Command 5 enables or disables the debug LED  
     case 5:
-      debug_led_enable = input_serial_buffer[0];
-               // turn off led in case it was on an on cycle
-      if( ! debug_led_enable )
-        debugOff();
-      else
-        debugOn();
+
+		//debug_led_enable = input_serial_buffer[0];
+		// turn off led in case it was on an on cycle
+		static boolean toggle = false;
+		if (!toggle) {
+			debugOff();
+			toggle = true;
+		}
+		else {
+			debugOn();
+			toggle = false;
+		}
         
       response(true);
       break;
@@ -436,11 +458,22 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 22 sets motors' program move mode (
+	//Command 22 sets motors' program move mode
 	case 22:
 		motor[0].planType(input_serial_buffer[0]);
 		motor[1].planType(input_serial_buffer[0]);
 		motor[2].planType(input_serial_buffer[0]);
+		response(true);
+		break;
+
+	//Command 23 set joystick mode
+	// This will cause the controller to ignore all commands except general commands 23 (set joystick mode) and 120 (query joystick mode),
+	// and motor commands 3 (enable motor), 4 (stop now), 6 (set microsteps), 13 (set continuous speed), 15 (execute simple move), and 
+	// This is to avoid incorrect commands due to corrupt communications causing runaway motors or controller lockup.
+	case 23:
+		joystick_mode = input_serial_buffer[0];
+		//USBSerial.print("Joystick: ");
+		//USBSerial.println(joystick_mode);
 		response(true);
 		break;
 		
@@ -448,8 +481,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//from the start and stop position until the user stops the program.
 	case 24:
 		pingPongMode = input_serial_buffer[0];
-		USBSerial.print("Ping-pong mode: ");
-		USBSerial.println(pingPongMode);
+		//USBSerial.print("Ping-pong mode: ");
+		//USBSerial.println(pingPongMode);
 		response(true);
 		break;
         
@@ -573,6 +606,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 119 reads whether the controller has been powercycled since last query
 	case 119:
 		response(true, powerCycled());
+		break;
+
+	//Command 120 reads joystick mode setting
+	case 120:
+		response(true, joystick_mode);
 		break;
 	
     //Error    
