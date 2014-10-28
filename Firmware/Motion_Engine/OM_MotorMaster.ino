@@ -198,7 +198,7 @@ void stopAllMotors() {
 /** Reverse Move
 
   Stops the motors, switches the start and stop positions, then restarts the motors.
-  Moves only if pingPongMode is enabled.
+  Moves only if ping_pong_mode is enabled.
   */
 
 void reverseStartStop(){
