@@ -122,7 +122,7 @@ void cycleCamera() {
  C. A. Church
  */
  
-boolean cycleShotOK(boolean p_prealt) {
+uint8_t cycleShotOK(uint8_t p_prealt) {
   
 
     // if we're in alt i/o as external intervalometer mode...

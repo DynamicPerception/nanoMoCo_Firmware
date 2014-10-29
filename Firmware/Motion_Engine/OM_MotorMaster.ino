@@ -139,7 +139,7 @@ void _fireCallback(uint8_t p_Param) {
  The rate specified as a number of steps per second (5000, 4000, 2000, or 1000)
  */
 
-bool maxStepRate( unsigned int p_Rate ) {
+uint8_t maxStepRate( unsigned int p_Rate ) {
 
 
 	if(  p_Rate != 10000 && p_Rate != 5000 && p_Rate != 4000 && p_Rate != 2000 && p_Rate != 1000 )

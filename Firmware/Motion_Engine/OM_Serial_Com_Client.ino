@@ -306,7 +306,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 		//debug_led_enable = input_serial_buffer[0];
 		// turn off led in case it was on an on cycle
-		static boolean toggle = false;
+		static uint8_t toggle = false;
 		if (!toggle) {
 			debugOff();
 			toggle = true;
@@ -936,6 +936,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 107 reads whether the motor is currently running
 	case 107:
 		response(true, motor[subaddr - 1].running());
+		break;
 
 	//Command 108 reads the continuous speed for the motor
 	case 108:
@@ -1037,7 +1038,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
    
     //Command 8 set camera's focus w shutter  
     case 8:
-      Camera.exposureFocus((boolean) input_serial_buffer[0]);
+      Camera.exposureFocus((uint8_t) input_serial_buffer[0]);
 	  response(true);
       break;
       
@@ -1140,7 +1141,7 @@ void serialComplexMove(byte subaddr, byte* buf) {
           Node Response Functions
 ===========================================*/
 
-void response(bool p_stat){
+void response(uint8_t p_stat){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat);
@@ -1157,7 +1158,7 @@ void response(bool p_stat){
     
 } 
 
-void response(bool p_stat, uint8_t p_resp){
+void response(uint8_t p_stat, uint8_t p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1173,7 +1174,7 @@ void response(bool p_stat, uint8_t p_resp){
 	}
 }
 
-void response(bool p_stat, unsigned int p_resp){
+void response(uint8_t p_stat, unsigned int p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1189,7 +1190,7 @@ void response(bool p_stat, unsigned int p_resp){
 	}
 }
 
-void response(bool p_stat, int p_resp){
+void response(uint8_t p_stat, int p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1205,7 +1206,7 @@ void response(bool p_stat, int p_resp){
 	}
 }
 
-void response(bool p_stat, unsigned long p_resp){
+void response(uint8_t p_stat, unsigned long p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1221,7 +1222,7 @@ void response(bool p_stat, unsigned long p_resp){
 	}
 }
 
-void response(bool p_stat, long p_resp){
+void response(uint8_t p_stat, long p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1237,7 +1238,7 @@ void response(bool p_stat, long p_resp){
 	}
 }
 
-void response(bool p_stat, float p_resp){
+void response(uint8_t p_stat, float p_resp){
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1253,7 +1254,7 @@ void response(bool p_stat, float p_resp){
 	}
 }
 
-void response(bool p_stat, char* p_resp, int p_len){
+void response(uint8_t p_stat, char* p_resp, int p_len){
 	
 	switch(node){
 		case 3:

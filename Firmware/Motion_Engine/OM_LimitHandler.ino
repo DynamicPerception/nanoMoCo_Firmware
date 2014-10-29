@@ -73,7 +73,7 @@ void altSetup() {
   altConnect(1,  altInputs[1]); 
 
     // check if any inputs are set to ext intervalometer
-  boolean doExt = false;
+  uint8_t doExt = false;
   
   for( byte i = 0; i < 2; i++ )
     if( altInputs[i] == ALT_EXTINT )
@@ -232,7 +232,7 @@ void altConnect(byte p_which, byte p_mode) {
 
 void altOutStart(byte p_mode) {
   
-  boolean altStarted = false;
+  uint8_t altStarted = false;
   
   unsigned int adelay = p_mode == ALT_OUT_BEFORE ? altBeforeMs  : altAfterMs;
   

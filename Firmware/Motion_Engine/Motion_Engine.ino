@@ -129,22 +129,22 @@ byte tempMS = 0;
 int device_address = 3;
 
 //Motor variables
-boolean ISR_On = false;
+uint8_t ISR_On = false;
 
 // predefine this function to declare the default argument
-void stopProgram(boolean force_clear = true);
+void stopProgram(uint8_t force_clear = true);
 
 
  // program timer counters
 
 unsigned long run_time    = 0;	// Amount of time since the program has started (ms)
 unsigned long last_time   = 0;
-boolean running = false;
+uint8_t running = false;
 volatile byte force_stop = false;
 
 //Variables for manual move, if manualMove is true the system expects a command at least once
 //every manualMoveTimeMax (mS), if it doesn't receive a command it'll stop the motors
-boolean manualMove = false;
+uint8_t manualMove = false;
 const int manualMoveTimeMax = 1000;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
@@ -152,10 +152,10 @@ byte joystick_mode = false;
 
   // do we generate timing for all devices on the network?
   // i.e. -are we the timing master?
-boolean timing_master = true;
+uint8_t timing_master = true;
 
-boolean debug_led_enable = false;
-boolean stepReady = false;
+uint8_t debug_led_enable = false;
+uint8_t stepReady = false;
 char byteFired = 0;
 
 
@@ -166,7 +166,7 @@ unsigned int  camera_fired     = 0;
 
 //ping pong mode variable
 
-bool pingPongMode = false;
+uint8_t pingPongMode = false;
 
  // maximum run time
 unsigned long max_time = 0;
@@ -275,8 +275,8 @@ unsigned int altBeforeDelay = 100;
 unsigned int  altAfterDelay = 100;
 unsigned int    altBeforeMs = 1000;
 unsigned int     altAfterMs = 1000;
-boolean        altForceShot = false;
-boolean           altExtInt = false;
+uint8_t        altForceShot = false;
+uint8_t           altExtInt = false;
 byte           altDirection = FALLING;
 byte             altOutTrig = HIGH;
 
@@ -521,7 +521,7 @@ void pauseProgram() {
 
 
 
-void stopProgram(boolean force_clear) {
+void stopProgram(uint8_t force_clear) {
               
    // stop/clear program
    
