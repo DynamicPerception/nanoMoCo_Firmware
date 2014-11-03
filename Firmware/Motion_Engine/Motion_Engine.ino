@@ -142,10 +142,10 @@ unsigned long last_time   = 0;
 uint8_t running = false;
 volatile byte force_stop = false;
 
-//Variables for manual move, if manualMove is true the system expects a command at least once
-//every manualMoveTimeMax (mS), if it doesn't receive a command it'll stop the motors
-uint8_t manualMove = false;
-const int manualMoveTimeMax = 1000;
+//Variables for joystick move, if watchdog is true the system expects a command at least once
+//every watchdogTimeMax (mS), if it doesn't receive a command it'll stop the motors
+uint8_t watchdog = false;
+const int watchdogTimeMax = 1000;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
  
@@ -462,10 +462,10 @@ void loop() {
 		time = millis();
 	}
 
-	//Check to see if manual move is on and motors are moving
+	//Check to see if joystick watchdog is on and motors are moving
 	//must see a command from the master every second or it'll stop
-	if ((motor[0].running() || motor[1].running() || motor[2].running()) && manualMove){
-		if(millis() - commandTime > manualMoveTimeMax) {
+	if ((motor[0].running() || motor[1].running() || motor[2].running()) && watchdog){
+		if(millis() - commandTime > watchdogTimeMax) {
 			stopAllMotors();
 		}
 	}

@@ -400,9 +400,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 		
-	//Command 14 sets motors' manual move flag
+	//Command 14 sets joystick watchdog flag
 	case 14:
-	    manualMove = input_serial_buffer[0];
+	    watchdog = input_serial_buffer[0];
 		response(true);
 		break;
 		
@@ -622,6 +622,15 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 120:
 		response(true, joystick_mode);
 		break;
+
+	//Command 121 reads the ping-pong flag setting
+	case 121:
+		response(true, pingPongMode);
+		break;
+
+	//Command 122 reas the joystick watchdog mode status
+	case 122:
+		response(true, )
 	
     //Error    
     default: 
