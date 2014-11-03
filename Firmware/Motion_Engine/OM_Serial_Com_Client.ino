@@ -630,7 +630,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 122 reas the joystick watchdog mode status
 	case 122:
-		response(true, )
+		response(true, watchdog);
 	
     //Error    
     default: 
