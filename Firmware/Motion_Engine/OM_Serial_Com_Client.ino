@@ -79,24 +79,24 @@ See dynamicperception.com for more information
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
-  //commandTime = millis();
-  //USBSerial.print("MocoBus ");
-  //USBSerial.print("SubAddr: ");
-  //USBSerial.print(subaddr);
-  //USBSerial.print(" command: ");
-  //USBSerial.print(command);
-  //USBSerial.print(" buf[0]: ");
-  //USBSerial.print(buf[0], HEX);
-  //USBSerial.print(" buf[1]: ");
-  //USBSerial.print(buf[1], HEX);
-  //USBSerial.print(" buf[2]: ");
-  //USBSerial.print(buf[2], HEX);
-  //USBSerial.print(" buf[3]: ");
-  //USBSerial.print(buf[3], HEX);
-  //USBSerial.print(" buf[4]: ");
-  //USBSerial.print(buf[4], HEX);
-  //USBSerial.print(" time: ");
-  //USBSerial.println(commandTime);
+  commandTime = millis();
+  USBSerial.print("MocoBus ");
+  USBSerial.print("SubAddr: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" buf[0]: ");
+  USBSerial.print(buf[0], HEX);
+  USBSerial.print(" buf[1]: ");
+  USBSerial.print(buf[1], HEX);
+  USBSerial.print(" buf[2]: ");
+  USBSerial.print(buf[2], HEX);
+  USBSerial.print(" buf[3]: ");
+  USBSerial.print(buf[3], HEX);
+  USBSerial.print(" buf[4]: ");
+  USBSerial.print(buf[4], HEX);
+  USBSerial.print(" time: ");
+  USBSerial.println(commandTime);
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -109,24 +109,24 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
-  //commandTime = millis();
-  //USBSerial.print("Bluetooth ");
-  //USBSerial.print("SubAddr: ");
-  //USBSerial.print(subaddr);
-  //USBSerial.print(" command: ");
-  //USBSerial.print(command);
-  //USBSerial.print(" buf[0]: ");
-  //USBSerial.print(buf[0], HEX);
-  //USBSerial.print(" buf[1]: ");
-  //USBSerial.print(buf[1], HEX);
-  //USBSerial.print(" buf[2]: ");
-  //USBSerial.print(buf[2], HEX);
-  //USBSerial.print(" buf[3]: ");
-  //USBSerial.print(buf[3], HEX);
-  //USBSerial.print(" buf[4]: ");
-  //USBSerial.print(buf[4], HEX);
-  //USBSerial.print(" time: ");
-  //USBSerial.println(commandTime);
+  commandTime = millis();
+  USBSerial.print("Bluetooth ");
+  USBSerial.print("SubAddr: ");
+  USBSerial.print(subaddr);
+  USBSerial.print(" command: ");
+  USBSerial.print(command);
+  USBSerial.print(" buf[0]: ");
+  USBSerial.print(buf[0], HEX);
+  USBSerial.print(" buf[1]: ");
+  USBSerial.print(buf[1], HEX);
+  USBSerial.print(" buf[2]: ");
+  USBSerial.print(buf[2], HEX);
+  USBSerial.print(" buf[3]: ");
+  USBSerial.print(buf[3], HEX);
+  USBSerial.print(" buf[4]: ");
+  USBSerial.print(buf[4], HEX);
+  USBSerial.print(" time: ");
+  USBSerial.println(commandTime);
   
   serCommandHandler(subaddr, command, buf);
 }
@@ -471,9 +471,19 @@ void serMain(byte command, byte* input_serial_buffer) {
 	// and motor commands 3 (enable motor), 4 (stop now), 6 (set microsteps), 13 (set continuous speed), 15 (execute simple move), and 
 	// This is to avoid incorrect commands due to corrupt communications causing runaway motors or controller lockup.
 	case 23:
+		
 		joystick_mode = input_serial_buffer[0];
-		//USBSerial.print("Joystick: ");
-		//USBSerial.println(joystick_mode);
+		
+		USBSerial.print("Joystick: ");
+		USBSerial.println(joystick_mode);
+		
+		// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
+		if (joystick_mode){
+			for (byte i = 0; i < MOTOR_COUNT; i++) {
+				motor[i].contSpeed(0);
+			}
+		}
+		
 		response(true);
 		break;
 		
@@ -694,7 +704,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 11 send motor to home limit
 	case 11:
-		// send a motor home
+		// Move at the maximum motor speed
+		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+
+		// send a motor homE
 		motor[subaddr - 1].home();
 		startISR();
 		response(true);
@@ -702,6 +715,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 12 send motor to end limit
 	case 12:
+		// Move at the maximum motor speed
+		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+
 		motor[subaddr - 1].moveToEnd();
 		startISR();
 		response(true);
@@ -709,9 +725,38 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	
     //Command 13 set motor's continous speed 
     case 13:
-      motor[subaddr-1].contSpeed(Node.ntof(input_serial_buffer));
-      response(true);
-      break;
+
+		// If joystick mode is active and the last speed setting was ~0, automatically start a simple continuous move in the correct direction
+		if (joystick_mode){
+			
+			float old_speed = motor[subaddr - 1].desiredSpeed();
+			float new_speed = Node.ntof(input_serial_buffer);
+			
+			// Set speed
+			motor[subaddr - 1].contSpeed(new_speed);
+
+			// Start new move if necessary
+			if (abs(old_speed) < 1 && abs(new_speed) > 1){
+				byte dir;
+				if (new_speed > 1)
+					dir = 1;
+				else
+					dir = 0;
+
+				motor[subaddr - 1].continuous(true);
+				motor[subaddr - 1].move(dir, 0);
+				startISR();
+
+				USBSerial.println("Auto-starting continuous move");
+			}
+		}
+
+		// Normal speed change handling
+		else
+			motor[subaddr - 1].contSpeed(Node.ntof(input_serial_buffer));			
+			response(true);
+
+		break;
 
 	//Command 14 sets the acceleration for the motor while in continuous motion
 	case 14:
@@ -722,11 +767,20 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	 //Command 15 move motor simple  
 	case 15:
 	{
-			   // how many steps to take
-
+			   // set direction
 			   byte dir = input_serial_buffer[0];
 			   input_serial_buffer++;
 
+			   // if in joystick mode, check whether the speed is currently set to zero and needs to change
+			   if (joystick_mode && motor[subaddr - 1].desiredSpeed() < 1.0 && motor[subaddr - 1].desiredSpeed() > - 1.0) {
+				   USBSerial.println("Jump-starting the motor!");
+				   if (dir == 1)
+					   motor[subaddr - 1].contSpeed(10);
+				   else
+					   motor[subaddr - 1].contSpeed(-10);
+			   }
+
+			   // how many steps to take
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
 
 			   // move
@@ -795,6 +849,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       
 	//Commnad 23 send motor to program start point
 	case 23:
+		// Move at the maximum motor speed
+		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+
 		motor[subaddr - 1].moveToStart();
 		startISR();
 		response(true);
@@ -802,6 +859,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	
 	//Commnad 24 send motor to program stop point
 	case 24:
+		// Move at the maximum motor speed
+		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+
 		motor[subaddr - 1].moveToStop();
 		startISR();
 		response(true);
@@ -875,7 +935,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		break;
 
 	//Command 28 set program start point here
-	case 28:
+	case 228:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].startPos(tempPos);
 		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
@@ -883,7 +943,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		break;
 
 	//Command 29 set program stop point here
-	case 29:
+	case 229:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].stopPos(tempPos);
 		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
