@@ -628,9 +628,15 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, pingPongMode);
 		break;
 
-	//Command 122 reas the joystick watchdog mode status
+	//Command 122 reads the joystick watchdog mode status
 	case 122:
 		response(true, watchdog);
+		break;
+
+	//Commadn 123 reports the percent completion of the current program
+	case 123:
+		response(true, programPercent());
+		break;
 	
     //Error    
     default: 
@@ -1170,6 +1176,11 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     case 108:
       response(true, Camera.delay);
       break;
+
+	//Command 109 gets the number of shots fired 
+	case 109:
+		response(true, camera_fired);
+		break;
       
             
     //Error    

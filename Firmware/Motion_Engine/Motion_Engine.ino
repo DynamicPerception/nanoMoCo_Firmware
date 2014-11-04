@@ -598,11 +598,44 @@ byte powerCycled() {
 	return(response);
 }
 
-void eStop(){
+void eStop() {
 	if (running)
 		pauseProgram();
 	else
 		stopAllMotors();	
+}
+
+uint8_t programPercent() {
+
+	// If the program isn't running then don't calculate
+	if (!running)
+		return(0);
+	
+	unsigned long longest_move = 0;
+	
+	// Check the total length of each motor's move and save the longest one
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		
+		// If the motor isn't enabled, don't check its move length
+		if (!motor[i].enable())
+			continue;
+
+		unsigned long current_move = motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
+		
+		if (current_move > longest_move)
+			longest_move = current_move;
+
+	}
+
+	// If the camera max shots is less than the longest motor move, use that value instead
+	if (Camera.maxShots < longest_move)
+		longest_move = Camera.maxShots;
+
+	// Determine the program percent completion by dividing the current shots by the max shots.
+	// Multiply by 100 to give whole number percent.
+	uint8_t percent = round((float)camera_fired / (float)longest_move * 100.0); 
+
+	return(percent);
 }
 
 
