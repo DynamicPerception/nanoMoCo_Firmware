@@ -97,6 +97,7 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   USBSerial.print(buf[4], HEX);
   USBSerial.print(" time: ");
   USBSerial.println(commandTime);
+  USBSerial.println("");
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -718,6 +719,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 11 send motor to home limit
 	case 11:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		// send a motor homE
@@ -729,6 +731,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 12 send motor to end limit
 	case 12:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToEnd();
@@ -863,6 +866,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Commnad 23 send motor to program start point
 	case 23:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToStart();
@@ -873,6 +877,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Commnad 24 send motor to program stop point
 	case 24:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToStop();
@@ -951,37 +956,51 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//The command will respond with the value that is selected or with 0 if a program is in progress or the selected motor is running.
 	case 28:
 
-		// The microstepping cutoff values below are in 16th steps
-		const int QUARTER_CUTOFF = 10000;
-		const int EIGHTH_CUTOFF = 5000;
-
 		// Don't change the microstep value if the motor or program is running
-		if (running || motor[subaddr - 1].running())
-			response(true, 0);
-
-		// For time lapse SMS mode
-		else if (motor[subaddr - 1].planType() == 0) {
-
-			unsigned long max_time_per_move = Camera.delay - Camera.exposeTime() - Camera.focusTime();
-			float steps_per_move = motor[subaddr - 1].getTopSpeed();
-
+		if (!running && !motor[subaddr - 1].running()) {
 			
-		}
+			// The microstepping cutoff values below are in 16th steps
+			const int QUARTER_CUTOFF = 10000;
+			const int EIGHTH_CUTOFF = 5000;
+			float comparison_speed;
 
-		// For time lapse continuous mode and video continuous mode
-		else if (motor[subaddr - 1].planType() == 1 || motor[subaddr - 1].planType() == 2) {
+			// For time lapse SMS mode
+			if (motor[subaddr - 1].planType() == 0) {
 
-			// Check the top speed against the cutoff values and select the appropriate microstepping setting
-			if (motor[subaddr - 1].getTopSpeed() >= QUARTER_CUTOFF)
+				const float MILLIS_PER_SECOND = 1000.0;
+				
+				// Max time in seconds
+				float max_time_per_move = (float)(Camera.delay - Camera.waitTime - Camera.exposeTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+
+				
+				// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
+				float steps_per_move = motor[subaddr - 1].getTopSpeed();
+
+				comparison_speed = steps_per_move / (float) max_time_per_move;
+
+			}
+
+			// For time lapse continuous mode and video continuous mode
+			else if (motor[subaddr - 1].planType() == 1 || motor[subaddr - 1].planType() == 2) {
+				comparison_speed = motor[subaddr - 1].getTopSpeed();
+			}
+
+			// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
+			if (comparison_speed >= QUARTER_CUTOFF)
 				motor[subaddr - 1].ms(4);
-			else if (motor[subaddr - 1].getTopSpeed() < QUARTER_CUTOFF && motor[subaddr - 1].getTopSpeed() > EIGHTH_CUTOFF)
+			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
 				motor[subaddr - 1].ms(8);
 			else
 				motor[subaddr - 1].ms(16);
 
 			// Report back the microstep value that was auto-selected
 			response(true, motor[subaddr - 1].ms());
+
 		}
+
+		// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed
+		else
+			response(true, 0);
 
 		break;
 
