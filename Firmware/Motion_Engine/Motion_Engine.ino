@@ -506,8 +506,6 @@ void loop() {
 		if(run_time >= start_delay)
 			Engine.checkCycle();
    }
-
- 
 }
 
 

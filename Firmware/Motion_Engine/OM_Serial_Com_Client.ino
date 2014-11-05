@@ -491,8 +491,6 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//from the start and stop position until the user stops the program.
 	case 24:
 		pingPongMode = input_serial_buffer[0];
-		//USBSerial.print("Ping-pong mode: ");
-		//USBSerial.println(pingPongMode);
 		response(true);
 		break;
         
@@ -949,7 +947,45 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 28 set program start point here
+	//command 28 automatically sets the motor to the highest resolution microstepping possible given program parameters
+	//The command will respond with the value that is selected or with 0 if a program is in progress or the selected motor is running.
+	case 28:
+
+		// The microstepping cutoff values below are in 16th steps
+		const int QUARTER_CUTOFF = 10000;
+		const int EIGHTH_CUTOFF = 5000;
+
+		// Don't change the microstep value if the motor or program is running
+		if (running || motor[subaddr - 1].running())
+			response(true, 0);
+
+		// For time lapse SMS mode
+		else if (motor[subaddr - 1].planType() == 0) {
+
+			unsigned long max_time_per_move = Camera.delay - Camera.exposeTime() - Camera.focusTime();
+			float steps_per_move = motor[subaddr - 1].getTopSpeed();
+
+			
+		}
+
+		// For time lapse continuous mode and video continuous mode
+		else if (motor[subaddr - 1].planType() == 1 || motor[subaddr - 1].planType() == 2) {
+
+			// Check the top speed against the cutoff values and select the appropriate microstepping setting
+			if (motor[subaddr - 1].getTopSpeed() >= QUARTER_CUTOFF)
+				motor[subaddr - 1].ms(4);
+			else if (motor[subaddr - 1].getTopSpeed() < QUARTER_CUTOFF && motor[subaddr - 1].getTopSpeed() > EIGHTH_CUTOFF)
+				motor[subaddr - 1].ms(8);
+			else
+				motor[subaddr - 1].ms(16);
+
+			// Report back the microstep value that was auto-selected
+			response(true, motor[subaddr - 1].ms());
+		}
+
+		break;
+
+	//Command 228 set program start point here
 	case 228:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].startPos(tempPos);
@@ -957,7 +993,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 29 set program stop point here
+	//Command 229 set program stop point here
 	case 229:
 		tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].stopPos(tempPos);
