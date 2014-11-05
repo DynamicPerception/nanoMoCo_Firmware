@@ -719,6 +719,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 11 send motor to home limit
 	case 11:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		// send a motor homE
@@ -730,6 +731,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 12 send motor to end limit
 	case 12:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToEnd();
@@ -864,7 +866,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Commnad 23 send motor to program start point
 	case 23:
 		// Move at the maximum motor speed
-		motor[subaddr - 1].contSpeed(4500);
+		motor[subaddr - 1].ms(4);
+		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToStart();
 		startISR();
@@ -874,6 +877,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Commnad 24 send motor to program stop point
 	case 24:
 		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
 		motor[subaddr - 1].moveToStop();
@@ -963,18 +967,16 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			// For time lapse SMS mode
 			if (motor[subaddr - 1].planType() == 0) {
 
-				unsigned long max_time_per_move = Camera.delay - Camera.exposeTime() - Camera.focusTime();
+				const float MILLIS_PER_SECOND = 1000.0;
+				
+				// Max time in seconds
+				float max_time_per_move = (float)(Camera.delay - Camera.waitTime - Camera.exposeTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 
-				USBSerial.print("Max move time: ");
-				USBSerial.println(max_time_per_move);
 				
 				// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
 				float steps_per_move = motor[subaddr - 1].getTopSpeed();
 
-				USBSerial.print("Steps per move: ");
-				USBSerial.println(steps_per_move);
-
-				comparison_speed = steps_per_move / max_time_per_move;
+				comparison_speed = steps_per_move / (float) max_time_per_move;
 
 			}
 
@@ -983,23 +985,17 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				comparison_speed = motor[subaddr - 1].getTopSpeed();
 			}
 
-			USBSerial.print("Comparison speed: ");
-			USBSerial.println(comparison_speed);
-
 			// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
-			/* // Commented out for now so the MS setting isn't constantly changing during debugging
 			if (comparison_speed >= QUARTER_CUTOFF)
 				motor[subaddr - 1].ms(4);
 			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
 				motor[subaddr - 1].ms(8);
 			else
 				motor[subaddr - 1].ms(16);
-			*/
 
 			// Report back the microstep value that was auto-selected
 			response(true, motor[subaddr - 1].ms());
 
-			USBSerial.println("");
 		}
 
 		// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed
