@@ -643,3 +643,44 @@ uint8_t programPercent() {
 }
 
 
+uint8_t checkMotorAttach() {
+
+	// If any of the motors is moving or a program is currently running return the error value
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (motor[i].running() || running)
+			return(8);
+	}
+
+	bool current_sleep[MOTOR_COUNT];
+	byte attached = B000;
+
+	
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		// Save the current sleep state of all the motors so they can be restored when done with the attach check
+		current_sleep[i] = motor[i].sleep();
+		// Put them into sleep mode in case it isn't already
+		motor[i].sleep(true);
+	}
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		motor[i].sleep(false);
+		delay(100);
+		// Read the analog value from current sensing pin
+		int current = analogRead(CURRENT_PIN);		
+		// Convert the value to current in millamps
+		float amps = (float)current / 1023 * 5;			
+		// If the draw is greater than 0.25 amps, then a motor is connected to the enabled channel
+		if (amps > 0.1)
+			attached |= (1 << i);
+		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
+		motor[i].sleep(true);
+	}
+
+	// Restore the saved sleep states
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		motor[i].sleep(current_sleep[i]);
+	}
+
+	// The bits of the attached byte indicate each motor's attached status
+	return(attached);
+}

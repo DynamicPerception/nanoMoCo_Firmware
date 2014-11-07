@@ -632,9 +632,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, watchdog);
 		break;
 
-	//Commadn 123 reports the percent completion of the current program
+	//Command 123 reports the percent completion of the current program
 	case 123:
 		response(true, programPercent());
+		break;
+
+	//Command 124 returns a byte where the three least significant bits indicate each motor's attachment state
+	case 124:
+		response(true, checkMotorAttach());
 		break;
 	
     //Error    
