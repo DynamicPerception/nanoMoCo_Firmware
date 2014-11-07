@@ -41,7 +41,7 @@ void stopAllCameras() {
 
 /** Trigger Exposure
 
- This method triggers an exposure for the amount of time as set via exposeTime().
+ This method triggers an exposure for the amount of time as set via triggerTime().
  Sends an expose begin signal.
 
 */

@@ -929,7 +929,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		  	
 			// need to decrease run time counter
 			{
-				unsigned long delayTime = ( Camera.delay > (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime()) ) ? Camera.delay : (Camera.exposeTime() + Camera.focusTime() + Camera.waitTime());
+				unsigned long delayTime = ( Camera.delay > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime()) ) ? Camera.delay : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
 			  	
 				if( run_time >= delayTime )
 					run_time -= delayTime;
@@ -970,7 +970,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				const float MILLIS_PER_SECOND = 1000.0;
 				
 				// Max time in seconds
-				float max_time_per_move = (float)(Camera.delay - Camera.waitTime - Camera.exposeTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+				float max_time_per_move = (float)(Camera.delay - Camera.delayTime - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 
 				
 				// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
@@ -1144,7 +1144,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 4 set camera's exposure time  
     case 4:
-      Camera.exposeTime( Node.ntoul(input_serial_buffer) );
+      Camera.triggerTime( Node.ntoul(input_serial_buffer) );
       response(true);
       break;
       
@@ -1162,7 +1162,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
     //Command 7 set camera's exposure delay
     case 7:
-      Camera.waitTime( Node.ntoui(input_serial_buffer) );
+      Camera.delayTime( Node.ntoui(input_serial_buffer) );
       response(true);
       break;
    
@@ -1199,7 +1199,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     
     //Command 102 gets the camera's exposure time
     case 102:
-      response(true, Camera.exposeTime());   
+      response(true, Camera.triggerTime());   
       break;
       
     //Command 103 gets the camera's focus time
@@ -1214,7 +1214,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 105 gets the camera's exposure delay
     case 105:
-      response(true, Camera.waitTime());
+      response(true, Camera.delayTime());
       break;
       
     //Command 106 gets the focus with shutter status
