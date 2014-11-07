@@ -77,6 +77,12 @@ const byte BLUETOOTH_ENABLE_PIN		= 0;
 // motor count constant
 const byte MOTOR_COUNT				= 3;
 
+// plan move types
+#define SMS 0
+#define CONT_TL 1
+#define CONT_VID 2
+
+
 
 
 

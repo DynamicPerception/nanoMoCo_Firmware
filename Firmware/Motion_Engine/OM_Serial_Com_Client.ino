@@ -868,6 +868,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		// Move at the maximum motor speed
 		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+		);
 
 		motor[subaddr - 1].moveToStart();
 		startISR();
@@ -960,12 +961,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		if (!running && !motor[subaddr - 1].running()) {
 			
 			// The microstepping cutoff values below are in 16th steps
-			const int QUARTER_CUTOFF = 10000;
-			const int EIGHTH_CUTOFF = 5000;
+			const int MAX_CUTOFF		= 20000;
+			const int QUARTER_CUTOFF	= 10000;
+			const int EIGHTH_CUTOFF		= 5000;
 			float comparison_speed;
 
 			// For time lapse SMS mode
-			if (motor[subaddr - 1].planType() == 0) {
+			if (motor[subaddr - 1].planType() == SMS) {
 
 				const float MILLIS_PER_SECOND = 1000.0;
 				
@@ -981,20 +983,27 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			}
 
 			// For time lapse continuous mode and video continuous mode
-			else if (motor[subaddr - 1].planType() == 1 || motor[subaddr - 1].planType() == 2) {
+			else if (motor[subaddr - 1].planType() == CONT_TL || motor[subaddr - 1].planType() == CONT_VID) {
 				comparison_speed = motor[subaddr - 1].getTopSpeed();
 			}
 
 			// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
-			if (comparison_speed >= QUARTER_CUTOFF)
-				motor[subaddr - 1].ms(4);
-			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
-				motor[subaddr - 1].ms(8);
-			else
-				motor[subaddr - 1].ms(16);
+			// If the requested speed is too high, send error value, don't change microstepping setting
+			if (comparison_speed >= MAX_CUTOFF) 
+				response(true, 255);
 
-			// Report back the microstep value that was auto-selected
-			response(true, motor[subaddr - 1].ms());
+			// Otherwise set the appropraite microstep setting and report the new value back to the master device
+			else {
+				if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
+					motor[subaddr - 1].ms(4);
+				else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
+					motor[subaddr - 1].ms(8);
+				else
+					motor[subaddr - 1].ms(16);
+
+				// Report back the microstep value that was auto-selected
+				response(true, motor[subaddr - 1].ms());
+			}
 
 		}
 

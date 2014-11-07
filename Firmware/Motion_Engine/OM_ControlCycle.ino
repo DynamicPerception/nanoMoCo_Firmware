@@ -56,7 +56,7 @@ void cycleCamera() {
   if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((!Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
            // stop program running w/o clearing variables
 		stopProgram();
-		if (pingPongMode){
+		if (pingPongMode && motor[1].planType() == CONT_TL){
 			reverseStartStop();
 			startProgram();
 		}
@@ -177,8 +177,8 @@ void cycleClearToMove() {
 
 	   }
 	   
-	   //do not move until the minimum plan lead in has based, if planType() == 2 then the plan lead in is in ms
-	   	if( ( minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType()!=2) || (motor[0].planType()==2 && run_time <= minPlanLead))) ) {
+	   //do not move until the minimum plan lead in has based, if planType() == CONT_TL then the plan lead in is in ms
+	   	if( ( minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType()!= CONT_TL) || (motor[0].planType()== CONT_TL && run_time <= minPlanLead))) ) {
 		   	Engine.state(ST_CLEAR);
 		   	return;
 	   	}
