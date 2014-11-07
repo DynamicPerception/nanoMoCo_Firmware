@@ -970,7 +970,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				const float MILLIS_PER_SECOND = 1000.0;
 				
 				// Max time in seconds
-				float max_time_per_move = (float)(Camera.delay - Camera.delayTime - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+				float max_time_per_move = (float)(Camera.delay - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 
 				
 				// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment

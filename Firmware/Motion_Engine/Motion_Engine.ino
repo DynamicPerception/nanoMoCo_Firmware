@@ -324,8 +324,8 @@ void setup() {
  ComMgr.watchHandler(motor_com_line);
  
    // setup camera defaults
- Camera.exposeTime(CAM_DEFAULT_EXP);
- Camera.waitTime(CAM_DEFAULT_WAIT);
+ Camera.triggerTime(CAM_DEFAULT_EXP);
+ Camera.delayTime(CAM_DEFAULT_WAIT);
  Camera.focusTime(CAM_DEFAULT_FOCUS);
  
  Camera.setHandler(camCallBack);
