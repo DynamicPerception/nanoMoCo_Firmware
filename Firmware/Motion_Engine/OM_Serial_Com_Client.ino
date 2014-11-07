@@ -868,7 +868,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		// Move at the maximum motor speed
 		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
-		);
 
 		motor[subaddr - 1].moveToStart();
 		startISR();
