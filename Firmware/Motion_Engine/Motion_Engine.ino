@@ -61,7 +61,7 @@ const byte CAM_DEFAULT_WAIT     = 0;
 const byte CAM_DEFAULT_FOCUS    = 0;
 
 const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 1000;
+const unsigned int MOT_DEFAULT_MAX_SPD   = 5000;
 const float MOT_DEFAULT_CONT_ACCEL	     = 15000.0;
 
 const unsigned int MOT_DEFAULT_BACKLASH = 96;
@@ -82,10 +82,9 @@ const byte MOTOR_COUNT				= 3;
 #define CONT_TL 1
 #define CONT_VID 2
 
+// General computational constants
 
-
-
-
+#define MILLIS_PER_SECOND 1000.0
 
 
 /* 
@@ -169,6 +168,7 @@ char byteFired = 0;
  // necessary camera control variables
  
 unsigned int  camera_fired     = 0;
+uint8_t		  camera_test_mode = false;
 
 //ping pong mode variable
 
@@ -179,6 +179,11 @@ unsigned long max_time = 0;
 
 // time delay for program starting
 unsigned long start_delay = 0;
+
+// key frame variables
+int key_frames = 0;
+int current_frame = 0;
+bool key_move = false;
 
 
  // default device name, exactly 9 characters + null terminator
@@ -195,7 +200,7 @@ byte node =1;
   ST_MOVE  - clear to move motor
   ST_RUN   - motor is currently running
   ST_EXP   - clear to expose camera (or not...)
-  ST_WAIT  - in camera wait 
+  ST_WAIT  - in camera delay 
   ST_ALTP  - check for alt output post 
   
  */
@@ -382,7 +387,7 @@ void setup() {
 	  motor[i].sleep(true);
 	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
 	  motor[i].ms(4);
-	 
+	  motor[i].programBackCheck(false);	 
  }
 
   // restore/store eeprom memory
@@ -603,8 +608,10 @@ byte powerCycled() {
 }
 
 void eStop() {
-	if (running)
+	if (running && !camera_test_mode)
 		pauseProgram();
+	else if (running && camera_test_mode)
+		stopProgram();
 	else
 		stopAllMotors();	
 }

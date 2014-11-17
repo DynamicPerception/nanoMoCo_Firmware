@@ -52,14 +52,33 @@ void setupControlCycle() {
 
 void cycleCamera() {
 	
-    // stop program if max shots exceeded    
+    // stop program if max shots exceeded or if the continuous video program as reached its destination
   if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((!Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
-           // stop program running w/o clearing variables
+	  
+	  	// stop program running w/o clearing variables
 		stopProgram();
-		if (pingPongMode && motor[1].planType() == CONT_TL){
+		
+		// If multiple key frames were set, load the parameters for the next position and start the program again
+		if (key_move && current_frame < key_frames) {
+			for (byte i = 0; i < MOTOR_COUNT; i++) {
+				
+				// Re-set each motor's parameters for the next key frame
+				motor[i].stopPos( motor[i].keyDest( current_frame ) );
+				motor[i].contSpeed( motor[i].keySpeed( current_frame ) );
+				motor[i].planAccelLength( motor[i].keyAccel( current_frame ) );
+				motor[i].planDecelLength( motor[i].keyDecel( current_frame ) );
+				motor[i].planLeadIn( motor[i].keyLead( current_frame ) );
+
+			}
+			startProgram();
+		}
+		
+		// If ping pong mode is one and this is a continuous video shot, reverse direction and start the program again
+		else if (pingPongMode && motor[1].planType() == CONT_VID) {
 			reverseStartStop();
 			startProgram();
 		}
+
 		return;
   } 
   
@@ -80,7 +99,7 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.delay || !Camera.enable  ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable  ) {
     
             // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
@@ -139,9 +158,9 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
 	  }
   
 	// pre--output clearance check
-	if(altBeforeDelay >= Camera.delay && !altBlock){  //Camera.delay is less than the altBeforeDelay, go as fast as possible
+	if(altBeforeDelay >= Camera.interval && !altBlock){  //Camera.interval is less than the altBeforeDelay, go as fast as possible
 		return true;
-	} else if( (millis() - camera_tm) >= (Camera.delay - altBeforeDelay)  && ! altBlock )
+	} else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
 		return true;
 
   

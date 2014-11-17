@@ -283,24 +283,77 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 void serMain(byte command, byte* input_serial_buffer) {
   
   switch(command) {
-    
-    //Command 2 starts program  
-    case 2:
-      startProgram();
-      response(true);
-      break;
+
+  //Command 2 starts program  
+  case 2:
+	  // Don't start a new program if one is already running
+	  if (!running) {
+
+			  uint8_t wait_required = false;
+
+			  for (byte i = 0; i < MOTOR_COUNT; i++) {
+				  if (motor[i].programBackCheck() == true) {
+
+					  // Indicate that a breif pause is necessary after starting the motors
+					  wait_required = true;
+
+					  // Set the motor microsteps to low resolution and increase speed for fastest takeup possible
+					  motor[i].ms(4);
+					  motor[i].contSpeed(MOT_DEFAULT_MAX_STEP);
+
+					  // Determine the direction of the programmed move
+					  uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
+
+					  // Move the motor 1 step in that direction to force the backlash takeup
+					  motor[i].move(dir, 1);
+					  startISR();
+				  }
+			  }
+
+			  if (wait_required) {
+				  unsigned long time = millis();
+				  while (millis() - time < 1000){
+					  // Wait a second for backlash takeup to finish
+				  }
+			  }
+
+			  // Re-set all the motors to their proper microstep settings
+			  for (byte i = 0; i < MOTOR_COUNT; i++)
+				  msAutoSet(i, false);
+		  
+		  // When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
+		  if (motor[1].planType() == SMS) {
+			  // Determine the max time in seconds allowed for moving the motors
+			  float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+			  // If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
+			  if (max_move_time > 0.5)
+				  max_move_time = 0.5;
+			  // Determine the maximum number of steps each motor needs to move. For short move, throttle the speed to avoid jerking of the rig.
+			  for (byte i = 0; i < MOTOR_COUNT; i++) {
+				  int steps_per_move = motor[i].getTopSpeed();
+				  if (steps_per_move < 500) {
+					  // Only use 50% of the maximum move time to allow for accel and decel phases
+					  unsigned long new_speed = (float)steps_per_move / (max_move_time * 0.5);
+				  }
+			  }
+		  }
+
+		  startProgram();
+	  }
+		response(true);
+		break;
     
     //Command 3 pauses program  
     case 3:
-      pauseProgram();
-      response(true);
-      break;
+		pauseProgram();
+		response(true);
+		break;
     
     //Command 4 stops program  
     case 4:
-      stopProgram();
-      response(true);
-      break;
+		stopProgram();
+		response(true);
+		break;
     
     //Command 5 enables or disables the debug LED  
     case 5:
@@ -494,7 +547,19 @@ void serMain(byte command, byte* input_serial_buffer) {
 		pingPongMode = input_serial_buffer[0];
 		response(true);
 		break;
-        
+
+	//Command 40 sets the next key frame position for all motors
+	case 40:
+	{
+			   uint8_t frame = input_serial_buffer[0];
+			   input_serial_buffer++;
+			   for (byte i = 0; i < MOTOR_COUNT; i++) {
+				   motor[i].keyDest(frame, motor[i].currentPos());
+			   }
+			   response(true);
+			   break;
+	}
+
     
     //*****************MAIN READ COMMANDS********************
     
@@ -870,10 +935,23 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       
 	//Commnad 23 send motor to program start point
 	case 23:
+	// Constrain scope here to allow variables to be declared
+	{
+			   // Determine whether this move will induce backlash that needs to be taken up before starting the program move
+			   uint8_t program_dir = (motor[subaddr - 1].stopPos() - motor[subaddr - 1].startPos()) > 0 ? 1 : 0;
+			   uint8_t this_move_dir = (motor[subaddr - 1].startPos() - motor[subaddr - 1].currentPos()) > 0 ? 1 : 0;
+
+			   if (program_dir != this_move_dir)
+				   motor[subaddr - 1].programBackCheck(true);
+			   else
+				   motor[subaddr - 1].programBackCheck(false);
+	}
+
 		// Move at the maximum motor speed
 		motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
+		// Start the move
 		motor[subaddr - 1].moveToStart();
 		startISR();
 		response(true);
@@ -903,7 +981,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			// rather than forcing them to run both commands.
 		  	
 			// go ahead and make sure we fire immediately
-			camera_tm = millis() - Camera.delay;
+			camera_tm = millis() - Camera.interval;
 
 			motor[subaddr-1].autoPause = true;
 			startProgram();
@@ -934,7 +1012,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		  	
 			// need to decrease run time counter
 			{
-				unsigned long delayTime = ( Camera.delay > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime()) ) ? Camera.delay : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
+				unsigned long delayTime = ( Camera.interval > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime()) ) ? Camera.interval : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
 			  	
 				if( run_time >= delayTime )
 					run_time -= delayTime;
@@ -961,61 +1039,48 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//The command will respond with the value that is selected or with 0 if a program is in progress or the selected motor is running.
 	case 28:
 
-		// Don't change the microstep value if the motor or program is running
-		if (!running && !motor[subaddr - 1].running()) {
-			
-			// The microstepping cutoff values below are in 16th steps
-			const int MAX_CUTOFF		= 20000;
-			const int QUARTER_CUTOFF	= 10000;
-			const int EIGHTH_CUTOFF		= 5000;
-			float comparison_speed;
-
-			// For time lapse SMS mode
-			if (motor[subaddr - 1].planType() == SMS) {
-
-				const float MILLIS_PER_SECOND = 1000.0;
-				
-				// Max time in seconds
-				float max_time_per_move = (float)(Camera.delay - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
-
-				
-				// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
-				float steps_per_move = motor[subaddr - 1].getTopSpeed();
-
-				comparison_speed = steps_per_move / (float) max_time_per_move;
-
-			}
-
-			// For time lapse continuous mode and video continuous mode
-			else if (motor[subaddr - 1].planType() == CONT_TL || motor[subaddr - 1].planType() == CONT_VID) {
-				comparison_speed = motor[subaddr - 1].getTopSpeed();
-			}
-
-			// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
-			// If the requested speed is too high, send error value, don't change microstepping setting
-			if (comparison_speed >= MAX_CUTOFF) 
-				response(true, 255);
-
-			// Otherwise set the appropraite microstep setting and report the new value back to the master device
-			else {
-				if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
-					motor[subaddr - 1].ms(4);
-				else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
-					motor[subaddr - 1].ms(8);
-				else
-					motor[subaddr - 1].ms(16);
-
-				// Report back the microstep value that was auto-selected
-				response(true, motor[subaddr - 1].ms());
-			}
-
-		}
-
-		// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed
-		else
-			response(true, 0);
-
+		msAutoSet((subaddr - 1), true);
 		break;
+
+	//command 40 sets the motor's key frame lead-in
+	case 40:
+	{
+			   uint8_t frame = input_serial_buffer[0];
+			   input_serial_buffer++;
+			   motor[subaddr - 1].keyLead(frame, Node.ntoul(input_serial_buffer));
+			   response(true);
+			   break;
+	}
+
+	//command 41 sets the motor's key frame acceleration
+	case 41:
+	{
+			   uint8_t frame = input_serial_buffer[0];
+			   input_serial_buffer++;
+			   motor[subaddr - 1].keyAccel(frame, Node.ntoul(input_serial_buffer));
+			   response(true);
+			   break;
+	}
+
+	//command 42 sets the motor's key frame deceleration
+	case 42:
+	{
+			   uint8_t frame = input_serial_buffer[0];
+			   input_serial_buffer++;
+			   motor[subaddr - 1].keyDecel(frame, Node.ntoul(input_serial_buffer));
+			   response(true);
+			   break;
+	}
+
+	//command 43 sets the motor's key frame speed
+	case 43:
+	{
+			   uint8_t frame = input_serial_buffer[0];
+			   input_serial_buffer++;
+			   motor[subaddr - 1].keySpeed(frame, Node.ntoul(input_serial_buffer));
+			   response(true);
+			   break;
+	}
 
 	//Command 228 set program start point here
 	case 228:
@@ -1193,9 +1258,15 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 10 set camera's interval  
     case 10:
-      Camera.delay = Node.ntoul(input_serial_buffer);
+      Camera.interval = Node.ntoul(input_serial_buffer);
       response(true);
       break;
+
+	//Command 11 enables and disables the camera's test mode
+    case 11:
+		cameraTest(input_serial_buffer[0]);
+		response(true);
+		break;
     
     
     //*****************CAMERA READ COMMANDS********************
@@ -1242,12 +1313,17 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 108 gets the camera's interval time
     case 108:
-      response(true, Camera.delay);
+      response(true, Camera.interval);
       break;
 
 	//Command 109 gets the number of shots fired 
 	case 109:
 		response(true, camera_fired);
+		break;
+		
+	//Command 110 reports whether the camera is in test mode
+	case 110:
+		response(true, cameraTest());
 		break;
       
             
@@ -1260,10 +1336,120 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 }
 
 
-           
-             
-           
-             
+/**
+	Set the appropriate microstep value for the motor based upon currently set program move parameters
+*/
+void msAutoSet(uint8_t motor_number, bool external_command) {
+	// Don't change the microstep value if the motor or program is running
+	if (!running && !motor[motor_number].running()) {
+
+		// The microstepping cutoff values below are in 16th steps
+		const int MAX_CUTOFF = 20000;
+		const int QUARTER_CUTOFF = 10000;
+		const int EIGHTH_CUTOFF = 5000;
+		float comparison_speed;
+
+		// For time lapse SMS mode
+		if (motor[motor_number].planType() == SMS) {
+
+			// Max time in seconds
+			float max_time_per_move = (float)(Camera.interval - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+
+
+			// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
+			float steps_per_move = motor[motor_number].getTopSpeed();
+
+			comparison_speed = steps_per_move / (float)max_time_per_move;
+
+		}
+
+		// For time lapse continuous mode and video continuous mode
+		else if (motor[motor_number].planType() == CONT_TL || motor[motor_number].planType() == CONT_VID) {
+			comparison_speed = motor[motor_number].getTopSpeed();
+		}
+
+		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
+		// If the requested speed is too high, send error value, don't change microstepping setting
+		if (comparison_speed >= MAX_CUTOFF && external_command)
+			response(true, 255);
+
+		// Otherwise set the appropraite microstep setting and report the new value back to the master device
+		else {
+			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
+				motor[motor_number].ms(4);
+			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
+				motor[motor_number].ms(8);
+			else
+				motor[motor_number].ms(16);
+
+			// Report back the microstep value that was auto-selected if necessary
+			if (external_command)
+				response(true, motor[motor_number].ms());
+		}
+
+	}
+
+	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
+	else if (external_command)
+		response(true, 0);
+}            
+
+
+/**
+	Start or stop camera test mode
+*/
+void cameraTest(uint8_t p_start) {
+
+	// If the command doesn't change the test mode, ignore it and exit the fucntion
+	if (camera_test_mode == p_start)
+		return;
+
+	static uint8_t old_enable[MOTOR_COUNT];
+	static unsigned long old_max_shots;
+	camera_test_mode = p_start;
+
+	// Entering test mode
+	if (camera_test_mode) {
+		// Remember each motor's enable mode and disable all of them
+		for (byte i = 0; i < MOTOR_COUNT; i++) {
+			old_enable[i] = motor[i].enable();
+			motor[i].enable(false);
+		}
+
+		// Remember the current max shots setting
+		old_max_shots = Camera.maxShots;
+
+		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
+		Camera.maxShots = 10000;
+
+		// Starting the program will make the camera fire, but the motors won't move
+		startProgram();
+
+	}
+
+	// Exiting test mode
+	else if (!camera_test_mode) {
+
+		// Stop the camera firing
+		stopProgram();
+
+		// Restore motor enable statuses and camera max shots
+		for (byte i = 0; i < MOTOR_COUNT; i++)
+			motor[i].enable(old_enable[i]);
+
+		Camera.maxShots = old_max_shots;
+	}
+}
+
+
+/**
+	Return whether the camera is in test mode
+*/
+uint8_t cameraTest() {
+
+	return(camera_test_mode);
+
+}
 
 
 void serialComplexMove(byte subaddr, byte* buf) {
