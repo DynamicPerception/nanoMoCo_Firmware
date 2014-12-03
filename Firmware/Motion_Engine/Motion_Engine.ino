@@ -143,6 +143,7 @@ void stopProgram(uint8_t force_clear = true);
  // program timer counters
 
 unsigned long run_time    = 0;	// Amount of time since the program has started (ms)
+unsigned long last_run_time = 0; // Stores the run time, even after the program has ended
 unsigned long last_time   = 0;
 uint8_t running = false;
 volatile byte force_stop = false;
@@ -166,12 +167,10 @@ char byteFired = 0;
 
 
  // necessary camera control variables
- 
 unsigned int  camera_fired     = 0;
 uint8_t		  camera_test_mode = false;
 
-//ping pong mode variable
-
+// ping pong mode variable
 uint8_t pingPongMode = false;
 
  // maximum run time
@@ -180,10 +179,16 @@ unsigned long max_time = 0;
 // time delay for program starting
 unsigned long start_delay = 0;
 
+// pause flag for later call of pauseProgram() 
+bool pause_flag = false;
+
 // key frame variables
 int key_frames = 0;
 int current_frame = 0;
 bool key_move = false;
+
+// program completion flag
+bool program_complete = false;
 
 
  // default device name, exactly 9 characters + null terminator
@@ -421,23 +426,23 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	 //  USBSerial.print(motor[0].currentPos());
-	 //  USBSerial.print(" continious Speed: ");
-	 //  USBSerial.print(motor[0].contSpeed());
-	 //  USBSerial.print(" backlash: ");
-	 //  USBSerial.print(motor[0].backlash());
-	 //  USBSerial.print(" startPos: ");
-	 //  USBSerial.print(motor[0].startPos());
-	 //  USBSerial.print(" stopPos: ");
-	 //  USBSerial.print(motor[0].stopPos());
-	 //  USBSerial.print(" endPos: ");
-	 //  USBSerial.print(motor[0].endPos());
-	 //  	USBSerial.print(" Type: ");
-	 //  	USBSerial.print(motor[0].planType());
-		//USBSerial.print(" shots: ");
-		//USBSerial.print(camera_fired);
-		//USBSerial.print(" leadIn: ");
-		//USBSerial.println(motor[0].planLeadIn());
+	   USBSerial.print(motor[0].currentPos());
+	   USBSerial.print(" continious Speed: ");
+	   USBSerial.print(motor[0].contSpeed());
+	   USBSerial.print(" backlash: ");
+	   USBSerial.print(motor[0].backlash());
+	   USBSerial.print(" startPos: ");
+	   USBSerial.print(motor[0].startPos());
+	   USBSerial.print(" stopPos: ");
+	   USBSerial.print(motor[0].stopPos());
+	   USBSerial.print(" endPos: ");
+	   USBSerial.print(motor[0].endPos());
+	   	USBSerial.print(" Type: ");
+	   	USBSerial.print(motor[0].planType());
+		USBSerial.print(" shots: ");
+		USBSerial.print(camera_fired);
+		USBSerial.print(" leadIn: ");
+		USBSerial.println(motor[0].planLeadIn());
 //
 //	   USBSerial.print("Current Steps ");
 //	   USBSerial.print(motor[1].currentPos());
@@ -500,6 +505,9 @@ void loop() {
 		run_time += cur_time - last_time;
 		last_time = cur_time;
 
+		if (run_time != 0)
+			last_run_time = run_time;
+
 		// Got an external stop somewhere, that wasn't a command?
 		if( force_stop == true )
 			stopProgram();
@@ -519,13 +527,12 @@ void loop() {
    }
 }
 
-
-
 void pauseProgram() {
      // pause program
   Camera.stop();
   stopAllMotors();
   running = false;
+  USBSerial.println("Pausing program!!!");
 }
 
 
@@ -560,7 +567,6 @@ void stopProgram(uint8_t force_clear) {
 
 
 void startProgram() {
-  
      // start program
   last_time = millis();
   running   = true;
@@ -578,8 +584,9 @@ void startProgram() {
     // set ready to check for camera
     // we only do this for master nodes, not slaves
     // as slaves get their ok to fire state from OMComHandler
-  if( ComMgr.master() == true )
-    Engine.state(ST_CLEAR); 
+  if (ComMgr.master() == true) {
+	  Engine.state(ST_CLEAR);
+  }
                     
 }
 
@@ -598,7 +605,7 @@ void flasher(byte pin, int count) {
 
 byte powerCycled() {
 	
-	// This function will response true the first time it is
+	// This function will respond true the first time it is
 	// called after a power cycle and false thereafter
 	static byte cycled = true;
 	byte response = cycled;
@@ -609,7 +616,7 @@ byte powerCycled() {
 
 void eStop() {
 	if (running && !camera_test_mode)
-		pauseProgram();
+		stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
 	else if (running && camera_test_mode)
 		stopProgram();
 	else
@@ -618,10 +625,8 @@ void eStop() {
 
 uint8_t programPercent() {
 
-	// If the program isn't running then don't calculate
-	if (!running)
-		return(0);
-	
+	static uint8_t percent = 0;
+
 	unsigned long longest_move = 0;
 	
 	// Check the total length of each motor's move and save the longest one
@@ -630,21 +635,54 @@ uint8_t programPercent() {
 		// If the motor isn't enabled, don't check its move length
 		if (!motor[i].enable())
 			continue;
-
-		unsigned long current_move = motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
 		
+		unsigned long current_move;
+
+		// If in SMS mode, the current_move is in shots, if in continuous video mode, it time in milliseconds
+		if (motor[i].planType() == SMS || motor[i].planType() == CONT_VID)
+			current_move = motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
+		
+		// If in continuous time lapse mode, current_move is time in milliseconds, but the lead-in needs to be converted from shots to milliseconds
+		else if (motor[i].planType() == CONT_TL)
+			current_move = (motor[i].planLeadIn() * Camera.interval) + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
+
+		// Update the longest move if necessary
 		if (current_move > longest_move)
 			longest_move = current_move;
 
 	}
 
-	// If the camera max shots is less than the longest motor move, use that value instead
-	if (Camera.maxShots < longest_move)
+	uint8_t percent_new;
+
+	// If in SMS mode and the camera max shots is less than the longest motor move, use that value instead
+	if (motor[0].planType() == SMS && Camera.maxShots < longest_move)
 		longest_move = Camera.maxShots;
+
+	// Determine the percent completion for SMS based on shots
+	if (motor[0].planType() == SMS)
+		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
+
+	// Otherwise determin the percent completion based on run-time
+	else
+		percent_new = round((float)run_time / (float)longest_move * 100.0);
 
 	// Determine the program percent completion by dividing the current shots by the max shots.
 	// Multiply by 100 to give whole number percent.
-	uint8_t percent = round((float)camera_fired / (float)longest_move * 100.0); 
+	USBSerial.print("Longest move: ");
+	USBSerial.println(longest_move);
+	USBSerial.print("Camera fired: ");
+	USBSerial.println(camera_fired);	
+	USBSerial.print("Percent: ");
+	USBSerial.println(percent);
+	USBSerial.print("Percent_new: ");
+	USBSerial.println(percent_new);
+
+
+	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
+	if (percent_new == 0 && percent != 0)
+		percent = 100;
+	else
+		percent = percent_new;
 
 	return(percent);
 }
@@ -690,4 +728,53 @@ uint8_t checkMotorAttach() {
 
 	// The bits of the attached byte indicate each motor's attached status
 	return(attached);
+}
+
+
+/**
+
+	Returns the total run time of the currently set program in milliseconds
+	
+*/
+unsigned long totalProgramTime() {
+
+	unsigned long longest_time = 0;
+	unsigned long motor_time = 0;
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		// If the motor is enabled, check its program time
+		if (motor[i].enable()) {
+			// SMS: Total the exposures for the program and multiply by the interval
+			if (motor[i].planType() == SMS)
+				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength());
+			// Continuous time lapse: Only the lead-in is in expsoures, so only multiply that by the interval. Everything else is already in milliseconds
+			else if (motor[i].planType() == CONT_TL)
+				motor_time = (Camera.interval * motor[i].planLeadIn()) + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
+			// Continuous video: all segments are in milliseconds, no need to multiply anything
+			else if (motor[i].planType() == CONT_VID)
+				motor_time = motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
+			// Overwrite longest_time if the last checked motor is longer
+			if (motor_time > longest_time)
+				longest_time = motor_time;
+		}
+	}
+
+	return(longest_time);
+}
+
+uint8_t programComplete() {
+
+	// This function will respond true the first time it is
+	// called after a power cycle and false thereafter
+
+	uint8_t status = false;
+
+	if (program_complete == true)
+		status = true;
+
+	program_complete = false;
+
+	return(status);
+
+	
 }

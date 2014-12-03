@@ -51,30 +51,39 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
+
+	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
+	if (pause_flag)
+		pauseProgram();
 	
-    // stop program if max shots exceeded or if the continuous video program as reached its destination
+    // stop program if max shots exceeded or if the continuous TL/video program as reached its destination
   if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((!Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
 	  
 	  	// stop program running w/o clearing variables
 		stopProgram();
+		program_complete = true;
 		
-		// If multiple key frames were set, load the parameters for the next position and start the program again
-		if (key_move && current_frame < key_frames) {
-			for (byte i = 0; i < MOTOR_COUNT; i++) {
-				
-				// Re-set each motor's parameters for the next key frame
-				motor[i].stopPos( motor[i].keyDest( current_frame ) );
-				motor[i].contSpeed( motor[i].keySpeed( current_frame ) );
-				motor[i].planAccelLength( motor[i].keyAccel( current_frame ) );
-				motor[i].planDecelLength( motor[i].keyDecel( current_frame ) );
-				motor[i].planLeadIn( motor[i].keyLead( current_frame ) );
+		//// If multiple key frames were set, load the parameters for the next position and start the program again
+		//if (key_move && current_frame < key_frames) {
+		//	for (byte i = 0; i < MOTOR_COUNT; i++) {
 
-			}
-			startProgram();
-		}
+		//		// Re-set each motor's parameters for the next key frame
+		//		motor[i].stopPos(motor[i].keyDest(current_frame));
+		//		motor[i].planTravelLength(motor[i].keyTime(current_frame));
+		//		motor[i].planAccelLength(motor[i].keyAccel(current_frame));
+		//		motor[i].planDecelLength(motor[i].keyDecel(current_frame));
+		//		motor[i].planLeadIn(motor[i].keyLead(current_frame));
+
+		//	}
+		//	current_frame++;
+		//	startProgram();
+		//}
+
+		//else if (key_move && current_frame >= key_frames)
+		//	current_frame = 0;
 		
 		// If ping pong mode is one and this is a continuous video shot, reverse direction and start the program again
-		else if (pingPongMode && motor[1].planType() == CONT_VID) {
+		if (pingPongMode && motor[1].planType() == CONT_VID) {
 			reverseStartStop();
 			startProgram();
 		}

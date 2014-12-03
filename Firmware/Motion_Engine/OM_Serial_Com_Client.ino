@@ -204,7 +204,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 0:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 23 && command != 120) {
+	   if (joystick_mode == true && command != 14 && command != 23 && command != 120 && command != 122) {
 		   //USBSerial.println("Invalid general command");
 		   response(false);
 		   return;   
@@ -286,66 +286,166 @@ void serMain(byte command, byte* input_serial_buffer) {
 
   //Command 2 starts program  
   case 2:
-	  // Don't start a new program if one is already running
-	  if (!running) {
+  {
+			USBSerial.print("Starting program: ");
+			USBSerial.println(motor[0].currentPos());
 
-			  uint8_t wait_required = false;
+			unsigned long time = millis();
+			// Don't start a new program if one is already running
+				key_move = false;
+			if (!running) {
 
-			  for (byte i = 0; i < MOTOR_COUNT; i++) {
-				  if (motor[i].programBackCheck() == true) {
+				// Re-set the program completion flag
+				program_complete = false;
+				bool was_pause = pause_flag;
+				pause_flag = false;
 
-					  // Indicate that a breif pause is necessary after starting the motors
-					  wait_required = true;
+				//USBSerial.println("Start Break 1");
 
-					  // Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-					  motor[i].ms(4);
-					  motor[i].contSpeed(MOT_DEFAULT_MAX_STEP);
+				uint8_t wait_required = false;
 
-					  // Determine the direction of the programmed move
-					  uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
+				USBSerial.print("Before backlash check: ");
+				USBSerial.println(motor[0].currentPos());
 
-					  // Move the motor 1 step in that direction to force the backlash takeup
-					  motor[i].move(dir, 1);
-					  startISR();
-				  }
-			  }
+				// Don't check the backlash if resuming from a paused state
+				if (!was_pause){
+					for (byte i = 0; i < MOTOR_COUNT; i++) {
+						if (motor[i].programBackCheck() == true) {
 
-			  if (wait_required) {
-				  unsigned long time = millis();
-				  while (millis() - time < 1000){
-					  // Wait a second for backlash takeup to finish
-				  }
-			  }
+							USBSerial.print("Checking backlash ");
+							USBSerial.print(i);
+							USBSerial.print(": ");
+							USBSerial.println(motor[0].currentPos());
 
-			  // Re-set all the motors to their proper microstep settings
-			  for (byte i = 0; i < MOTOR_COUNT; i++)
-				  msAutoSet(i, false);
-		  
-		  // When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
-		  if (motor[1].planType() == SMS) {
-			  // Determine the max time in seconds allowed for moving the motors
-			  float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
-			  // If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
-			  if (max_move_time > 0.5)
-				  max_move_time = 0.5;
-			  // Determine the maximum number of steps each motor needs to move. For short move, throttle the speed to avoid jerking of the rig.
-			  for (byte i = 0; i < MOTOR_COUNT; i++) {
-				  int steps_per_move = motor[i].getTopSpeed();
-				  if (steps_per_move < 500) {
-					  // Only use 50% of the maximum move time to allow for accel and decel phases
-					  unsigned long new_speed = (float)steps_per_move / (max_move_time * 0.5);
-				  }
-			  }
-		  }
+							// Indicate that a breif pause is necessary after starting the motors
+							wait_required = true;
 
-		  startProgram();
-	  }
-		response(true);
-		break;
+							// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
+							motor[i].ms(4);
+							motor[i].contSpeed(MOT_DEFAULT_MAX_STEP);
+
+							// Determine the direction of the programmed move
+							uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
+
+							// Move the motor 1 step in that direction to force the backlash takeup
+							motor[i].move(dir, 1);
+							startISR();
+						}
+					}
+				}
+
+				USBSerial.print("Done with backlash: ");
+				USBSerial.println(motor[0].currentPos());
+
+				if (wait_required) {
+					unsigned long time = millis();
+					while (millis() - time < 1000){
+						// Wait a second for backlash takeup to finish
+					}
+				}
+
+				USBSerial.print("Done with wait: ");
+				USBSerial.println(motor[0].currentPos());
+
+				//USBSerial.println("Start Break 2");
+				//// If this is a key frame move, set the stop position to the first key frame position
+				//if (key_move && current_frame == 0) {
+				//	USBSerial.println("Break 3");
+				//	for (byte i = 0; i < MOTOR_COUNT; i++) {
+				//		motor[i].stopPos(motor[i].keyDest(current_frame));
+				//		motor[i].planTravelLength(motor[i].keyTime(current_frame));
+				//		motor[i].planAccelLength(motor[i].keyAccel(current_frame));
+				//		motor[i].planDecelLength(motor[i].keyDecel(current_frame));
+				//		motor[i].planLeadIn(motor[i].keyLead(current_frame));
+
+				//		USBSerial.print("Plan type: ");
+				//		USBSerial.print(motor[i].planType());
+				//		USBSerial.print(" -- Start pos: ");
+				//		USBSerial.print(motor[i].startPos());
+				//		USBSerial.print(" -- Stop pos: ");
+				//		USBSerial.print(motor[i].stopPos());
+				//		USBSerial.print(" -- Travel: ");
+				//		USBSerial.print(motor[i].planTravelLength());
+				//		USBSerial.print(" -- Accel: ");
+				//		USBSerial.print(motor[i].planAccelLength());
+				//		USBSerial.print(" -- Decel: ");
+				//		USBSerial.print(motor[i].planDecelLength());
+				//		USBSerial.print(" -- Lead-In: ");
+				//		USBSerial.println(motor[i].planLeadIn());
+				//	}
+				//}
+
+				// Re-set all the motors to their proper microstep settings
+				if (!was_pause){
+					USBSerial.print("BAD!: ");
+					USBSerial.println(motor[0].currentPos());
+
+					for (byte i = 0; i < MOTOR_COUNT; i++) {
+						msAutoSet(i, false);
+
+						USBSerial.print("Microsteps: ");
+						USBSerial.println(motor[i].ms());
+					}
+				}
+
+				USBSerial.println("Motor distances:");
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
+				}
+				USBSerial.println("Motor starts:");
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					USBSerial.println(motor[i].startPos());
+				}
+				USBSerial.println("Motor stops:");
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					USBSerial.println(motor[i].stopPos());
+				}
+				USBSerial.println("Motor current:");
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					USBSerial.println(motor[i].currentPos());
+				}
+
+				// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
+				if (motor[1].planType() == SMS) {
+					//USBSerial.println("Start Break 4");
+					// Determine the max time in seconds allowed for moving the motors
+					float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+					// If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
+					if (max_move_time > 0.5)
+						max_move_time = 0.5;
+					// Determine the maximum number of steps each motor needs to move. For short move, throttle the speed to avoid jerking of the rig.
+					for (byte i = 0; i < MOTOR_COUNT; i++) {
+						int steps_per_move = motor[i].getTopSpeed();
+						if (steps_per_move < 500) {
+							// Only use 50% of the maximum move time to allow for accel and decel phases
+							unsigned long new_speed = (float)steps_per_move / (max_move_time * 0.5);
+						}
+					}
+				}
+
+				//USBSerial.println("Start Break 5");
+
+				if (motor[0].planType() == CONT_VID)
+					Camera.expose();
+				USBSerial.print("Time before start program: ");
+				USBSerial.println(millis() - time);
+				startProgram();
+			}
+			USBSerial.print("Time before response: ");
+			USBSerial.println(millis() - time);
+			response(true);
+			break;
+  }
     
     //Command 3 pauses program  
     case 3:
-		pauseProgram();
+		// Don't do anything if the program isn't running. This could cause the pause flag to be set inappropriately.
+		if (running) {
+			pause_flag = true;
+			// If running in a mode other than SMS, pause the program immediately
+			if (running && !motor[0].planType() == SMS)
+				pauseProgram();
+		}
 		response(true);
 		break;
     
@@ -537,6 +637,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 				motor[i].contSpeed(0);
 			}
 		}
+		// If we're exiting joystick mode, turn off the joystick watchdog mode
+		else if (!joystick_mode)
+			watchdog = false;
 		
 		response(true);
 		break;
@@ -548,15 +651,67 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 40 sets the next key frame position for all motors
+	//Command 25 sends all motors to their start positions. The function will
+	case 25:
+		sendAllToStart();
+		response(true);
+		break;
+
+	//Command 26 set program start point here
+	case 26:
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			tempPos = motor[i].currentPos();
+			motor[i].startPos(tempPos);
+			OMEEPROM::write(EE_START_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		}
+		response(true);
+		break;
+
+	//Command 27 set program stop point here
+	case 27:
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			tempPos = motor[i].currentPos();
+			motor[i].stopPos(tempPos);
+			OMEEPROM::write(EE_STOP_0 + (i)* EE_MOTOR_MEMORY_SPACE, tempPos);
+		}
+		response(true);
+		break;
+
+	//Command 40 sets whether the current shot is using key frames
 	case 40:
-	{
-			   uint8_t frame = input_serial_buffer[0];
-			   input_serial_buffer++;
+		key_move = input_serial_buffer[0];
+		// When entering key frame mode, reset the number of key frames
+		if (key_move) {
+			key_frames = 0;
+			current_frame = 0;
+			USBSerial.println("Resetting key frame and current frame counts");
+		}
+		response(true);
+		
+		USBSerial.print("Key move status: ");
+		USBSerial.println(key_move);
+
+		break;
+
+	//Command 41 sets the next key frame position for all motors
+	case 41:
+	{ 
+			   //uint8_t frame = input_serial_buffer[0];
+			   uint8_t frame = key_frames;
+			   
 			   for (byte i = 0; i < MOTOR_COUNT; i++) {
 				   motor[i].keyDest(frame, motor[i].currentPos());
+				   USBSerial.println("Motor pos: ");
+				   USBSerial.println(motor[i].keyDest(frame));
 			   }
+			   
+			   USBSerial.print("Key frame number ");
+			   USBSerial.print(key_frames);
+			   USBSerial.println(" set!");
+
+			   key_frames++;
 			   response(true);
+			   			   
 			   break;
 	}
 
@@ -571,16 +726,28 @@ void serMain(byte command, byte* input_serial_buffer) {
       break;
     
     //Command 101 reads run status
-    case 101:
-      // program run status
-      response( true, (byte) running );
+	case 101:
+	{
+				uint8_t status;
+				// program run status
+				if (pause_flag)
+					status = 1;
+				else if (running)
+					status = 2;
+				else
+					status = 0;
+				response(true, (byte)status);
+				USBSerial.print("Running? ");
+				USBSerial.println(status);
+	}
       break;
     
-    //Command 102 reads run time  
-    case 102:
-      // current run time
-      response(true, run_time);     
-      break;
+    //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
+	case 102:
+
+      response(true, last_run_time);
+	  break;
+     
       
     //Command 103 is camera(s) currently exposing?  
     case 103:
@@ -694,7 +861,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 122 reads the joystick watchdog mode status
 	case 122:
-		response(true, watchdog);
+		if (!joystick_mode)
+			response(true, watchdog);
 		break;
 
 	//Command 123 reports the percent completion of the current program
@@ -705,6 +873,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 124 returns a byte where the three least significant bits indicate each motor's attachment state
 	case 124:
 		response(true, checkMotorAttach());
+		break;
+
+	//Command 125 returns the total run time of the current program in milliseconds
+	case 125:
+		response(true, totalProgramTime());
+		break;
+
+	//Command 126 returns whether the current program has completed
+	case 126:
+		response(true, programComplete());
 		break;
 	
     //Error    
@@ -839,7 +1017,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 		// Normal speed change handling
 		else
-			motor[subaddr - 1].contSpeed(Node.ntof(input_serial_buffer));			
+			motor[subaddr - 1].contSpeed(Node.ntof(input_serial_buffer));		
+
+		if (!joystick_mode)
 			response(true);
 
 		break;
@@ -935,25 +1115,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       
 	//Commnad 23 send motor to program start point
 	case 23:
-	// Constrain scope here to allow variables to be declared
-	{
-			   // Determine whether this move will induce backlash that needs to be taken up before starting the program move
-			   uint8_t program_dir = (motor[subaddr - 1].stopPos() - motor[subaddr - 1].startPos()) > 0 ? 1 : 0;
-			   uint8_t this_move_dir = (motor[subaddr - 1].startPos() - motor[subaddr - 1].currentPos()) > 0 ? 1 : 0;
-
-			   if (program_dir != this_move_dir)
-				   motor[subaddr - 1].programBackCheck(true);
-			   else
-				   motor[subaddr - 1].programBackCheck(false);
-	}
-
-		// Move at the maximum motor speed
-		motor[subaddr - 1].ms(4);
-		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
-
-		// Start the move
-		motor[subaddr - 1].moveToStart();
-		startISR();
+		sendToStart(subaddr - 1);
 		response(true);
 		break;
 	
@@ -1040,7 +1202,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 28:
 
 		msAutoSet((subaddr - 1), true);
+		// Do not response here; response is handled within the above function.
 		break;
+
 
 	//command 40 sets the motor's key frame lead-in
 	case 40:
@@ -1049,6 +1213,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   input_serial_buffer++;
 			   motor[subaddr - 1].keyLead(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
+
+			   USBSerial.print("Motor ");
+			   USBSerial.print(subaddr - 1);
+			   USBSerial.print(" lead-in set to ");
+			   USBSerial.print(motor[subaddr - 1].keyLead(frame));
+			   USBSerial.print(" for frame ");
+			   USBSerial.println(frame);
+			   
 			   break;
 	}
 
@@ -1059,6 +1231,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   input_serial_buffer++;
 			   motor[subaddr - 1].keyAccel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
+
+			   USBSerial.print("Motor ");
+			   USBSerial.print(subaddr - 1);
+			   USBSerial.print(" accel set to ");
+			   USBSerial.print(motor[subaddr - 1].keyAccel(frame));
+			   USBSerial.print(" for frame ");
+			   USBSerial.println(frame);
+
 			   break;
 	}
 
@@ -1069,39 +1249,34 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   input_serial_buffer++;
 			   motor[subaddr - 1].keyDecel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
+
+			   USBSerial.print("Motor ");
+			   USBSerial.print(subaddr - 1);
+			   USBSerial.print(" decel set to ");
+			   USBSerial.print(motor[subaddr - 1].keyDecel(frame));
+			   USBSerial.print(" for frame ");
+			   USBSerial.println(frame);
+
 			   break;
 	}
 
-	//command 43 sets the motor's key frame speed
+	//command 43 sets the motor's key frame arrival time
 	case 43:
 	{
 			   uint8_t frame = input_serial_buffer[0];
 			   input_serial_buffer++;
-			   motor[subaddr - 1].keySpeed(frame, Node.ntoul(input_serial_buffer));
+			   motor[subaddr - 1].keyTime(frame, Node.ntoui(input_serial_buffer));
 			   response(true);
+
+			   USBSerial.print("Motor ");
+			   USBSerial.print(subaddr - 1);
+			   USBSerial.print(" time set to ");
+			   USBSerial.print(motor[subaddr - 1].keyTime(frame));
+			   USBSerial.print(" for frame ");
+			   USBSerial.println(frame);
+
 			   break;
-	}
-
-	//Command 228 set program start point here
-	case 228:
-		tempPos = motor[subaddr - 1].currentPos();
-		motor[subaddr - 1].startPos(tempPos);
-		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
-		response(true);
-		break;
-
-	//Command 229 set program stop point here
-	case 229:
-		tempPos = motor[subaddr - 1].currentPos();
-		motor[subaddr - 1].stopPos(tempPos);
-		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
-		response(true);
-		break;
-		
-	
-
-      
-    
+	}    
 
     
     //*****************MOTOR READ COMMANDS********************
@@ -1144,6 +1319,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 107 reads whether the motor is currently running
 	case 107:
 		response(true, motor[subaddr - 1].running());
+		USBSerial.print("Motor running? ");
+		USBSerial.println(motor[subaddr - 1].running());
 		break;
 
 	//Command 108 reads the continuous speed for the motor
@@ -1191,6 +1368,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, motor[subaddr - 1].planDecelLength());
 		break;
    
+	//Command 117 reads the program sleep state
+	case 117:
+		response(true, motor[subaddr - 1].sleep());
+		break;
+
+
     //Error    
     default: 
       response(false);
@@ -1340,9 +1523,10 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	Set the appropriate microstep value for the motor based upon currently set program move parameters
 */
 void msAutoSet(uint8_t motor_number, bool external_command) {
+	//USBSerial.println("Setting microsteps");
 	// Don't change the microstep value if the motor or program is running
 	if (!running && !motor[motor_number].running()) {
-
+		//USBSerial.println("Break 2");
 		// The microstepping cutoff values below are in 16th steps
 		const int MAX_CUTOFF = 20000;
 		const int QUARTER_CUTOFF = 10000;
@@ -1365,16 +1549,20 @@ void msAutoSet(uint8_t motor_number, bool external_command) {
 
 		// For time lapse continuous mode and video continuous mode
 		else if (motor[motor_number].planType() == CONT_TL || motor[motor_number].planType() == CONT_VID) {
+			//USBSerial.println("Break 3");
 			comparison_speed = motor[motor_number].getTopSpeed();
 		}
 
 		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 		// If the requested speed is too high, send error value, don't change microstepping setting
-		if (comparison_speed >= MAX_CUTOFF && external_command)
+		if (comparison_speed >= MAX_CUTOFF && external_command) {
+			//USBSerial.println("Break 4");
 			response(true, 255);
+		}
 
 		// Otherwise set the appropraite microstep setting and report the new value back to the master device
 		else {
+			//USBSerial.println("Break 5");
 			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
 				motor[motor_number].ms(4);
 			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
@@ -1383,15 +1571,24 @@ void msAutoSet(uint8_t motor_number, bool external_command) {
 				motor[motor_number].ms(16);
 
 			// Report back the microstep value that was auto-selected if necessary
-			if (external_command)
+			if (external_command) {
+				//USBSerial.println("Break 6");
 				response(true, motor[motor_number].ms());
+			}
 		}
 
 	}
 
 	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
-	else if (external_command)
+	else if (external_command) {
+		//USBSerial.println("Break 7");
 		response(true, 0);
+	}
+
+	// Save the microstep settings
+	eepromWrite();
+
+	//USBSerial.println("Done setting microsteps");
 }            
 
 
@@ -1476,6 +1673,10 @@ void serialComplexMove(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response(uint8_t p_stat){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat);
@@ -1493,6 +1694,10 @@ void response(uint8_t p_stat){
 } 
 
 void response(uint8_t p_stat, uint8_t p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1509,6 +1714,10 @@ void response(uint8_t p_stat, uint8_t p_resp){
 }
 
 void response(uint8_t p_stat, unsigned int p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1525,6 +1734,10 @@ void response(uint8_t p_stat, unsigned int p_resp){
 }
 
 void response(uint8_t p_stat, int p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1541,6 +1754,10 @@ void response(uint8_t p_stat, int p_resp){
 }
 
 void response(uint8_t p_stat, unsigned long p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1557,6 +1774,10 @@ void response(uint8_t p_stat, unsigned long p_resp){
 }
 
 void response(uint8_t p_stat, long p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1573,6 +1794,10 @@ void response(uint8_t p_stat, long p_resp){
 }
 
 void response(uint8_t p_stat, float p_resp){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	switch(node){
 		case 3:
 			NodeUSB.response(p_stat, p_resp);
@@ -1589,6 +1814,10 @@ void response(uint8_t p_stat, float p_resp){
 }
 
 void response(uint8_t p_stat, char* p_resp, int p_len){
+	if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+	else
+		USBSerial.println("All's cool, bro!");
 	
 	switch(node){
 		case 3:
