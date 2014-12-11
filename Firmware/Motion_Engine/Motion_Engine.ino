@@ -169,6 +169,7 @@ char byteFired = 0;
  // necessary camera control variables
 unsigned int  camera_fired     = 0;
 uint8_t		  camera_test_mode = false;
+uint8_t					fps    = true;
 
 // ping pong mode variable
 uint8_t pingPongMode = false;
@@ -320,6 +321,8 @@ void setup() {
   altSerial.begin(9600);
   time = millis();
 
+  USBSerial.println("Done setting things up!");
+
 
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(BLUETOOTH_ENABLE_PIN, OUTPUT);
@@ -426,23 +429,23 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	   USBSerial.print(motor[0].currentPos());
-	   USBSerial.print(" continious Speed: ");
-	   USBSerial.print(motor[0].contSpeed());
-	   USBSerial.print(" backlash: ");
-	   USBSerial.print(motor[0].backlash());
-	   USBSerial.print(" startPos: ");
-	   USBSerial.print(motor[0].startPos());
-	   USBSerial.print(" stopPos: ");
-	   USBSerial.print(motor[0].stopPos());
-	   USBSerial.print(" endPos: ");
-	   USBSerial.print(motor[0].endPos());
-	   	USBSerial.print(" Type: ");
-	   	USBSerial.print(motor[0].planType());
-		USBSerial.print(" shots: ");
-		USBSerial.print(camera_fired);
-		USBSerial.print(" leadIn: ");
-		USBSerial.println(motor[0].planLeadIn());
+	 //  USBSerial.print(motor[0].currentPos());
+	 //  USBSerial.print(" continious Speed: ");
+	 //  USBSerial.print(motor[0].contSpeed());
+	 //  USBSerial.print(" backlash: ");
+	 //  USBSerial.print(motor[0].backlash());
+	 //  USBSerial.print(" startPos: ");
+	 //  USBSerial.print(motor[0].startPos());
+	 //  USBSerial.print(" stopPos: ");
+	 //  USBSerial.print(motor[0].stopPos());
+	 //  USBSerial.print(" endPos: ");
+	 //  USBSerial.print(motor[0].endPos());
+	 //  	USBSerial.print(" Type: ");
+	 //  	USBSerial.print(motor[0].planType());
+		//USBSerial.print(" shots: ");
+		//USBSerial.print(camera_fired);
+		//USBSerial.print(" leadIn: ");
+		//USBSerial.println(motor[0].planLeadIn());
 //
 //	   USBSerial.print("Current Steps ");
 //	   USBSerial.print(motor[1].currentPos());
