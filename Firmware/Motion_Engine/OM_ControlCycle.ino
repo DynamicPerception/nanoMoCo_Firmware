@@ -56,8 +56,9 @@ void cycleCamera() {
 	if (pause_flag)
 		pauseProgram();
 	
-    // stop program if max shots exceeded or if the continuous TL/video program as reached its destination
-  if(( Camera.maxShots > 0  && camera_fired >= Camera.maxShots) || ((!Camera.enable) && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
+  // stop program if max shots exceeded or if the continuous TL/video program as reached its destination
+  // The program stops when camera_fired exceeds Camera.maxShots instead of equalling it in order to allow the camera to take an exposure at its final destination
+  if((Camera.maxShots > 0  && camera_fired > Camera.maxShots) || (!Camera.enable && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
 	  
 	  	// stop program running w/o clearing variables
 		stopProgram();

@@ -661,6 +661,9 @@ uint8_t programPercent() {
 	if (motor[0].planType() == SMS && Camera.maxShots < longest_move)
 		longest_move = Camera.maxShots;
 
+	// Determine the program percent completion by dividing the current shots by the max shots.
+	// Multiply by 100 to give whole number percent.
+
 	// Determine the percent completion for SMS based on shots
 	if (motor[0].planType() == SMS)
 		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
@@ -668,18 +671,6 @@ uint8_t programPercent() {
 	// Otherwise determin the percent completion based on run-time
 	else
 		percent_new = round((float)run_time / (float)longest_move * 100.0);
-
-	// Determine the program percent completion by dividing the current shots by the max shots.
-	// Multiply by 100 to give whole number percent.
-	USBSerial.print("Longest move: ");
-	USBSerial.println(longest_move);
-	USBSerial.print("Camera fired: ");
-	USBSerial.println(camera_fired);	
-	USBSerial.print("Percent: ");
-	USBSerial.println(percent);
-	USBSerial.print("Percent_new: ");
-	USBSerial.println(percent_new);
-
 
 	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
 	if (percent_new == 0 && percent != 0)
@@ -748,8 +739,21 @@ unsigned long totalProgramTime() {
 		// If the motor is enabled, check its program time
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
-			if (motor[i].planType() == SMS)
+			if (motor[i].planType() == SMS) {
+				USBSerial.print("Interval: ");
+				USBSerial.print(Camera.interval);
+				USBSerial.print("  Lead in: ");
+				USBSerial.print(motor[i].planLeadIn());
+				USBSerial.print("  Accel: ");
+				USBSerial.print(motor[i].planAccelLength());
+				USBSerial.print("  Travel: ");
+				USBSerial.print(motor[i].planTravelLength());
+				USBSerial.print("  Decel: ");
+				USBSerial.print(motor[i].planDecelLength());
 				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength());
+				USBSerial.print("  Motor time: ");
+				USBSerial.println(motor_time);
+			}
 			// Continuous time lapse: Only the lead-in is in expsoures, so only multiply that by the interval. Everything else is already in milliseconds
 			else if (motor[i].planType() == CONT_TL)
 				motor_time = (Camera.interval * motor[i].planLeadIn()) + motor[i].planAccelLength() + motor[i].planTravelLength() + motor[i].planDecelLength();
