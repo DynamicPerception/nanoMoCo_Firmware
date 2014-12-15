@@ -298,7 +298,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				program_complete = false;
 
 				//USBSerial.println("Start Break 1");
-
+				
 				uint8_t wait_required = false;
 
 				// Check each motor to see if it needs backlash compensation
@@ -334,7 +334,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 					//USBSerial.print("Microsteps: ");
 					//USBSerial.println(motor[i].ms());
-				}
+				} 
 
 				// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
 				if (motor[1].planType() == SMS) {
@@ -357,7 +357,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				// If we're starting a video move, fire the camera trigger pin to start the video camera
 				if ( motor[0].planType() == CONT_VID)
 					Camera.expose();
-			}
+			}//end if (!running && !was_pause)
 
 			// Don't start a new program if one is already running
 			if (!running) {
@@ -381,7 +381,17 @@ void serMain(byte command, byte* input_serial_buffer) {
 				USBSerial.println("Motor travel:");
 				for (byte i = 0; i < MOTOR_COUNT; i++){
 					USBSerial.println(motor[i].planTravelLength());
-				}				
+				}	
+				
+				//if it was paused and not SMS then recalculate move from pause time
+				if (was_pause && motor[0].planType() != SMS){
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						if(motor[i].enable())
+							motor[i].resumeMove();
+						USBSerial.print("New Run Time: ");
+						USBSerial.println(motor[i].planTravelLength());
+					}	
+				}
 
 				startProgram();
 			}

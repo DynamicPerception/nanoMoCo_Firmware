@@ -429,19 +429,23 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	 //  USBSerial.print(motor[0].currentPos());
-	 //  USBSerial.print(" continious Speed: ");
-	 //  USBSerial.print(motor[0].contSpeed());
-	 //  USBSerial.print(" backlash: ");
-	 //  USBSerial.print(motor[0].backlash());
-	 //  USBSerial.print(" startPos: ");
-	 //  USBSerial.print(motor[0].startPos());
-	 //  USBSerial.print(" stopPos: ");
-	 //  USBSerial.print(motor[0].stopPos());
-	 //  USBSerial.print(" endPos: ");
-	 //  USBSerial.print(motor[0].endPos());
-	 //  	USBSerial.print(" Type: ");
-	 //  	USBSerial.print(motor[0].planType());
+	   USBSerial.print(motor[0].currentPos());
+	   USBSerial.print(" continious Speed: ");
+	   USBSerial.print(motor[0].contSpeed());
+	   USBSerial.print(" backlash: ");
+	   USBSerial.print(motor[0].backlash());
+	   USBSerial.print(" startPos: ");
+	   USBSerial.print(motor[0].startPos());
+	   USBSerial.print(" stopPos: ");
+	   USBSerial.print(motor[0].stopPos());
+	   USBSerial.print(" endPos: ");
+	   USBSerial.print(motor[0].endPos());
+	   USBSerial.print(" running: ");
+	   USBSerial.print(motor[0].running());
+	   	USBSerial.print(" enable: ");
+	   	USBSerial.print(motor[0].enable());
+	  	USBSerial.print(" Type: ");
+	  	USBSerial.println(motor[0].planType());
 		//USBSerial.print(" shots: ");
 		//USBSerial.print(camera_fired);
 		//USBSerial.print(" leadIn: ");
@@ -572,6 +576,7 @@ void stopProgram(uint8_t force_clear) {
 void startProgram() {
      // start program
   last_time = millis();
+
   running   = true;
 	for( int i = 0; i < MOTOR_COUNT; i++){
 		if(motor[i].enable())
