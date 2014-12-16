@@ -1519,10 +1519,10 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	Set the appropriate microstep value for the motor based upon currently set program move parameters
 */
 void msAutoSet(uint8_t motor_number, bool external_command) {
-	////USBSerial.println("Setting microsteps");
+	//USBSerial.println("Setting microsteps");
 	// Don't change the microstep value if the motor or program is running
 	if (!running && !motor[motor_number].running()) {
-		////USBSerial.println("Break 2");
+		//USBSerial.println("Break 1");
 		// The microstepping cutoff values below are in 16th steps
 		const int MAX_CUTOFF = 20000;
 		const int QUARTER_CUTOFF = 10000;
@@ -1545,14 +1545,13 @@ void msAutoSet(uint8_t motor_number, bool external_command) {
 
 		// For time lapse continuous mode and video continuous mode
 		else if (motor[motor_number].planType() == CONT_TL || motor[motor_number].planType() == CONT_VID) {
-			////USBSerial.println("Break 3");
+			//USBSerial.println("Break 2");
 			comparison_speed = motor[motor_number].getTopSpeed();
 		}
 
 		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 		// If the requested speed is too high, send error value, don't change microstepping setting
 		if (comparison_speed >= MAX_CUTOFF && external_command) {
-			////USBSerial.println("Break 4");
 			response(true, 255);
 		}
 
@@ -1568,7 +1567,7 @@ void msAutoSet(uint8_t motor_number, bool external_command) {
 
 			// Report back the microstep value that was auto-selected if necessary
 			if (external_command) {
-				////USBSerial.println("Break 6");
+				//USBSerial.println("Break 4");
 				response(true, motor[motor_number].ms());
 			}
 		}
@@ -1577,7 +1576,7 @@ void msAutoSet(uint8_t motor_number, bool external_command) {
 
 	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
 	else if (external_command) {
-		////USBSerial.println("Break 7");
+		//USBSerial.println("Break 5");
 		response(true, 0);
 	}
 

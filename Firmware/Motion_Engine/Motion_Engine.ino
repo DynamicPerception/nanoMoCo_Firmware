@@ -64,7 +64,7 @@ const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
 const unsigned int MOT_DEFAULT_MAX_SPD   = 5000;
 const float MOT_DEFAULT_CONT_ACCEL	     = 15000.0;
 
-const unsigned int MOT_DEFAULT_BACKLASH = 96;
+const unsigned int MOT_DEFAULT_BACKLASH = 0;
 
  // digital I/O line definitions
 
@@ -190,7 +190,6 @@ bool key_move = false;
 
 // program completion flag
 bool program_complete = false;
-
 
  // default device name, exactly 9 characters + null terminator
 byte device_name[] = "DEFAULT   ";
@@ -429,23 +428,23 @@ void loop() {
    if ((millis()-time) > 500)   
    {   
 
-	   USBSerial.print(motor[0].currentPos());
-	   USBSerial.print(" continious Speed: ");
-	   USBSerial.print(motor[0].contSpeed());
-	   USBSerial.print(" backlash: ");
-	   USBSerial.print(motor[0].backlash());
-	   USBSerial.print(" startPos: ");
-	   USBSerial.print(motor[0].startPos());
-	   USBSerial.print(" stopPos: ");
-	   USBSerial.print(motor[0].stopPos());
-	   USBSerial.print(" endPos: ");
-	   USBSerial.print(motor[0].endPos());
-	   USBSerial.print(" running: ");
-	   USBSerial.print(motor[0].running());
-	   	USBSerial.print(" enable: ");
-	   	USBSerial.print(motor[0].enable());
-	  	USBSerial.print(" Type: ");
-	  	USBSerial.println(motor[0].planType());
+	   //USBSerial.print(motor[0].currentPos());
+	   //USBSerial.print(" continious Speed: ");
+	   //USBSerial.print(motor[0].contSpeed());
+	   //USBSerial.print(" backlash: ");
+	   //USBSerial.print(motor[0].backlash());
+	   //USBSerial.print(" startPos: ");
+	   //USBSerial.print(motor[0].startPos());
+	   //USBSerial.print(" stopPos: ");
+	   //USBSerial.print(motor[0].stopPos());
+	   //USBSerial.print(" endPos: ");
+	   //USBSerial.print(motor[0].endPos());
+	   //USBSerial.print(" running: ");
+	   //USBSerial.print(motor[0].running());
+	   //	USBSerial.print(" enable: ");
+	   //	USBSerial.print(motor[0].enable());
+	  	//USBSerial.print(" Type: ");
+	  	//USBSerial.println(motor[0].planType());
 		//USBSerial.print(" shots: ");
 		//USBSerial.print(camera_fired);
 		//USBSerial.print(" leadIn: ");
