@@ -1555,9 +1555,8 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 		// If the requested speed is too high, send error value, don't change microstepping setting
 		if (comparison_speed >= MAX_CUTOFF && p_external_command) {
-			// Save the microstep settings
-			eepromWrite();
-			response(true, 255);
+			USBSerial.println("Excessive speed requested");
+			response(true, (uint8_t) 255);
 		}
 
 		// Otherwise set the appropraite microstep setting and report the new value back to the master device
@@ -1577,7 +1576,7 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 				USBSerial.println(motor[p_motor_number].ms());
 				// Save the microstep settings
 				eepromWrite();
-				response(true, motor[p_motor_number].ms());
+				response(true, (uint8_t) motor[p_motor_number].ms());
 			}
 		}
 
@@ -1586,10 +1585,10 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
 	else {
 		if (p_external_command) {
-			//USBSerial.println("Break 5: Responding 0");
+			USBSerial.println("Break 5: Responding 0");
 			// Save the microstep settings
 			eepromWrite();
-			response(true, 0);
+			response(true, (uint8_t) 0);
 		}
 	}
 }            
