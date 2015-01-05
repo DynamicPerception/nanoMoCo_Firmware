@@ -355,8 +355,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 				}
 
 				// If we're starting a video move, fire the camera trigger pin to start the video camera
-				if ( motor[0].planType() == CONT_VID)
+				if (motor[0].planType() == CONT_VID) {
 					Camera.expose();
+					unsigned long time = millis();
+					while (millis() - time < (MILLIS_PER_SECOND * 1.5))
+					{
+						// Wait a second and a half for the video to start before starting the move.
+					}
+				}
 			}//end if (!running && !was_pause)
 
 			// Don't start a new program if one is already running
@@ -948,13 +954,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 11 send motor to home limit
 	case 11:
-		// Move at the maximum motor speed
-		motor[subaddr - 1].ms(4);
-		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+		//// Move at the maximum motor speed
+		//motor[subaddr - 1].ms(4);
+		//motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
 
-		// send a motor homE
-		motor[subaddr - 1].home();
-		startISR();
+		//// send a motor home
+		//motor[subaddr - 1].home();
+		//startISR();
 		response(true);
 		break;
 
@@ -1395,6 +1401,8 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       response(true);
       break;
     
+
+
     //Command 4 set camera's exposure time  
     case 4:
       Camera.triggerTime( Node.ntoul(input_serial_buffer) );
@@ -1516,8 +1524,13 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
 
 /**
-	Set the appropriate microstep value for the motor based upon currently set program move parameters
+	Set the appropriate microstep value for the motor based upon currently set program move parameters.
+	
+	p_motor_number: motor to modify microstepping
+	p_external_command: true if the request is originating from an external serial command. This enables responses to the master device.
+
 */
+
 void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	unsigned long time = millis();
 	USBSerial.println("Setting microsteps");
@@ -1527,9 +1540,9 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	if (!running && !motor[p_motor_number].running()) {
 		//USBSerial.println("Break 1");
 		// The microstepping cutoff values below are in 16th steps
-		const int MAX_CUTOFF = 20000;
-		const int QUARTER_CUTOFF = 10000;
-		const int EIGHTH_CUTOFF = 5000;
+		const int MAX_CUTOFF = 16000;
+		const int QUARTER_CUTOFF = 8000;
+		const int EIGHTH_CUTOFF = 4000;
 		float comparison_speed;
 
 		// For time lapse SMS mode
@@ -1675,14 +1688,16 @@ void serialComplexMove(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response_check(uint8_t p_stat) {
+	respond_flag = true;
 	if (!p_stat)
 	USBSerial.println("*** Danger, danger Will Robinson! ***");
+	respond_flag = false;
 	//else
 	//USBSerial.println("All's cool, bro!");
 }
 
 void response(uint8_t p_stat){
-	
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1698,11 +1713,12 @@ void response(uint8_t p_stat){
 		default:
 			break;
 	}
+	respond_flag = false;
     
 } 
 
 void response(uint8_t p_stat, uint8_t p_resp){
-	
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1718,10 +1734,11 @@ void response(uint8_t p_stat, uint8_t p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, unsigned int p_resp){
-
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1737,10 +1754,11 @@ void response(uint8_t p_stat, unsigned int p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, int p_resp){
-
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1756,10 +1774,11 @@ void response(uint8_t p_stat, int p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, unsigned long p_resp){
-
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1775,10 +1794,11 @@ void response(uint8_t p_stat, unsigned long p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, long p_resp){
-
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1794,10 +1814,11 @@ void response(uint8_t p_stat, long p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, float p_resp){
-
+	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1813,10 +1834,11 @@ void response(uint8_t p_stat, float p_resp){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 void response(uint8_t p_stat, char* p_resp, int p_len){
-
+	respond_flag = true;
 	response_check(p_stat);
 	
 	switch(node){
@@ -1832,6 +1854,7 @@ void response(uint8_t p_stat, char* p_resp, int p_len){
 		default:
 			break;
 	}
+	respond_flag = false;
 }
 
 

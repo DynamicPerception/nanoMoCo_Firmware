@@ -264,7 +264,6 @@ void startISR() {
  // of the motor
 
 void _runISR() {
-	
 	//PORTF |= (1 << motor[2].stpflg);
 	//delayMicroseconds(1);
 	
@@ -295,8 +294,10 @@ void _runISR() {
         stopAllMotors();
     }
 
-	//PORTF &= ~(1 << motor[2].stpflg);
+	if (respond_flag)
+		interferences++;
 
+	//PORTF &= ~(1 << motor[2].stpflg);
 }
 
 

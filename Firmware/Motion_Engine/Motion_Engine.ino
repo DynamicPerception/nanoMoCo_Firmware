@@ -47,7 +47,7 @@ See dynamicperception.com for more information
 const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-const byte SERIAL_VERSION = 6;
+const unsigned long SERIAL_VERSION = 1907;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
@@ -85,6 +85,10 @@ const byte MOTOR_COUNT				= 3;
 // General computational constants
 
 #define MILLIS_PER_SECOND 1000.0
+
+bool respond_flag = false;
+unsigned int interferences = 0;
+unsigned int old_interferences = 0;
 
 
 /* 
@@ -531,6 +535,13 @@ void loop() {
 		if(run_time >= start_delay)
 			Engine.checkCycle();
    }
+
+   if (interferences != old_interferences){
+	   USBSerial.print("Interference count: ");
+	   USBSerial.println(interferences);
+	   old_interferences = interferences;
+   }
+
 }
 
 void pauseProgram() {
@@ -626,8 +637,10 @@ void eStop() {
 		stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
 	else if (running && camera_test_mode)
 		stopProgram();
-	else
-		stopAllMotors();	
+	else {
+		stopAllMotors();
+		interferences = 0;
+	}
 }
 
 uint8_t programPercent() {

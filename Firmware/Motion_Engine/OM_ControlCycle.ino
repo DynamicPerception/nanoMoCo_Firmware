@@ -63,6 +63,9 @@ void cycleCamera() {
 	  	// stop program running w/o clearing variables
 		stopProgram();
 		program_complete = true;
+
+		if (motor[0].planType() == CONT_VID)
+			Camera.expose();
 		
 		//// If multiple key frames were set, load the parameters for the next position and start the program again
 		//if (key_move && current_frame < key_frames) {
@@ -110,7 +113,20 @@ void cycleCamera() {
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
   if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable  ) {
-    
+
+	  //USBSerial.print("Shots: ");
+	  //USBSerial.print(camera_fired);
+	  //USBSerial.print(" ");
+
+	  //for (byte i = 0; i < MOTOR_COUNT; i++){
+		 // USBSerial.print("Motor ");
+		 // USBSerial.print(i);
+		 // USBSerial.print(": ");
+		 // USBSerial.print(motor[i].currentPos());
+		 // USBSerial.print(" ");
+	  //}
+	  //USBSerial.println("");
+
             // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
         Engine.state(ST_MOVE);
