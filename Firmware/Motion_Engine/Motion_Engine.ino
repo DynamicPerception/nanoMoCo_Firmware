@@ -536,12 +536,6 @@ void loop() {
 			Engine.checkCycle();
    }
 
-   if (interferences != old_interferences){
-	   USBSerial.print("Interference count: ");
-	   USBSerial.println(interferences);
-	   old_interferences = interferences;
-   }
-
 }
 
 void pauseProgram() {
