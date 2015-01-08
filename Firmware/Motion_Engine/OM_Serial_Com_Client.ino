@@ -80,24 +80,24 @@ See dynamicperception.com for more information
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
   commandTime = millis();
-  USBSerial.print("MocoBus ");
-  USBSerial.print("SubAddr: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  USBSerial.print(" buf[0]: ");
-  USBSerial.print(buf[0], HEX);
-  USBSerial.print(" buf[1]: ");
-  USBSerial.print(buf[1], HEX);
-  USBSerial.print(" buf[2]: ");
-  USBSerial.print(buf[2], HEX);
-  USBSerial.print(" buf[3]: ");
-  USBSerial.print(buf[3], HEX);
-  USBSerial.print(" buf[4]: ");
-  USBSerial.print(buf[4], HEX);
-  USBSerial.print(" time: ");
-  USBSerial.println(commandTime);
-  USBSerial.println("");
+  //USBSerial.print("MocoBus ");
+  //USBSerial.print("SubAddr: ");
+  //USBSerial.print(subaddr);
+  //USBSerial.print(" command: ");
+  //USBSerial.print(command);
+  //USBSerial.print(" buf[0]: ");
+  //USBSerial.print(buf[0], HEX);
+  //USBSerial.print(" buf[1]: ");
+  //USBSerial.print(buf[1], HEX);
+  //USBSerial.print(" buf[2]: ");
+  //USBSerial.print(buf[2], HEX);
+  //USBSerial.print(" buf[3]: ");
+  //USBSerial.print(buf[3], HEX);
+  //USBSerial.print(" buf[4]: ");
+  //USBSerial.print(buf[4], HEX);
+  //USBSerial.print(" time: ");
+  //USBSerial.println(commandTime);
+  //USBSerial.println("");
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -111,23 +111,23 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
-  USBSerial.print("Bluetooth ");
-  USBSerial.print("SubAddr: ");
-  USBSerial.print(subaddr);
-  USBSerial.print(" command: ");
-  USBSerial.print(command);
-  USBSerial.print(" buf[0]: ");
-  USBSerial.print(buf[0], HEX);
-  USBSerial.print(" buf[1]: ");
-  USBSerial.print(buf[1], HEX);
-  USBSerial.print(" buf[2]: ");
-  USBSerial.print(buf[2], HEX);
-  USBSerial.print(" buf[3]: ");
-  USBSerial.print(buf[3], HEX);
-  USBSerial.print(" buf[4]: ");
-  USBSerial.print(buf[4], HEX);
-  USBSerial.print(" time: ");
-  USBSerial.println(commandTime);
+  //USBSerial.print("Bluetooth ");
+  //USBSerial.print("SubAddr: ");
+  //USBSerial.print(subaddr);
+  //USBSerial.print(" command: ");
+  //USBSerial.print(command);
+  //USBSerial.print(" buf[0]: ");
+  //USBSerial.print(buf[0], HEX);
+  //USBSerial.print(" buf[1]: ");
+  //USBSerial.print(buf[1], HEX);
+  //USBSerial.print(" buf[2]: ");
+  //USBSerial.print(buf[2], HEX);
+  //USBSerial.print(" buf[3]: ");
+  //USBSerial.print(buf[3], HEX);
+  //USBSerial.print(" buf[4]: ");
+  //USBSerial.print(buf[4], HEX);
+  //USBSerial.print(" time: ");
+  //USBSerial.println(commandTime);
   
   serCommandHandler(subaddr, command, buf);
 }
@@ -705,7 +705,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 100 read firmware version
     case 100:
       // serial api version
-      response( true, (byte) SERIAL_VERSION );
+      response( true, (unsigned long) SERIAL_VERSION );
       
       break;
     
@@ -720,14 +720,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 					status = 1;
 				else
 					status = 0;
-				USBSerial.print("Run Status: ");
-				USBSerial.println(status);
+				//USBSerial.print("Run Status: ");
+				//USBSerial.println(status);
 				response(true, status);
 	}
       break;
     
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
+		//USBSerial.print("Run time: ");
+		//USBSerial.println (last_run_time);
       response(true, last_run_time);
 	  break;
      
@@ -824,6 +826,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 	//Command 118 reads motors' continuous mode setting
 	case 118:
+		//USBSerial.print("Plan type: ");
+		//USBSerial.println(motor[0].planType());
 		response(true, motor[0].planType());
 		break;
 
@@ -839,6 +843,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 121 reads the ping-pong flag setting
 	case 121:
+		//USBSerial.print("Ping pong mode: ");
+		//if (pingPongMode)
+		//	USBSerial.println("True");
+		//else
+		//	USBSerial.println("False");
 		response(true, pingPongMode);
 		break;
 
@@ -850,6 +859,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 123 reports the percent completion of the current program
 	case 123:
+		//USBSerial.print("Completion: ");
+		//USBSerial.println(programPercent());
 		response(true, programPercent());
 		break;
 
@@ -860,6 +871,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
+		//USBSerial.print("Total run time: ");
+		//USBSerial.println(totalProgramTime());
+		//USBSerial.println("");
 		response(true, totalProgramTime());
 		break;
 
@@ -1533,9 +1547,9 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
 void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	unsigned long time = millis();
-	USBSerial.println("Setting microsteps");
-	USBSerial.print("External command? ");
-	USBSerial.println(p_external_command);
+	//USBSerial.println("Setting microsteps");
+	//USBSerial.print("External command? ");
+	//USBSerial.println(p_external_command);
 	// Don't change the microstep value if the motor or program is running
 	if (!running && !motor[p_motor_number].running()) {
 		//USBSerial.println("Break 1");
@@ -1585,8 +1599,8 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 			// Report back the microstep value that was auto-selected if necessary
 			if (p_external_command) {
 				//USBSerial.println("Break 4");
-				USBSerial.print("Requested Microsteps: ");
-				USBSerial.println(motor[p_motor_number].ms());
+				//USBSerial.print("Requested Microsteps: ");
+				//USBSerial.println(motor[p_motor_number].ms());
 				// Save the microstep settings
 				eepromWrite();
 				response(true, (uint8_t) motor[p_motor_number].ms());
@@ -1598,7 +1612,7 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
 	else {
 		if (p_external_command) {
-			USBSerial.println("Break 5: Responding 0");
+			//USBSerial.println("Break 5: Responding 0");
 			// Save the microstep settings
 			eepromWrite();
 			response(true, (uint8_t) 0);
@@ -1688,16 +1702,13 @@ void serialComplexMove(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response_check(uint8_t p_stat) {
-	respond_flag = true;
-	if (!p_stat)
-	USBSerial.println("*** Danger, danger Will Robinson! ***");
-	respond_flag = false;
+	//if (!p_stat)
+	//USBSerial.println("*** Danger, danger Will Robinson! ***");
 	//else
 	//USBSerial.println("All's cool, bro!");
 }
 
 void response(uint8_t p_stat){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1713,12 +1724,10 @@ void response(uint8_t p_stat){
 		default:
 			break;
 	}
-	respond_flag = false;
     
 } 
 
 void response(uint8_t p_stat, uint8_t p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1734,11 +1743,9 @@ void response(uint8_t p_stat, uint8_t p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, unsigned int p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1754,11 +1761,9 @@ void response(uint8_t p_stat, unsigned int p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, int p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1774,11 +1779,9 @@ void response(uint8_t p_stat, int p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, unsigned long p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1794,11 +1797,9 @@ void response(uint8_t p_stat, unsigned long p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, long p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1814,11 +1815,9 @@ void response(uint8_t p_stat, long p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, float p_resp){
-	respond_flag = true;
 	response_check(p_stat);
 
 	switch(node){
@@ -1834,11 +1833,9 @@ void response(uint8_t p_stat, float p_resp){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 void response(uint8_t p_stat, char* p_resp, int p_len){
-	respond_flag = true;
 	response_check(p_stat);
 	
 	switch(node){
@@ -1854,7 +1851,6 @@ void response(uint8_t p_stat, char* p_resp, int p_len){
 		default:
 			break;
 	}
-	respond_flag = false;
 }
 
 

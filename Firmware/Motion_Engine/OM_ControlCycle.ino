@@ -52,6 +52,15 @@ void setupControlCycle() {
 
 void cycleCamera() {
 
+	//for (byte i = 0; i < MOTOR_COUNT; i++){
+	//	USBSerial.print("Motor ");
+	//	USBSerial.print(i);
+	//	USBSerial.print(" steps: ");
+	//	USBSerial.print(motor[i].currentPos());
+	//	USBSerial.print(" ");
+	//}
+	//USBSerial.println("");
+
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
 	if (pause_flag)
 		pauseProgram();
@@ -252,7 +261,7 @@ void cycleCheckMotor() {
 
      // do not block on continuous motion of any sort
 	 for (int i = 0; i < MOTOR_COUNT; i++){
-      if( motor[i].planMoveType  == 0 && motor[i].running() == true )
+      if( motor[i].planMoveType  == SMS && motor[i].running() == true )
         return;
 	 }
 
@@ -265,6 +274,7 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
+		  USBSerial.println("Auto pausing!!!");
             pauseProgram();
       }
     }

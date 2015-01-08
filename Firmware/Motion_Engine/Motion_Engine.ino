@@ -47,7 +47,7 @@ See dynamicperception.com for more information
 const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-const unsigned long SERIAL_VERSION = 1907;
+const int SERIAL_VERSION = 20;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
@@ -704,7 +704,7 @@ uint8_t checkMotorAttach() {
 	// If any of the motors is moving or a program is currently running return the error value
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		if (motor[i].running() || running)
-			return(8);
+			return(B1000); // B1000 = 8
 	}
 
 	bool current_sleep[MOTOR_COUNT];
@@ -720,7 +720,7 @@ uint8_t checkMotorAttach() {
 
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		motor[i].sleep(false);
-		delay(100);
+		delay(300);
 		// Read the analog value from current sensing pin
 		int current = analogRead(CURRENT_PIN);		
 		// Convert the value to current in millamps
