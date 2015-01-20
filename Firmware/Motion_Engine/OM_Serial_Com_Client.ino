@@ -294,7 +294,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 			// Don't perform backlash checks or other start of move operations if the program was paused or is currently running
 			if (!running && !was_pause) {
 
-				// Re-set the program completion flag
+				// Reset the shot counter to 0. If the user presses the "Fire Camera" button in the joystick screen of the app, it may be a non-zero number.
+				camera_fired = 0;
+
+				// Reset the program completion flag
 				program_complete = false;
 
 				//USBSerial.println("Start Break 1");
