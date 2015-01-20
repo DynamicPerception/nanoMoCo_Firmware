@@ -618,12 +618,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 			}
 		}
 		// If we're exiting joystick mode, turn off the joystick watchdog mode
-		else if (!joystick_mode) {
+		else if (!joystick_mode)
 			watchdog = false;
-			// Reset the shot count. This is because the fire camera button in the app will increase 
-			// the counter and it won't be reset before starting a program otherwise.
-			camera_fired = 0;
-		}
 		
 		response(true);
 		break;
