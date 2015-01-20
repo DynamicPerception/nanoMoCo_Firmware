@@ -517,10 +517,21 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 	//Command 13 sets aux I/O mode
 	case 13:
-		altConnect(0, input_serial_buffer[0]);
-		altConnect(1, input_serial_buffer[1]);
-		altSetup();
-		response(true);
+	{
+			   byte _ring = input_serial_buffer[0];
+			   byte _tip = input_serial_buffer[1];
+			   altConnect(0, _ring);
+			   altConnect(1, _tip);
+			   altSetup();
+
+			   // Set the external_intervalomter flag so running time is equal to total program time during the entire program
+			   if (_ring == ALT_EXTINT || _tip == ALT_EXTINT)
+				   external_intervalometer = true;
+			   else
+				   external_intervalometer = false;
+
+			   response(true);
+	}
 		break;
 		
 	//Command 14 sets joystick watchdog flag
@@ -730,7 +741,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 102:
 		//USBSerial.print("Run time: ");
 		//USBSerial.println (last_run_time);
-      response(true, last_run_time);
+		if (external_intervalometer)
+			response(true, totalProgramTime());
+		else
+			response(true, last_run_time);
 	  break;
      
       
@@ -886,6 +900,74 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 127:
 		response(true, fps);
 		break;
+
+	//Command 128 checks whether any motor is currently running
+	case 128:
+	{
+				uint8_t motors_running = false;
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					if (motor[i].running())
+						motors_running = true;
+				}
+				response(true, motors_running);
+				break;
+	}
+
+	//Command 255 Is a self diagnostic command for checking basic functionality of the controller
+	case 255:
+	{
+				response(true);
+				// Check camera trigger
+				for (byte i = 0; i < 2; i++) {
+					Camera.expose();
+					delay(1000);
+				}
+				
+				// Enable and sleep all the motors so all LEDs are off
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					motor[i].enable(true);
+					motor[i].sleep(true);
+				}
+				
+				// Check the motor attachment
+				uint8_t _motor_attach = checkMotorAttach();		
+				delay(250);
+								
+				// Report via enable lights which motors were detected
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					// If a motor is detected, turn on the LED by turning off sleep mode
+					if ((_motor_attach >> i) & 1){
+						motor[i].sleep(false);
+						delay(250);
+						motor[i].sleep(true);
+						delay(250);
+					}
+					else
+						delay(1000);
+				}
+
+				// Turn sleep mode back off for all motor channels
+				for (byte i = 0; i < MOTOR_COUNT; i++)
+					motor[i].sleep(false);
+				
+				// Move motors forward
+				unsigned long _time = millis();
+				int _speed = 4000;
+				int _seconds = 3;
+				for (byte i = 0; i < MOTOR_COUNT; i++){
+					motor[i].contSpeed(_speed);
+					motor[i].continuous(false);
+					motor[i].move(0, (_speed * _seconds)); // Determine the distanced based upon the speed and desired seconds above.
+				}
+				startISR();
+				while (motor[0].running() || motor[1].running() || motor[2].running()){
+					// Do nothing until all motors have stopped
+				}
+				for (byte i = 0; i < MOTOR_COUNT; i++)
+					motor[i].move(1, (_speed * _seconds)); 
+				startISR();
+				break;
+	}
 	
     //Error    
     default: 
@@ -1547,9 +1629,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
 void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	unsigned long time = millis();
-	//USBSerial.println("Setting microsteps");
-	//USBSerial.print("External command? ");
-	//USBSerial.println(p_external_command);
+
 	// Don't change the microstep value if the motor or program is running
 	if (!running && !motor[p_motor_number].running()) {
 		//USBSerial.println("Break 1");
@@ -1582,8 +1662,9 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 		// If the requested speed is too high, send error value, don't change microstepping setting
 		if (comparison_speed >= MAX_CUTOFF && p_external_command) {
-			USBSerial.println("Excessive speed requested");
+			//USBSerial.println("Excessive speed requested");
 			response(true, (uint8_t) 255);
+			return;
 		}
 
 		// Otherwise set the appropraite microstep setting and report the new value back to the master device
@@ -1603,7 +1684,9 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 				//USBSerial.println(motor[p_motor_number].ms());
 				// Save the microstep settings
 				eepromWrite();
+				//USBSerial.println("Microsteps successfully set");
 				response(true, (uint8_t) motor[p_motor_number].ms());
+				return;
 			}
 		}
 
@@ -1616,6 +1699,7 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 			// Save the microstep settings
 			eepromWrite();
 			response(true, (uint8_t) 0);
+			return;
 		}
 	}
 }            
@@ -1664,6 +1748,9 @@ void cameraTest(uint8_t p_start) {
 			motor[i].enable(old_enable[i]);
 
 		Camera.maxShots = old_max_shots;
+
+		// Reset the shot count to 0
+		camera_fired = 0;
 	}
 }
 

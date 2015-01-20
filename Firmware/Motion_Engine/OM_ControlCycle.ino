@@ -274,7 +274,7 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
-		  USBSerial.println("Auto pausing!!!");
+		  //USBSerial.println("Auto pausing!!!");
             pauseProgram();
       }
     }

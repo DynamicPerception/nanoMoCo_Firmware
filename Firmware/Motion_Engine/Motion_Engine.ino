@@ -47,7 +47,7 @@ See dynamicperception.com for more information
 const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-const int SERIAL_VERSION = 20;
+const int SERIAL_VERSION = 23;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
@@ -302,6 +302,7 @@ byte             altOutTrig = HIGH;
 
 //Temp variable for storing information for node response
 int temp = 0;
+bool external_intervalometer = false;
 
 
 /* 
@@ -324,7 +325,7 @@ void setup() {
   altSerial.begin(9600);
   time = millis();
 
-  USBSerial.println("Done setting things up!");
+  //USBSerial.println("Done setting things up!");
 
 
   pinMode(DEBUG_PIN, OUTPUT);
@@ -395,9 +396,13 @@ void setup() {
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
-	  motor[i].sleep(true);
+	  motor[i].sleep(false);
 	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
-	  motor[i].ms(4);
+	  // Set the slide motor to 4th stepping and pan/tilt motors to 16th
+	  if (i == 0)
+		  motor[i].ms(4);
+	  else
+		  motor[i].ms(16);
 	  motor[i].programBackCheck(false);	 
  }
 
@@ -627,14 +632,59 @@ byte powerCycled() {
 }
 
 void eStop() {
-	if (running && !camera_test_mode)
-		stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
-	else if (running && camera_test_mode)
-		stopProgram();
-	else {
-		stopAllMotors();
-		interferences = 0;
+
+	static unsigned long last_interrupt_time = 0;
+	unsigned long interrupt_time = millis();
+
+	static unsigned long _time = millis();
+	static byte enable_count = 0;
+	const byte THRESHOLD = 3;
+	
+	// If interrupts come faster than 200ms, assume it's a bounce and ignore
+	if (interrupt_time - last_interrupt_time > 200) {
+
+		if (running && !camera_test_mode)
+			stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
+		
+		else if (running && camera_test_mode)
+			stopProgram();
+		
+		else if (!motor[0].running() && !motor[1].running() && !motor[2].running()) {
+			// If the button was pressed recently enough, increase the enable count, otherwise reset it to 0.
+			if (millis() - _time < 1500)
+				enable_count++;
+			else
+				enable_count = 1;
+			//USBSerial.print("Switch count ");
+			//USBSerial.println(_enable_count);
+
+			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
+			if (enable_count >= THRESHOLD && !external_intervalometer) {
+				limitSwitchAttach(0);
+				altConnect(1, ALT_EXTINT);
+				altSetup();
+				external_intervalometer = true;
+				enable_count = 0;
+				
+				// Turn the debug light on to confirm the setting
+				debugOn();
+			}
+			else if (enable_count >= THRESHOLD && external_intervalometer) {
+				altConnect(1, ALT_OFF);
+				altSetup();
+				external_intervalometer = false;
+				enable_count = 0;
+
+				// Turn the debug light off to confirm the setting
+				debugOff();
+			}
+			time = millis();
+		}
+
+		else
+			stopAllMotors();
 	}
+	last_interrupt_time = interrupt_time;	
 }
 
 uint8_t programPercent() {
@@ -702,7 +752,7 @@ uint8_t checkMotorAttach() {
 	}
 
 	bool current_sleep[MOTOR_COUNT];
-	byte attached = B000;
+	uint8_t attached = B000;
 
 	
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
@@ -714,16 +764,22 @@ uint8_t checkMotorAttach() {
 
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		motor[i].sleep(false);
-		delay(300);
+		delay(100);
 		// Read the analog value from current sensing pin
 		int current = analogRead(CURRENT_PIN);		
 		// Convert the value to current in millamps
-		float amps = (float)current / 1023 * 5;			
-		// If the draw is greater than 0.25 amps, then a motor is connected to the enabled channel
-		if (amps > 0.1)
+		float amps = (float)current / 1023 * 5;
+		// This is the threshold in amps above which a motor will register as being detected;
+		const float THRESHOLD = 0.15;
+		// If the draw is greater than <THRESHOLD> amps, then a motor is connected to the enabled channel
+		if (amps > THRESHOLD)
 			attached |= (1 << i);
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
+		//USBSerial.print("Motor ");
+		//USBSerial.print(i);
+		//USBSerial.print(" current draw: ");
+		//USBSerial.println(amps);
 	}
 
 	// Restore the saved sleep states
