@@ -245,7 +245,7 @@ Debugging Variable and Associated Flags
 
 */
 
-byte usb_debug			= B00000000;
+byte usb_debug			= B00100001;
 const byte DB_COM_OUT	= B00000001;
 const byte DB_STEPS		= B00000010;
 const byte DB_MOTOR		= B00000100;
@@ -490,24 +490,24 @@ void loop() {
 	  USBSerial.println(motor[1].planType());
 	  USBSerial.print(" leadIn: ");
 	  USBSerial.println(motor[1].planLeadIn());
+
+	  USBSerial.print("Current Steps ");
+	  USBSerial.print(motor[2].currentPos());
+	  USBSerial.print(" continious Speed: ");
+	  USBSerial.print(motor[2].contSpeed());
+	  USBSerial.print(" backlash: ");
+	  USBSerial.print(motor[2].backlash());
+	  USBSerial.print(" startPos: ");
+	  USBSerial.print(motor[2].startPos());
+	  USBSerial.print(" stopPos: ");
+	  USBSerial.print(motor[2].stopPos());
+	  USBSerial.print(" endPos: ");
+	  USBSerial.println(motor[2].endPos());
+	  USBSerial.println("");
   }
-/*
-		USBSerial.print("Current Steps ");
-		USBSerial.print(motor[2].currentPos());
-		USBSerial.print(" continious Speed: ");
-		USBSerial.print(motor[2].contSpeed());
-		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[2].backlash());
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[2].startPos());
-		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[2].stopPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.println(motor[2].endPos());
-		USBSerial.println("");
 		
 		time = millis();
-	}
+	
 
 	//Check to see if joystick watchdog is on and motors are moving
 	//must see a command from the master every second or it'll stop

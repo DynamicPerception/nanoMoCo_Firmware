@@ -1849,7 +1849,7 @@ void serialComplexMove(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response_check(uint8_t p_stat) {
-	if (usb_debug && DB_CONFIM){
+	if (usb_debug && DB_CONFIRM){
 		if (!p_stat)
 		USBSerial.println("*** Danger, danger Will Robinson! ***");
 		else
