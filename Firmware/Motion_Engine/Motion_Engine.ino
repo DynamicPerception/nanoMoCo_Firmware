@@ -245,7 +245,7 @@ Debugging Variable and Associated Flags
 
 */
 
-byte usb_debug			= B00100001;
+byte usb_debug			= B00000000;
 const byte DB_COM_OUT	= B00000001;
 const byte DB_STEPS		= B00000010;
 const byte DB_MOTOR		= B00000100;
