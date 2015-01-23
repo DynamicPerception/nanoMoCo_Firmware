@@ -948,8 +948,17 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 254 sets the USB debug reporting state
 	case 254:
-		usb_debug = input_serial_buffer[0];
-		response(true);
+	{
+				byte setting = input_serial_buffer[0];
+				
+				// If the specified flag is already on, turn it off, otherwise turn it on.
+				if (usb_debug & setting)
+					usb_debug &= !setting;
+				else
+					usb_debug |= setting;
+
+				response(true);
+	}
 
 	//Command 255 Is a self diagnostic command for checking basic functionality of the controller
 	case 255:
