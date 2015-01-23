@@ -83,7 +83,6 @@ const byte MOTOR_COUNT				= 3;
 #define CONT_VID 2
 
 // General computational constants
-
 #define MILLIS_PER_SECOND 1000.0
 
 bool respond_flag = false;
@@ -238,6 +237,21 @@ OMState      Engine = OMState(7);
 
 int incomingByte = 0;
 
+/*
+
+=========================================
+Debugging Variable and Associated Flags
+=========================================
+
+*/
+
+byte usb_debug			= B00000000;
+const byte DB_COM_OUT	= B00000001;
+const byte DB_STEPS		= B00000010;
+const byte DB_MOTOR		= B00000100;
+const byte DB_GEN_SER	= B00010000;
+const byte DB_FUNCT		= B00100000;
+const byte DB_CONFIRM	= B01000000;
 
 /* 
 
@@ -325,7 +339,8 @@ void setup() {
   altSerial.begin(9600);
   time = millis();
 
-  //USBSerial.println("Done setting things up!");
+  if (usb_debug & DB_FUNCT)
+	USBSerial.println("Done setting things up!");
 
 
   pinMode(DEBUG_PIN, OUTPUT);
@@ -434,62 +449,63 @@ void loop() {
   NodeBlue.check();
   NodeUSB.check();
 
-   if ((millis()-time) > 500)   
-   {   
+  if ((millis() - time) > 500 && (usb_debug & DB_STEPS))
+  {
 
-	   //USBSerial.print(motor[0].currentPos());
-	   //USBSerial.print(" continious Speed: ");
-	   //USBSerial.print(motor[0].contSpeed());
-	   //USBSerial.print(" backlash: ");
-	   //USBSerial.print(motor[0].backlash());
-	   //USBSerial.print(" startPos: ");
-	   //USBSerial.print(motor[0].startPos());
-	   //USBSerial.print(" stopPos: ");
-	   //USBSerial.print(motor[0].stopPos());
-	   //USBSerial.print(" endPos: ");
-	   //USBSerial.print(motor[0].endPos());
-	   //USBSerial.print(" running: ");
-	   //USBSerial.print(motor[0].running());
-	   //	USBSerial.print(" enable: ");
-	   //	USBSerial.print(motor[0].enable());
-	  	//USBSerial.print(" Type: ");
-	  	//USBSerial.println(motor[0].planType());
-		//USBSerial.print(" shots: ");
-		//USBSerial.print(camera_fired);
-		//USBSerial.print(" leadIn: ");
-		//USBSerial.println(motor[0].planLeadIn());
-//
-//	   USBSerial.print("Current Steps ");
-//	   USBSerial.print(motor[1].currentPos());
-//	   USBSerial.print(" continious Speed: ");
-//	   USBSerial.print(motor[1].contSpeed());
-//	   USBSerial.print(" backlash: ");
-//	   USBSerial.print(motor[1].backlash());
-//	   USBSerial.print(" startPos: ");
-//	   USBSerial.print(motor[1].startPos());
-//	   USBSerial.print(" stopPos: ");
-//	   USBSerial.print(motor[1].stopPos());
-//	   USBSerial.print(" endPos: ");
-//	   USBSerial.print(motor[1].endPos());
-//	   	USBSerial.print(" Type: ");
-//	   	USBSerial.println(motor[1].planType());
-//	   	USBSerial.print(" leadIn: ");
-//	   	USBSerial.println(motor[1].planLeadIn());
-///*
-//		USBSerial.print("Current Steps ");
-//		USBSerial.print(motor[2].currentPos());
-//		USBSerial.print(" continious Speed: ");
-//		USBSerial.print(motor[2].contSpeed());
-//		USBSerial.print(" backlash: ");
-//		USBSerial.print(motor[2].backlash());
-//		USBSerial.print(" startPos: ");
-//		USBSerial.print(motor[2].startPos());
-//		USBSerial.print(" stopPos: ");
-//		USBSerial.print(motor[2].stopPos());
-//		USBSerial.print(" endPos: ");
-//		USBSerial.println(motor[2].endPos());
-//		USBSerial.println("");
-//		
+	  USBSerial.print(motor[0].currentPos());
+	  USBSerial.print(" continious Speed: ");
+	  USBSerial.print(motor[0].contSpeed());
+	  USBSerial.print(" backlash: ");
+	  USBSerial.print(motor[0].backlash());
+	  USBSerial.print(" startPos: ");
+	  USBSerial.print(motor[0].startPos());
+	  USBSerial.print(" stopPos: ");
+	  USBSerial.print(motor[0].stopPos());
+	  USBSerial.print(" endPos: ");
+	  USBSerial.print(motor[0].endPos());
+	  USBSerial.print(" running: ");
+	  USBSerial.print(motor[0].running());
+	  USBSerial.print(" enable: ");
+	  USBSerial.print(motor[0].enable());
+	  USBSerial.print(" Type: ");
+	  USBSerial.println(motor[0].planType());
+	  USBSerial.print(" shots: ");
+	  USBSerial.print(camera_fired);
+	  USBSerial.print(" leadIn: ");
+	  USBSerial.println(motor[0].planLeadIn());
+
+	  USBSerial.print("Current Steps ");
+	  USBSerial.print(motor[1].currentPos());
+	  USBSerial.print(" continious Speed: ");
+	  USBSerial.print(motor[1].contSpeed());
+	  USBSerial.print(" backlash: ");
+	  USBSerial.print(motor[1].backlash());
+	  USBSerial.print(" startPos: ");
+	  USBSerial.print(motor[1].startPos());
+	  USBSerial.print(" stopPos: ");
+	  USBSerial.print(motor[1].stopPos());
+	  USBSerial.print(" endPos: ");
+	  USBSerial.print(motor[1].endPos());
+	  USBSerial.print(" Type: ");
+	  USBSerial.println(motor[1].planType());
+	  USBSerial.print(" leadIn: ");
+	  USBSerial.println(motor[1].planLeadIn());
+  }
+/*
+		USBSerial.print("Current Steps ");
+		USBSerial.print(motor[2].currentPos());
+		USBSerial.print(" continious Speed: ");
+		USBSerial.print(motor[2].contSpeed());
+		USBSerial.print(" backlash: ");
+		USBSerial.print(motor[2].backlash());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[2].startPos());
+		USBSerial.print(" stopPos: ");
+		USBSerial.print(motor[2].stopPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.println(motor[2].endPos());
+		USBSerial.println("");
+		
 		time = millis();
 	}
 
@@ -807,19 +823,21 @@ unsigned long totalProgramTime() {
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
-				//USBSerial.print("Interval: ");
-				//USBSerial.print(Camera.interval);
-				//USBSerial.print("  Lead in: ");
-				//USBSerial.print(motor[i].planLeadIn());
-				//USBSerial.print("  Accel: ");
-				//USBSerial.print(motor[i].planAccelLength());
-				//USBSerial.print("  Travel: ");
-				//USBSerial.print(motor[i].planTravelLength());
-				//USBSerial.print("  Decel: ");
-				//USBSerial.print(motor[i].planDecelLength());
 				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength());
-				//USBSerial.print("  Motor time: ");
-				//USBSerial.println(motor_time);
+				if (usb_debug & DB_FUNCT){
+					USBSerial.print("Interval: ");
+					USBSerial.print(Camera.interval);
+					USBSerial.print("  Lead in: ");
+					USBSerial.print(motor[i].planLeadIn());
+					USBSerial.print("  Accel: ");
+					USBSerial.print(motor[i].planAccelLength());
+					USBSerial.print("  Travel: ");
+					USBSerial.print(motor[i].planTravelLength());
+					USBSerial.print("  Decel: ");
+					USBSerial.print(motor[i].planDecelLength());
+					USBSerial.print("  Motor time: ");
+					USBSerial.println(motor_time);
+				}
 			}
 			// Continuous time lapse: Only the lead-in is in expsoures, so only multiply that by the interval. Everything else is already in milliseconds
 			else if (motor[i].planType() == CONT_TL)

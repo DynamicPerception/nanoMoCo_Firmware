@@ -52,15 +52,6 @@ void setupControlCycle() {
 
 void cycleCamera() {
 
-	//for (byte i = 0; i < MOTOR_COUNT; i++){
-	//	USBSerial.print("Motor ");
-	//	USBSerial.print(i);
-	//	USBSerial.print(" steps: ");
-	//	USBSerial.print(motor[i].currentPos());
-	//	USBSerial.print(" ");
-	//}
-	//USBSerial.println("");
-
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
 	if (pause_flag)
 		pauseProgram();
@@ -123,18 +114,20 @@ void cycleCamera() {
 
   if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable  ) {
 
-	  //USBSerial.print("Shots: ");
-	  //USBSerial.print(camera_fired);
-	  //USBSerial.print(" ");
+	  if (usb_debug & DB_STEPS){
+		  USBSerial.print("Shots: ");
+		  USBSerial.print(camera_fired);
+		  USBSerial.print(" ");
 
-	  //for (byte i = 0; i < MOTOR_COUNT; i++){
-		 // USBSerial.print("Motor ");
-		 // USBSerial.print(i);
-		 // USBSerial.print(": ");
-		 // USBSerial.print(motor[i].currentPos());
-		 // USBSerial.print(" ");
-	  //}
-	  //USBSerial.println("");
+		  for (byte i = 0; i < MOTOR_COUNT; i++){
+			  USBSerial.print("Motor ");
+			  USBSerial.print(i);
+			  USBSerial.print(": ");
+			  USBSerial.print(motor[i].currentPos());
+			  USBSerial.print(" ");
+		  }
+		  USBSerial.println("");
+	  }
 
             // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
@@ -274,7 +267,8 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
-		  //USBSerial.println("Auto pausing!!!");
+		  if (usb_debug & DB_GEN_SER)
+		  USBSerial.println("Auto pausing!!!");
             pauseProgram();
       }
     }

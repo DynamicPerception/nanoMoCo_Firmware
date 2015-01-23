@@ -80,24 +80,26 @@ See dynamicperception.com for more information
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
   node = 1;
   commandTime = millis();
-  //USBSerial.print("MocoBus ");
-  //USBSerial.print("SubAddr: ");
-  //USBSerial.print(subaddr);
-  //USBSerial.print(" command: ");
-  //USBSerial.print(command);
-  //USBSerial.print(" buf[0]: ");
-  //USBSerial.print(buf[0], HEX);
-  //USBSerial.print(" buf[1]: ");
-  //USBSerial.print(buf[1], HEX);
-  //USBSerial.print(" buf[2]: ");
-  //USBSerial.print(buf[2], HEX);
-  //USBSerial.print(" buf[3]: ");
-  //USBSerial.print(buf[3], HEX);
-  //USBSerial.print(" buf[4]: ");
-  //USBSerial.print(buf[4], HEX);
-  //USBSerial.print(" time: ");
-  //USBSerial.println(commandTime);
-  //USBSerial.println("");
+  if(usb_debug & DB_COM_OUT){
+	  USBSerial.print("MocoBus ");
+	  USBSerial.print("SubAddr: ");
+	  USBSerial.print(subaddr);
+	  USBSerial.print(" command: ");
+	  USBSerial.print(command);
+	  USBSerial.print(" buf[0]: ");
+	  USBSerial.print(buf[0], HEX);
+	  USBSerial.print(" buf[1]: ");
+	  USBSerial.print(buf[1], HEX);
+	  USBSerial.print(" buf[2]: ");
+	  USBSerial.print(buf[2], HEX);
+	  USBSerial.print(" buf[3]: ");
+	  USBSerial.print(buf[3], HEX);
+	  USBSerial.print(" buf[4]: ");
+	  USBSerial.print(buf[4], HEX);
+	  USBSerial.print(" time: ");
+	  USBSerial.println(commandTime);
+	  USBSerial.println("");
+  }
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -111,23 +113,25 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   node = 2;
   commandTime = millis();
-  //USBSerial.print("Bluetooth ");
-  //USBSerial.print("SubAddr: ");
-  //USBSerial.print(subaddr);
-  //USBSerial.print(" command: ");
-  //USBSerial.print(command);
-  //USBSerial.print(" buf[0]: ");
-  //USBSerial.print(buf[0], HEX);
-  //USBSerial.print(" buf[1]: ");
-  //USBSerial.print(buf[1], HEX);
-  //USBSerial.print(" buf[2]: ");
-  //USBSerial.print(buf[2], HEX);
-  //USBSerial.print(" buf[3]: ");
-  //USBSerial.print(buf[3], HEX);
-  //USBSerial.print(" buf[4]: ");
-  //USBSerial.print(buf[4], HEX);
-  //USBSerial.print(" time: ");
-  //USBSerial.println(commandTime);
+  if (usb_debug & DB_COM_OUT){
+	  USBSerial.print("Bluetooth ");
+	  USBSerial.print("SubAddr: ");
+	  USBSerial.print(subaddr);
+	  USBSerial.print(" command: ");
+	  USBSerial.print(command);
+	  USBSerial.print(" buf[0]: ");
+	  USBSerial.print(buf[0], HEX);
+	  USBSerial.print(" buf[1]: ");
+	  USBSerial.print(buf[1], HEX);
+	  USBSerial.print(" buf[2]: ");
+	  USBSerial.print(buf[2], HEX);
+	  USBSerial.print(" buf[3]: ");
+	  USBSerial.print(buf[3], HEX);
+	  USBSerial.print(" buf[4]: ");
+	  USBSerial.print(buf[4], HEX);
+	  USBSerial.print(" time: ");
+	  USBSerial.println(commandTime);
+  }
   
   serCommandHandler(subaddr, command, buf);
 }
@@ -205,7 +209,8 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true
 	   if (joystick_mode == true && command != 14 && command != 23 && command != 120 && command != 122) {
-		   ////USBSerial.println("Invalid general command");
+		   if (usb_debug & DB_GEN_SER)
+			   USBSerial.println("Invalid general command");
 		   response(false);
 		   return;   
 	   }
@@ -219,7 +224,8 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true
 	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 15) {
-		   ////USBSerial.println("Invalid motor command");
+		   if (usb_debug & DB_GEN_SER)
+			   USBSerial.println("Invalid motor command");
 		   response(false);
 		   return;
 		   
@@ -335,8 +341,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 				for (byte i = 0; i < MOTOR_COUNT; i++) {
 					msAutoSet(i, false);
 
-					USBSerial.print("Microsteps: ");
-					USBSerial.println(motor[i].ms());
+					if (usb_debug & DB_FUNCT){
+						USBSerial.print("Microsteps: ");
+						USBSerial.println(motor[i].ms());
+					}
 				} 
 
 				// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
@@ -371,26 +379,28 @@ void serMain(byte command, byte* input_serial_buffer) {
 			// Don't start a new program if one is already running
 			if (!running) {
 
-				//USBSerial.println("Motor distances:");
-				//for (byte i = 0; i < MOTOR_COUNT; i++){
-				//	USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
-				//}
-				//USBSerial.println("Motor start:");
-				//for (byte i = 0; i < MOTOR_COUNT; i++){
-				//	USBSerial.println(motor[i].startPos());
-				//}
-				//USBSerial.println("Motor stop:");
-				//for (byte i = 0; i < MOTOR_COUNT; i++){
-				//	USBSerial.println(motor[i].stopPos());
-				//}
-				//USBSerial.println("Motor current:");
-				//for (byte i = 0; i < MOTOR_COUNT; i++){
-				//	USBSerial.println(motor[i].currentPos());
-				//}
-				//USBSerial.println("Motor travel:");
-				//for (byte i = 0; i < MOTOR_COUNT; i++){
-				//	USBSerial.println(motor[i].planTravelLength());
-				//}	
+				if (usb_debug & DB_GEN_SER){
+					USBSerial.println("Motor distances:");
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
+					}
+					USBSerial.println("Motor start:");
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						USBSerial.println(motor[i].startPos());
+					}
+					USBSerial.println("Motor stop:");
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						USBSerial.println(motor[i].stopPos());
+					}
+					USBSerial.println("Motor current:");
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						USBSerial.println(motor[i].currentPos());
+					}
+					USBSerial.println("Motor travel:");
+					for (byte i = 0; i < MOTOR_COUNT; i++){
+						USBSerial.println(motor[i].planTravelLength());
+					}
+				}
 				
 				//if it was paused and not SMS then recalculate move from pause time
 				if (was_pause && motor[0].planType() != SMS){
@@ -611,8 +621,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 		joystick_mode = input_serial_buffer[0];
 		
-		//USBSerial.print("Joystick: ");
-		//USBSerial.println(joystick_mode);
+		if (usb_debug & DB_GEN_SER) {
+			USBSerial.print("Joystick: ");
+			USBSerial.println(joystick_mode);
+		}
 		
 		// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 		if (joystick_mode){
@@ -636,7 +648,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 25 sends all motors to their start positions. 
 	case 25:
-		//USBSerial.println("Sending motors home");
+		if (usb_debug && DB_GEN_SER)
+			USBSerial.println("Sending motors home");
 		sendAllToStart();
 		response(true);
 		break;
@@ -646,10 +659,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			tempPos = motor[i].currentPos();
 			motor[i].startPos(tempPos);
-			//USBSerial.print("Motor ");
-			//USBSerial.print(i);
-			//USBSerial.print(" start: ");
-			//USBSerial.println(motor[i].startPos());
+			if (usb_debug && DB_GEN_SER){
+				USBSerial.print("Motor ");
+				USBSerial.print(i);
+				USBSerial.print(" start: ");
+				USBSerial.println(motor[i].startPos());
+			}
 			OMEEPROM::write(EE_START_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		}
 		response(true);
@@ -660,10 +675,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			tempPos = motor[i].currentPos();
 			motor[i].stopPos(tempPos);
-			//USBSerial.print("Motor ");
-			//USBSerial.print(i);
-			//USBSerial.print(" stop: ");
-			//USBSerial.println(motor[i].stopPos());
+			if (usb_debug && DB_GEN_SER){
+				USBSerial.print("Motor ");
+				USBSerial.print(i);
+				USBSerial.print(" stop: ");
+				USBSerial.println(motor[i].stopPos());
+			}
 			OMEEPROM::write(EE_STOP_0 + (i)* EE_MOTOR_MEMORY_SPACE, tempPos);
 		}
 		response(true);
@@ -682,7 +699,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 		if (key_move) {
 			key_frames = 0;
 			current_frame = 0;
-			//USBSerial.println("Resetting key frame and current frame counts");
+			if (usb_debug && DB_GEN_SER)
+				USBSerial.println("Resetting key frame and current frame counts");
 		}
 		response(true);
 		
@@ -699,13 +717,17 @@ void serMain(byte command, byte* input_serial_buffer) {
 			   
 			   for (byte i = 0; i < MOTOR_COUNT; i++) {
 				   motor[i].keyDest(frame, motor[i].currentPos());
-				   //USBSerial.println("Motor pos: ");
-				   //USBSerial.println(motor[i].keyDest(frame));
+				   if (usb_debug && DB_GEN_SER){
+					   USBSerial.println("Motor pos: ");
+					   USBSerial.println(motor[i].keyDest(frame));
+				   }
 			   }
 			   
-			   //USBSerial.print("Key frame number ");
-			   //USBSerial.print(key_frames);
-			   //USBSerial.println(" set!");
+			   if (usb_debug && DB_GEN_SER){
+				   USBSerial.print("Key frame number ");
+				   USBSerial.print(key_frames);
+				   USBSerial.println(" set!");
+			   }
 
 			   key_frames++;
 			   response(true);
@@ -734,16 +756,20 @@ void serMain(byte command, byte* input_serial_buffer) {
 					status = 1;
 				else
 					status = 0;
-				//USBSerial.print("Run Status: ");
-				//USBSerial.println(status);
+				if (usb_debug && DB_GEN_SER){
+					USBSerial.print("Run Status: ");
+					USBSerial.println(status);
+				}
 				response(true, status);
 	}
       break;
     
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
-		//USBSerial.print("Run time: ");
-		//USBSerial.println (last_run_time);
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Run time: ");
+			USBSerial.println (last_run_time);
+		}
 		if (external_intervalometer)
 			response(true, totalProgramTime());
 		else
@@ -860,11 +886,13 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 121 reads the ping-pong flag setting
 	case 121:
-		//USBSerial.print("Ping pong mode: ");
-		//if (pingPongMode)
-		//	USBSerial.println("True");
-		//else
-		//	USBSerial.println("False");
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Ping pong mode: ");
+			if (pingPongMode)
+				USBSerial.println("True");
+			else
+				USBSerial.println("False");
+		}
 		response(true, pingPongMode);
 		break;
 
@@ -888,9 +916,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
-		//USBSerial.print("Total run time: ");
-		//USBSerial.println(totalProgramTime());
-		//USBSerial.println("");
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Total run time: ");
+			USBSerial.println(totalProgramTime());
+			USBSerial.println("");
+		}
 		response(true, totalProgramTime());
 		break;
 
@@ -915,6 +945,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 				response(true, motors_running);
 				break;
 	}
+
+	//Command 254 sets the USB debug reporting state
+	case 254:
+		usb_debug = input_serial_buffer[0];
+		response(true);
 
 	//Command 255 Is a self diagnostic command for checking basic functionality of the controller
 	case 255:
@@ -1098,7 +1133,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				motor[subaddr - 1].move(dir, 0);
 				startISR();
 
-				//USBSerial.println("Auto-starting continuous move");
+				if (usb_debug && DB_GEN_SER)
+					USBSerial.println("Auto-starting continuous move");
 			}
 		}
 
@@ -1126,7 +1162,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   // if in joystick mode, check whether the speed is currently set to zero and needs to change
 			   if (joystick_mode && motor[subaddr - 1].desiredSpeed() < 1.0 && motor[subaddr - 1].desiredSpeed() > - 1.0) {
-				   //USBSerial.println("Jump-starting the motor!");
 				   if (dir == 1)
 					   motor[subaddr - 1].contSpeed(10);
 				   else
@@ -1312,12 +1347,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyLead(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   //USBSerial.print("Motor ");
-			   //USBSerial.print(subaddr - 1);
-			   //USBSerial.print(" lead-in set to ");
-			   //USBSerial.print(motor[subaddr - 1].keyLead(frame));
-			   //USBSerial.print(" for frame ");
-			   //USBSerial.println(frame);
+			   if (usb_debug && DB_GEN_SER){
+				   USBSerial.print("Motor ");
+				   USBSerial.print(subaddr - 1);
+				   USBSerial.print(" lead-in set to ");
+				   USBSerial.print(motor[subaddr - 1].keyLead(frame));
+				   USBSerial.print(" for frame ");
+				   USBSerial.println(frame);
+			   }
 			   
 			   break;
 	}
@@ -1330,12 +1367,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyAccel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   //USBSerial.print("Motor ");
-			   //USBSerial.print(subaddr - 1);
-			   //USBSerial.print(" accel set to ");
-			   //USBSerial.print(motor[subaddr - 1].keyAccel(frame));
-			   //USBSerial.print(" for frame ");
-			   //USBSerial.println(frame);
+			   if (usb_debug && DB_GEN_SER){
+				   USBSerial.print("Motor ");
+				   USBSerial.print(subaddr - 1);
+				   USBSerial.print(" accel set to ");
+				   USBSerial.print(motor[subaddr - 1].keyAccel(frame));
+				   USBSerial.print(" for frame ");
+				   USBSerial.println(frame);
+			   }
 
 			   break;
 	}
@@ -1348,12 +1387,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyDecel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   //USBSerial.print("Motor ");
-			   //USBSerial.print(subaddr - 1);
-			   //USBSerial.print(" decel set to ");
-			   //USBSerial.print(motor[subaddr - 1].keyDecel(frame));
-			   //USBSerial.print(" for frame ");
-			   //USBSerial.println(frame);
+			   if (usb_debug && DB_GEN_SER){
+				   USBSerial.print("Motor ");
+				   USBSerial.print(subaddr - 1);
+				   USBSerial.print(" decel set to ");
+				   USBSerial.print(motor[subaddr - 1].keyDecel(frame));
+				   USBSerial.print(" for frame ");
+				   USBSerial.println(frame);
+			   }
 
 			   break;
 	}
@@ -1366,12 +1407,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyTime(frame, Node.ntoui(input_serial_buffer));
 			   response(true);
 
-			   //USBSerial.print("Motor ");
-			   //USBSerial.print(subaddr - 1);
-			   //USBSerial.print(" time set to ");
-			   //USBSerial.print(motor[subaddr - 1].keyTime(frame));
-			   //USBSerial.print(" for frame ");
-			   //USBSerial.println(frame);
+			   if (usb_debug && DB_GEN_SER){
+				   USBSerial.print("Motor ");
+				   USBSerial.print(subaddr - 1);
+				   USBSerial.print(" time set to ");
+				   USBSerial.print(motor[subaddr - 1].keyTime(frame));
+				   USBSerial.print(" for frame ");
+				   USBSerial.println(frame);
+			   }
 
 			   break;
 	}    
@@ -1417,8 +1460,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 107 reads whether the motor is currently running
 	case 107:
 		response(true, motor[subaddr - 1].running());
-		//USBSerial.print("Motor running? ");
-		//USBSerial.println(motor[subaddr - 1].running());
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Motor running? ");
+			USBSerial.println(motor[subaddr - 1].running());
+		}
 		break;
 
 	//Command 108 reads the continuous speed for the motor
@@ -1517,8 +1562,10 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 6 set camera's max shots 
     case 6:
       Camera.maxShots = Node.ntoui(input_serial_buffer);
-	  //USBSerial.print("Max shots: ");
-	  //USBSerial.println(Camera.maxShots);
+	  if (usb_debug && DB_GEN_SER){
+		  USBSerial.print("Max shots: ");
+		  USBSerial.println(Camera.maxShots);
+	  }
       response(true);
       break;
 
@@ -1603,8 +1650,10 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 109 gets the number of shots fired 
 	case 109:
 		response(true, camera_fired);
-		//USBSerial.print("Camera fired: ");
-		//USBSerial.println(camera_fired);
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Camera fired: ");
+			USBSerial.println(camera_fired);
+		}
 		break;
 		
 	//Command 110 reports whether the camera is in test mode
@@ -1658,7 +1707,6 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 
 		// For time lapse continuous mode and video continuous mode
 		else if (motor[p_motor_number].planType() == CONT_TL || motor[p_motor_number].planType() == CONT_VID) {
-			//USBSerial.println("Break 2");
 			comparison_speed = motor[p_motor_number].getTopSpeed();
 		}
 
@@ -1672,7 +1720,6 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 
 		// Otherwise set the appropraite microstep setting and report the new value back to the master device
 		else {
-			//USBSerial.println("Break 3");
 			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
 				motor[p_motor_number].ms(4);
 			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
@@ -1682,12 +1729,14 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 
 			// Report back the microstep value that was auto-selected if necessary
 			if (p_external_command) {
-				//USBSerial.println("Break 4");
-				//USBSerial.print("Requested Microsteps: ");
-				//USBSerial.println(motor[p_motor_number].ms());
+				if (usb_debug && DB_GEN_SER){
+					USBSerial.print("Requested Microsteps: ");
+					USBSerial.println(motor[p_motor_number].ms());
+				}
 				// Save the microstep settings
 				eepromWrite();
-				//USBSerial.println("Microsteps successfully set");
+				if (usb_debug && DB_GEN_SER)
+					USBSerial.println("Microsteps successfully set");
 				response(true, (uint8_t) motor[p_motor_number].ms());
 				return;
 			}
@@ -1698,9 +1747,8 @@ void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
 	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
 	else {
 		if (p_external_command) {
-			//USBSerial.println("Break 5: Responding 0");
-			// Save the microstep settings
-			eepromWrite();
+			if (usb_debug && DB_GEN_SER)
+				USBSerial.println("Motors are running, can't auto-set microsteps");
 			response(true, (uint8_t) 0);
 			return;
 		}
@@ -1792,10 +1840,12 @@ void serialComplexMove(byte subaddr, byte* buf) {
 ===========================================*/
 
 void response_check(uint8_t p_stat) {
-	//if (!p_stat)
-	//USBSerial.println("*** Danger, danger Will Robinson! ***");
-	//else
-	//USBSerial.println("All's cool, bro!");
+	if (usb_debug && DB_CONFIM){
+		if (!p_stat)
+		USBSerial.println("*** Danger, danger Will Robinson! ***");
+		else
+		USBSerial.println("All's cool, bro!");
+	}
 }
 
 void response(uint8_t p_stat){
