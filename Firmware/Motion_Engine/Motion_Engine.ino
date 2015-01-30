@@ -25,7 +25,6 @@ See dynamicperception.com for more information
 */
 
 
-#include "OM_Key_Frames.h"
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
@@ -84,7 +83,15 @@ const byte MOTOR_COUNT				= 3;
 #define CONT_VID 2
 
 // General computational constants
-#define MILLIS_PER_SECOND 1000.0
+#define MILLIS_PER_SECOND	1000.0
+
+// Valid microstep settings
+#define FULL				1
+#define HALF				2
+#define QUARTER				4
+#define EIGHTH				8
+#define SIXTHEENTH			16
+
 
 bool respond_flag = false;
 unsigned int interferences = 0;

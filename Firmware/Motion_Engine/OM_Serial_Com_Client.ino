@@ -295,7 +295,7 @@ void serMain(byte command, byte* input_serial_buffer) {
   //Command 2 starts program  
   case 2:
   {
-			
+			startProgramCom();
 			response(true);
 			break;
   }
@@ -507,7 +507,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 24 sets the motors' ping_pong_mode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
 	case 24:
-		ping_pong_mode = input_serial_buffer[0];
+		pingPongMode(input_serial_buffer[0]);
 		response(true);
 		break;
 
@@ -780,6 +780,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 				response(true, motors_running);
 				break;
 	}
+
+	//Command 129 checks whether all the motors can achieve the required speed to complete program based on currently set parameters
+	case 129:
+		response(true, validateProgram());
+		break;
+		
 
 	//Command 254 sets the USB debug reporting state
 	case 254:
@@ -1173,9 +1179,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//command 28 automatically sets the motor to the highest resolution microstepping possible given program parameters
 	//The command will respond with the value that is selected or with 0 if a program is in progress or the selected motor is running.
 	case 28:
-
-		msAutoSet((subaddr - 1), true);
-		// Do not response here; response is handled within the above function.
+		response(true, msAutoSet(subaddr - 1));
 		break;
 
 	//command 29 sets the motor's start position to its current position
@@ -1366,6 +1370,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 117:
 		response(true, motor[subaddr - 1].sleep());
 		break;
+
+	//Command 117 returns whether the specified motor can achieve the speed required by the currently set program parameters
+	case 118:
+		response(true, validateProgram(subaddr - 1));
 
     //Error    
     default: 

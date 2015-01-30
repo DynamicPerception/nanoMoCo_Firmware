@@ -144,8 +144,9 @@ void startProgramCom() {
 
 		// Re-set all the motors to their proper microstep settings
 		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			msAutoSet(i, false);
+			msAutoSet(i);
 
+			// Print debug info if proper flag is set
 			if (usb_debug & DB_FUNCT){
 				USBSerial.print("Microsteps: ");
 				USBSerial.println(motor[i].ms());
@@ -222,88 +223,145 @@ void startProgramCom() {
 }
 
 /*
-msAutoSet(uint8_t p_motor_number, bool p_external_command)
+validateProgram()
+
+Checks all motors to see if they can achieve the speed required given the current program parameters.
+
+*/
+
+byte validateProgram() {
+
+	// If any of the motors fail validation, return false
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (validateProgram(i, false) == false)
+			return false;
+	}
+
+	// Otherwise return true
+	return true;
+}
+
+/*
+validateProgram(byte p_motor)
+
+Checks specified motor to see if it can achieve the speed required given the current program parameters.
+
+p_motor: Motor to check (0 through MOTOR_COUNT)
+
+*/
+
+byte validateProgram(byte p_motor) {
+	validateProgram(p_motor, false);
+}
+
+
+/*
+validateProgram(byte p_motor, bool p_autosteps)
+
+Checks specified motor to see if it can achieve the speed required given the current program parameters.
+
+p_motor:		Motor to check (0 through MOTOR_COUNT)
+p_autosteps:	Optional parameter. Function will return required microstep setting instead of true on success and 255 instead of false upon failure.
+
+*/
+
+
+byte validateProgram(byte p_motor, bool p_autosteps) {
+	
+	//USBSerial.println("Break 1");
+	// The microstepping cutoff values below are in 16th steps
+	const int MAX_CUTOFF = 16000;
+	const int QUARTER_CUTOFF = 8000;
+	const int EIGHTH_CUTOFF = 4000;
+	float comparison_speed;
+
+	// For time lapse SMS mode
+	if (motor[p_motor].planType() == SMS) {
+
+		// Max time in seconds
+		float max_time_per_move = (float)(Camera.interval - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+
+
+		// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
+		float steps_per_move = motor[p_motor].getTopSpeed();
+
+		comparison_speed = steps_per_move / (float)max_time_per_move;
+
+	}
+
+	// For time lapse continuous mode and video continuous mode
+	else if (motor[p_motor].planType() == CONT_TL || motor[p_motor].planType() == CONT_VID) {
+		comparison_speed = motor[p_motor].getTopSpeed();
+	}
+
+	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
+	// If the requested speed is too high, send error value, don't change microstepping setting
+	if (comparison_speed >= MAX_CUTOFF ) {
+		//USBSerial.println("Excessive speed requested");
+		return false;
+	}
+	else {
+		// Return the appropriate microstep value if called from msAutoSet(), otherwise return true for OK
+		if (p_autosteps) {
+			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
+				return QUARTER;
+			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
+				return EIGHTH;
+			else
+				return SIXTHEENTH;
+		}
+		else
+			return true;
+	}
+
+}
+
+/*
+msAutoSet(uint8_t p_motor_number)
 
 Set the appropriate microstep value for the motor based upon currently set program move parameters.
 
 p_motor_number: motor to modify microstepping
-p_external_command: true if the request is originating from an external serial command. This enables responses to the master device.
 
 */
 
-void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
+byte msAutoSet(uint8_t p_motor) {
+
 	unsigned long time = millis();
-
+	byte microsteps;
+	
 	// Don't change the microstep value if the motor or program is running
-	if (!running && !motor[p_motor_number].running()) {
-		//USBSerial.println("Break 1");
-		// The microstepping cutoff values below are in 16th steps
-		const int MAX_CUTOFF = 16000;
-		const int QUARTER_CUTOFF = 8000;
-		const int EIGHTH_CUTOFF = 4000;
-		float comparison_speed;
+	if (!running && !motor[p_motor].running()) {
+		
+		// Get program validation info
+		microsteps = validateProgram(p_motor, true);
 
-		// For time lapse SMS mode
-		if (motor[p_motor_number].planType() == SMS) {
-
-			// Max time in seconds
-			float max_time_per_move = (float)(Camera.interval - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
-
-
-			// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
-			float steps_per_move = motor[p_motor_number].getTopSpeed();
-
-			comparison_speed = steps_per_move / (float)max_time_per_move;
-
-		}
-
-		// For time lapse continuous mode and video continuous mode
-		else if (motor[p_motor_number].planType() == CONT_TL || motor[p_motor_number].planType() == CONT_VID) {
-			comparison_speed = motor[p_motor_number].getTopSpeed();
-		}
-
-		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
-		// If the requested speed is too high, send error value, don't change microstepping setting
-		if (comparison_speed >= MAX_CUTOFF && p_external_command) {
-			//USBSerial.println("Excessive speed requested");
-			response(true, (uint8_t)255);
-			return;
-		}
-
+		// Return an error code of 255 if called from msAutoSet(), since a 0 error is given when the routine cannot be run
+		if (microsteps == false)
+			return 255;
+		
 		// Otherwise set the appropraite microstep setting and report the new value back to the master device
-		else {
-			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
-				motor[p_motor_number].ms(4);
-			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
-				motor[p_motor_number].ms(8);
-			else
-				motor[p_motor_number].ms(16);
+		else
+			motor[p_motor].ms(microsteps);
 
-			// Report back the microstep value that was auto-selected if necessary
-			if (p_external_command) {
-				if (usb_debug && DB_GEN_SER){
-					USBSerial.print("Requested Microsteps: ");
-					USBSerial.println(motor[p_motor_number].ms());
-				}
-				// Save the microstep settings
-				eepromWrite();
-				if (usb_debug && DB_GEN_SER)
-					USBSerial.println("Microsteps successfully set");
-				response(true, (uint8_t)motor[p_motor_number].ms());
-				return;
-			}
+		// Save the microstep settings
+		eepromWrite();
+
+		// USB print the debug value, if necessary
+		if (usb_debug && DB_GEN_SER){
+			USBSerial.print("Requested Microsteps: ");
+			USBSerial.println(microsteps);
+			USBSerial.println("Microsteps successfully set");
 		}
+		return microsteps;
+		
+	}	
 
-	}
-
-	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
+	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
 	else {
-		if (p_external_command) {
-			if (usb_debug && DB_GEN_SER)
+		if (usb_debug && DB_GEN_SER)
 				USBSerial.println("Motors are running, can't auto-set microsteps");
-			response(true, (uint8_t)0);
-			return;
-		}
+			return false;
 	}
 }
 
