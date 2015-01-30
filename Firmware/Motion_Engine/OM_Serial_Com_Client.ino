@@ -265,12 +265,14 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	  
 	  //resets controller to default address/name, flashes the debug LED 10 times to indicate restart required      
     case OM_BCAST_SET_ADDRESS:
+		USBSerial.println("Setting new address!");
 	  if (buf[0] <= 255 && buf[0] >= 2){
 		  	device_address = buf[0];
 			eepromWrite();
 			Node.address(device_address);
 			NodeBlue.address(device_address);
 			flasher(DEBUG_PIN, 5);	
+			response(true);
 	  }
       break;
       
@@ -953,11 +955,18 @@ void serMain(byte command, byte* input_serial_buffer) {
 				
 				// If the specified flag is already on, turn it off, otherwise turn it on.
 				if (usb_debug & setting)
-					usb_debug &= !setting;
+					usb_debug &= ~setting;
 				else
 					usb_debug |= setting;
 
-				response(true);
+				USBSerial.print("Requested setting change: ");
+				USBSerial.println(setting, BIN);
+				USBSerial.print("Debug flags: ");
+				USBSerial.println(usb_debug, BIN);
+				USBSerial.println("");
+
+				response(true, setting);
+				break;
 	}
 
 	//Command 255 Is a self diagnostic command for checking basic functionality of the controller
