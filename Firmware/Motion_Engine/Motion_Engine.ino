@@ -25,6 +25,7 @@ See dynamicperception.com for more information
 */
 
 
+#include "OM_Key_Frames.h"
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
@@ -175,7 +176,7 @@ uint8_t		  camera_test_mode = false;
 uint8_t					fps    = true;
 
 // ping pong mode variable
-uint8_t pingPongMode = false;
+uint8_t ping_pong_mode = false;
 
  // maximum run time
 unsigned long max_time = 0;

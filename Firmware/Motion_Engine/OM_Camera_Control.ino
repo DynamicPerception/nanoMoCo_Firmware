@@ -109,6 +109,65 @@ void checkCameraRepeat() {
    Engine.state(ST_EXP);
 }
 
+/**
+Start or stop camera test mode
+*/
+void cameraTest(uint8_t p_start) {
+
+	// If the command doesn't change the test mode, ignore it and exit the fucntion
+	if (camera_test_mode == p_start)
+		return;
+
+	static uint8_t old_enable[MOTOR_COUNT];
+	static unsigned long old_max_shots;
+	camera_test_mode = p_start;
+
+	// Entering test mode
+	if (camera_test_mode) {
+		// Remember each motor's enable mode and disable all of them
+		for (byte i = 0; i < MOTOR_COUNT; i++) {
+			old_enable[i] = motor[i].enable();
+			motor[i].enable(false);
+		}
+
+		// Remember the current max shots setting
+		old_max_shots = Camera.maxShots;
+
+		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
+		Camera.maxShots = 10000;
+
+		// Starting the program will make the camera fire, but the motors won't move
+		startProgram();
+
+	}
+
+	// Exiting test mode
+	else if (!camera_test_mode) {
+
+		// Stop the camera firing
+		stopProgram();
+
+		// Restore motor enable statuses and camera max shots
+		for (byte i = 0; i < MOTOR_COUNT; i++)
+			motor[i].enable(old_enable[i]);
+
+		Camera.maxShots = old_max_shots;
+
+		// Reset the shot count to 0
+		camera_fired = 0;
+	}
+}
+
+
+/**
+Return whether the camera is in test mode
+*/
+uint8_t cameraTest() {
+
+	return(camera_test_mode);
+
+}
+
 
 
 

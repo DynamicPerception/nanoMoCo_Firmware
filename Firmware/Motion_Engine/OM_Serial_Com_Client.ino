@@ -295,127 +295,7 @@ void serMain(byte command, byte* input_serial_buffer) {
   //Command 2 starts program  
   case 2:
   {
-			key_move = false;
-			bool was_pause = pause_flag;
-			pause_flag = false;
 			
-			// Don't perform backlash checks or other start of move operations if the program was paused or is currently running
-			if (!running && !was_pause) {
-
-				// Reset the shot counter to 0. If the user presses the "Fire Camera" button in the joystick screen of the app, it may be a non-zero number.
-				camera_fired = 0;
-
-				// Reset the program completion flag
-				program_complete = false;
-
-				//USBSerial.println("Start Break 1");
-				
-				uint8_t wait_required = false;
-
-				// Check each motor to see if it needs backlash compensation
-				for (byte i = 0; i < MOTOR_COUNT; i++) {
-					if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
-
-						// Indicate that a brief pause is necessary after starting the motors
-						wait_required = true;
-
-						// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-						motor[i].ms(4);
-						motor[i].contSpeed(MOT_DEFAULT_MAX_STEP);
-
-						// Determine the direction of the programmed move
-						uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
-
-						// Move the motor 1 step in that direction to force the backlash takeup
-						motor[i].move(dir, 1);
-						startISR();
-					}
-				}
-
-				if (wait_required) {
-					unsigned long time = millis();
-					while (millis() - time < MILLIS_PER_SECOND){
-						// Wait a second for backlash takeup to finish
-					}
-				}
-
-				// Re-set all the motors to their proper microstep settings
-				for (byte i = 0; i < MOTOR_COUNT; i++) {
-					msAutoSet(i, false);
-
-					if (usb_debug & DB_FUNCT){
-						USBSerial.print("Microsteps: ");
-						USBSerial.println(motor[i].ms());
-					}
-				} 
-
-				// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
-				if (motor[1].planType() == SMS) {
-					////USBSerial.println("Start Break 4");
-					// Determine the max time in seconds allowed for moving the motors
-					float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
-					// If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
-					if (max_move_time > 0.5)
-						max_move_time = 0.5;
-					// Determine the maximum number of steps each motor needs to move. For short move, throttle the speed to avoid jerking of the rig.
-					for (byte i = 0; i < MOTOR_COUNT; i++) {
-						int steps_per_move = motor[i].getTopSpeed();
-						if (steps_per_move < 500) {
-							// Only use 50% of the maximum move time to allow for accel and decel phases
-							motor[i].contSpeed((float)steps_per_move / (max_move_time * 0.5));
-						}
-					}
-				}
-
-				// If we're starting a video move, fire the camera trigger pin to start the video camera
-				if (motor[0].planType() == CONT_VID) {
-					Camera.expose();
-					unsigned long time = millis();
-					while (millis() - time < (MILLIS_PER_SECOND * 1.5))
-					{
-						// Wait a second and a half for the video to start before starting the move.
-					}
-				}
-			}//end if (!running && !was_pause)
-
-			// Don't start a new program if one is already running
-			if (!running) {
-
-				if (usb_debug & DB_GEN_SER){
-					USBSerial.println("Motor distances:");
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
-					}
-					USBSerial.println("Motor start:");
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						USBSerial.println(motor[i].startPos());
-					}
-					USBSerial.println("Motor stop:");
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						USBSerial.println(motor[i].stopPos());
-					}
-					USBSerial.println("Motor current:");
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						USBSerial.println(motor[i].currentPos());
-					}
-					USBSerial.println("Motor travel:");
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						USBSerial.println(motor[i].planTravelLength());
-					}
-				}
-				
-				//if it was paused and not SMS then recalculate move from pause time
-				if (was_pause && motor[0].planType() != SMS){
-					for (byte i = 0; i < MOTOR_COUNT; i++){
-						if(motor[i].enable())
-							motor[i].resumeMove();
-						//USBSerial.print("New Run Time: ");
-						//USBSerial.println(motor[i].planTravelLength());
-					}	
-				}
-
-				startProgram();
-			}
 			response(true);
 			break;
   }
@@ -620,31 +500,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 	// and motor commands 3 (enable motor), 4 (stop now), 6 (set microsteps), 13 (set continuous speed), 15 (execute simple move), and 
 	// This is to avoid incorrect commands due to corrupt communications causing runaway motors or controller lockup.
 	case 23:
-		
-		joystick_mode = input_serial_buffer[0];
-		
-		if (usb_debug & DB_GEN_SER) {
-			USBSerial.print("Joystick: ");
-			USBSerial.println(joystick_mode);
-		}
-		
-		// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
-		if (joystick_mode){
-			for (byte i = 0; i < MOTOR_COUNT; i++) {
-				motor[i].contSpeed(0);
-			}
-		}
-		// If we're exiting joystick mode, turn off the joystick watchdog mode
-		else if (!joystick_mode)
-			watchdog = false;
-		
+		joystickSet(input_serial_buffer[0]);
 		response(true);
 		break;
 		
-	//Command 24 sets the motors' pingPongMode, if enabled it causes the motors to bounce back and forth
+	//Command 24 sets the motors' ping_pong_mode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
 	case 24:
-		pingPongMode = input_serial_buffer[0];
+		ping_pong_mode = input_serial_buffer[0];
 		response(true);
 		break;
 
@@ -694,48 +557,18 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 40 sets whether the current shot is using key frames
+	//Command 40 sets key frames flag
 	case 40:
-		key_move = input_serial_buffer[0];
-		// When entering key frame mode, reset the number of key frames
-		if (key_move) {
-			key_frames = 0;
-			current_frame = 0;
-			if (usb_debug && DB_GEN_SER)
-				USBSerial.println("Resetting key frame and current frame counts");
-		}
+		kfSet(input_serial_buffer[0]);
 		response(true);
-		
-		//USBSerial.print("Key move status: ");
-		//USBSerial.println(key_move);
-
 		break;
 
 	//Command 41 sets the next key frame position for all motors
 	case 41:
-	{ 
-			   //uint8_t frame = input_serial_buffer[0];
-			   uint8_t frame = key_frames;
-			   
-			   for (byte i = 0; i < MOTOR_COUNT; i++) {
-				   motor[i].keyDest(frame, motor[i].currentPos());
-				   if (usb_debug && DB_GEN_SER){
-					   USBSerial.println("Motor pos: ");
-					   USBSerial.println(motor[i].keyDest(frame));
-				   }
-			   }
-			   
-			   if (usb_debug && DB_GEN_SER){
-				   USBSerial.print("Key frame number ");
-				   USBSerial.print(key_frames);
-				   USBSerial.println(" set!");
-			   }
+		kfNext();
+		response(true);
+		break;
 
-			   key_frames++;
-			   response(true);
-			   			   
-			   break;
-	}
 
     
     //*****************MAIN READ COMMANDS********************
@@ -890,12 +723,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 121:
 		if (usb_debug && DB_GEN_SER){
 			USBSerial.print("Ping pong mode: ");
-			if (pingPongMode)
+			if (ping_pong_mode)
 				USBSerial.println("True");
 			else
 				USBSerial.println("False");
 		}
-		response(true, pingPongMode);
+		response(true, ping_pong_mode);
 		break;
 
 	//Command 122 reads the joystick watchdog mode status
@@ -1687,152 +1520,6 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
   }
   
 }
-
-
-/**
-	Set the appropriate microstep value for the motor based upon currently set program move parameters.
-	
-	p_motor_number: motor to modify microstepping
-	p_external_command: true if the request is originating from an external serial command. This enables responses to the master device.
-
-*/
-
-void msAutoSet(uint8_t p_motor_number, bool p_external_command) {
-	unsigned long time = millis();
-
-	// Don't change the microstep value if the motor or program is running
-	if (!running && !motor[p_motor_number].running()) {
-		//USBSerial.println("Break 1");
-		// The microstepping cutoff values below are in 16th steps
-		const int MAX_CUTOFF = 16000;
-		const int QUARTER_CUTOFF = 8000;
-		const int EIGHTH_CUTOFF = 4000;
-		float comparison_speed;
-
-		// For time lapse SMS mode
-		if (motor[p_motor_number].planType() == SMS) {
-
-			// Max time in seconds
-			float max_time_per_move = (float)(Camera.interval - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
-
-
-			// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
-			float steps_per_move = motor[p_motor_number].getTopSpeed();
-
-			comparison_speed = steps_per_move / (float)max_time_per_move;
-
-		}
-
-		// For time lapse continuous mode and video continuous mode
-		else if (motor[p_motor_number].planType() == CONT_TL || motor[p_motor_number].planType() == CONT_VID) {
-			comparison_speed = motor[p_motor_number].getTopSpeed();
-		}
-
-		// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
-		// If the requested speed is too high, send error value, don't change microstepping setting
-		if (comparison_speed >= MAX_CUTOFF && p_external_command) {
-			//USBSerial.println("Excessive speed requested");
-			response(true, (uint8_t) 255);
-			return;
-		}
-
-		// Otherwise set the appropraite microstep setting and report the new value back to the master device
-		else {
-			if (comparison_speed >= QUARTER_CUTOFF && comparison_speed < MAX_CUTOFF)
-				motor[p_motor_number].ms(4);
-			else if (comparison_speed < QUARTER_CUTOFF && comparison_speed > EIGHTH_CUTOFF)
-				motor[p_motor_number].ms(8);
-			else
-				motor[p_motor_number].ms(16);
-
-			// Report back the microstep value that was auto-selected if necessary
-			if (p_external_command) {
-				if (usb_debug && DB_GEN_SER){
-					USBSerial.print("Requested Microsteps: ");
-					USBSerial.println(motor[p_motor_number].ms());
-				}
-				// Save the microstep settings
-				eepromWrite();
-				if (usb_debug && DB_GEN_SER)
-					USBSerial.println("Microsteps successfully set");
-				response(true, (uint8_t) motor[p_motor_number].ms());
-				return;
-			}
-		}
-
-	}
-
-	// If the motor or program is running, report back 0 to indicate that the auto-set routine was not completed if necessary
-	else {
-		if (p_external_command) {
-			if (usb_debug && DB_GEN_SER)
-				USBSerial.println("Motors are running, can't auto-set microsteps");
-			response(true, (uint8_t) 0);
-			return;
-		}
-	}
-}            
-
-
-/**
-	Start or stop camera test mode
-*/
-void cameraTest(uint8_t p_start) {
-
-	// If the command doesn't change the test mode, ignore it and exit the fucntion
-	if (camera_test_mode == p_start)
-		return;
-
-	static uint8_t old_enable[MOTOR_COUNT];
-	static unsigned long old_max_shots;
-	camera_test_mode = p_start;
-
-	// Entering test mode
-	if (camera_test_mode) {
-		// Remember each motor's enable mode and disable all of them
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			old_enable[i] = motor[i].enable();
-			motor[i].enable(false);
-		}
-
-		// Remember the current max shots setting
-		old_max_shots = Camera.maxShots;
-
-		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
-		Camera.maxShots = 10000;
-
-		// Starting the program will make the camera fire, but the motors won't move
-		startProgram();
-
-	}
-
-	// Exiting test mode
-	else if (!camera_test_mode) {
-
-		// Stop the camera firing
-		stopProgram();
-
-		// Restore motor enable statuses and camera max shots
-		for (byte i = 0; i < MOTOR_COUNT; i++)
-			motor[i].enable(old_enable[i]);
-
-		Camera.maxShots = old_max_shots;
-
-		// Reset the shot count to 0
-		camera_fired = 0;
-	}
-}
-
-
-/**
-	Return whether the camera is in test mode
-*/
-uint8_t cameraTest() {
-
-	return(camera_test_mode);
-
-}
-
 
 void serialComplexMove(byte subaddr, byte* buf) {
    byte dir = buf[0];
