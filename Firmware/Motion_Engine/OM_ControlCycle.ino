@@ -58,15 +58,50 @@ void cycleCamera() {
 	
   // stop program if max shots exceeded or if the continuous TL/video program as reached its destination
   // The program stops when camera_fired exceeds Camera.maxShots instead of equalling it in order to allow the camera to take an exposure at its final destination
-  if((Camera.maxShots > 0  && camera_fired > Camera.maxShots) || (!Camera.enable && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
-	  
-	  	// stop program running w/o clearing variables
-		stopProgram();
-		program_complete = true;
+  if((Camera.maxShots > 0  && camera_fired > Camera.maxShots) || (motor[0].planType() != SMS && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
 
-		if (motor[0].planType() == CONT_VID)
-			Camera.expose();
-		
+	  bool ready_to_stop = true;
+
+	  // If this is a video move there might be a lead-out to wait for, so if the run time is less than the total calculated time, don't stop the program yet
+	  // totalProgramTime() and last_run_time are unsigned, so they must be recast as signed values to avoid rolling the result if last_runt_time is longer
+	  if (motor[0].planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
+		  
+		  ready_to_stop = false;
+
+		  // Debug output
+		  if (usb_debug & DB_FUNCT) {
+			  USBSerial.println("All motors done moving!");
+			  if ((totalProgramTime() - last_run_time) > 0) {
+				  USBSerial.println(totalProgramTime());
+				  USBSerial.println(last_run_time);
+				  USBSerial.print("There are ");
+				  USBSerial.print((long)totalProgramTime() - (long)last_run_time);
+				  USBSerial.println("ms of lead-out time remaining");
+			  }
+
+		  }
+	  }
+
+		// stop program running w/o clearing variables
+		if (ready_to_stop) {
+			stopProgram();
+			program_complete = true;
+
+			// If not running a ping-pong move, activate the camera trigger to stop the video recording
+			if (!ping_pong_mode && motor[0].planType() == CONT_VID)
+				Camera.expose();
+
+			// If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
+			else if (ping_pong_mode && motor[0].planType() == CONT_VID) {
+				reverseStartStop();
+				startProgram();
+			}
+
+		}
+
+		return;
+  }
+
 		//// If multiple key frames were set, load the parameters for the next position and start the program again
 		//if (key_move && current_frame < key_frames) {
 		//	for (byte i = 0; i < MOTOR_COUNT; i++) {
@@ -85,19 +120,8 @@ void cycleCamera() {
 
 		//else if (key_move && current_frame >= key_frames)
 		//	current_frame = 0;
-		
-		// If ping pong mode is one and this is a continuous video shot, reverse direction and start the program again
-		if (ping_pong_mode && motor[1].planType() == CONT_VID) {
-			reverseStartStop();
-			startProgram();
-		}
-
-		return;
-  } 
   
-	// if in external interval mode, don't do anything is a force shot isn't
-	// registered
-    
+	// if in external interval mode, don't do anything if a force shot isn't registered
 	if( altExtInt && ! altForceShot )
 		return;
 		
@@ -129,7 +153,7 @@ void cycleCamera() {
 		  USBSerial.println("");
 	  }
 
-            // skip camera actions if camera disabled  
+      // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
         Engine.state(ST_MOVE);
         camera_tm = millis();  
@@ -188,7 +212,8 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
 	// pre--output clearance check
 	if(altBeforeDelay >= Camera.interval && !altBlock){  //Camera.interval is less than the altBeforeDelay, go as fast as possible
 		return true;
-	} else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
+	} 
+	else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
 		return true;
 
   
@@ -224,8 +249,8 @@ void cycleClearToMove() {
 
 	   }
 	   
-	   //do not move until the minimum plan lead in has based, if planType() == CONT_TL then the plan lead in is in ms
-	   	if( ( minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType()!= CONT_TL) || (motor[0].planType()== CONT_TL && run_time <= minPlanLead))) ) {
+	   //do not move until the minimum plan lead in has passed, if planType() == CONT_VID then the plan lead in is in ms
+	   if ((minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType() != CONT_VID) || (motor[0].planType() == CONT_VID && run_time <= minPlanLead)))) {
 		   	Engine.state(ST_CLEAR);
 		   	return;
 	   	}

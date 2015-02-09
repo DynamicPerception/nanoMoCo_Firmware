@@ -53,9 +53,9 @@ void move_motor() {
 	   //only check the motors that are enable
 	   if( motor[i].enable()){
 		   //check to see if there's a shot delay for the motor
-		   if (!(motor[i].planLeadIn() > 0 && ((camera_fired <= motor[i].planLeadIn() && motor[i].planType() != CONT_VID) || (motor[i].planType() == CONT_VID && run_time <= motor[i].planLeadIn())))){
+		   if (!(motor[i].planLeadIn() > 0 && ((camera_fired <= motor[i].planLeadIn() && motor[i].planType() == SMS) || (motor[i].planType() != SMS && run_time <= motor[i].planLeadIn())))){
 				motor[i].programMove();
-				if( motor[i].planMoveType  == SMS ) {
+				if( motor[i].planType()  == SMS ) {
 					// planned SMS move
 					 //motor[i].planRun();
 					// block camera while motor is moving
@@ -231,14 +231,16 @@ Checks all motors to see if they can achieve the speed required given the curren
 
 byte validateProgram() {
 
+	byte validation = B00000000;
+
 	// If any of the motors fail validation, return false
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		if (validateProgram(i, false) == false)
-			return false;
+		if (validateProgram(i, false) == true)
+			validation &= 1 << i;
 	}
 
-	// Otherwise return true
-	return true;
+	// Return byte indicating status of all three motors
+	return validation;
 }
 
 /*
@@ -250,8 +252,8 @@ p_motor: Motor to check (0 through MOTOR_COUNT)
 
 */
 
-byte validateProgram(byte p_motor) {
-	validateProgram(p_motor, false);
+int validateProgram(byte p_motor) {
+	return validateProgram(p_motor, false);
 }
 
 
@@ -266,7 +268,7 @@ p_autosteps:	Optional parameter. Function will return required microstep setting
 */
 
 
-byte validateProgram(byte p_motor, bool p_autosteps) {
+int validateProgram(byte p_motor, bool p_autosteps) {
 	
 	//USBSerial.println("Break 1");
 	// The microstepping cutoff values below are in 16th steps
@@ -298,7 +300,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	// If the requested speed is too high, send error value, don't change microstepping setting
 	if (comparison_speed >= MAX_CUTOFF ) {
 		//USBSerial.println("Excessive speed requested");
-		return false;
+		return (int) round(comparison_speed);
 	}
 	else {
 		// Return the appropriate microstep value if called from msAutoSet(), otherwise return true for OK
@@ -311,7 +313,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 				return SIXTHEENTH;
 		}
 		else
-			return true;
+			return (int)round(comparison_speed);
 	}
 
 }
@@ -348,7 +350,7 @@ byte msAutoSet(uint8_t p_motor) {
 		eepromWrite();
 
 		// USB print the debug value, if necessary
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Requested Microsteps: ");
 			USBSerial.println(microsteps);
 			USBSerial.println("Microsteps successfully set");
@@ -359,7 +361,7 @@ byte msAutoSet(uint8_t p_motor) {
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
 	else {
-		if (usb_debug && DB_GEN_SER)
+		if (usb_debug & DB_GEN_SER)
 				USBSerial.println("Motors are running, can't auto-set microsteps");
 			return false;
 	}

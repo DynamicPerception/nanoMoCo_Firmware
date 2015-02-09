@@ -57,7 +57,7 @@ void camWait() {
 
 void camCallBack(byte code) {
     
-  // This callback is called whenever an asynchronous activity begi  ns or ends, and 
+  // This callback is called whenever an asynchronous activity begins or ends, and 
   // is able to take some actions as different states are reported out of the
   // camera object.
   //
@@ -160,12 +160,39 @@ void cameraTest(uint8_t p_start) {
 
 
 /**
+
 Return whether the camera is in test mode
+
 */
 uint8_t cameraTest() {
 
 	return(camera_test_mode);
 
+}
+
+
+/**
+
+Automatically sets the max shots value based upon the lead-in, travel, and lead-out shots.
+
+*/
+void cameraAutoMaxShots() {
+
+	// This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
+	if (motor[0].planType() != SMS)
+		return;
+
+	unsigned int longest = 0;
+	unsigned int current = 0;
+
+	// Find the longest combination of leads and travel, then set that as the max shots
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		current = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
+		if (current > longest)
+			longest = current;
+	}
+
+	Camera.maxShots = longest;
 }
 
 

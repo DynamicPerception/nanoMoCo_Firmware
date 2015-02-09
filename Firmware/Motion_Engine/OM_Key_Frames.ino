@@ -41,13 +41,13 @@ void kfNext() {
 
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		motor[i].keyDest(frame, motor[i].currentPos());
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.println("Motor pos: ");
 			USBSerial.println(motor[i].keyDest(frame));
 		}
 	}
 
-	if (usb_debug && DB_GEN_SER){
+	if (usb_debug & DB_GEN_SER){
 		USBSerial.print("Key frame number ");
 		USBSerial.print(key_frames);
 		USBSerial.println(" set!");
@@ -62,7 +62,7 @@ void kfSet(byte p_input) {
 	if (key_move) {
 		key_frames = 0;
 		current_frame = 0;
-		if (usb_debug && DB_GEN_SER)
+		if (usb_debug & DB_GEN_SER)
 			USBSerial.println("Resetting key frame and current frame counts");
 	}
 

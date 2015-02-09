@@ -727,13 +727,7 @@ uint8_t programPercent() {
 		
 		unsigned long current_move;
 
-		// If in SMS mode, the current_move is in shots, if in continuous video mode, it time in milliseconds
-		if (motor[i].planType() == SMS || motor[i].planType() == CONT_VID)
-			current_move = motor[i].planLeadIn() + motor[i].planTravelLength();
-		
-		// If in continuous time lapse mode, current_move is time in milliseconds, but the lead-in needs to be converted from shots to milliseconds
-		else if (motor[i].planType() == CONT_TL)
-			current_move = (motor[i].planLeadIn() * Camera.interval) + motor[i].planTravelLength();
+		current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadIn();
 
 		// Update the longest move if necessary
 		if (current_move > longest_move)
@@ -831,7 +825,7 @@ unsigned long totalProgramTime() {
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
-				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength());
+				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
 				if (usb_debug & DB_FUNCT){
 					USBSerial.print("Interval: ");
 					USBSerial.print(Camera.interval);
@@ -843,16 +837,15 @@ unsigned long totalProgramTime() {
 					USBSerial.print(motor[i].planTravelLength());
 					USBSerial.print("  Decel: ");
 					USBSerial.print(motor[i].planDecelLength());
+					USBSerial.print("  Lead out: ");
+					USBSerial.print(motor[i].planLeadOut());
 					USBSerial.print("  Motor time: ");
 					USBSerial.println(motor_time);
 				}
 			}
-			// Continuous time lapse: Only the lead-in is in expsoures, so only multiply that by the interval. Everything else is already in milliseconds
-			else if (motor[i].planType() == CONT_TL)
-				motor_time = (Camera.interval * motor[i].planLeadIn()) + motor[i].planTravelLength();
-			// Continuous video: all segments are in milliseconds, no need to multiply anything
-			else if (motor[i].planType() == CONT_VID)
-				motor_time = motor[i].planLeadIn() + motor[i].planTravelLength();
+			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
+			else
+				motor_time = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
 			// Overwrite longest_time if the last checked motor is longer
 			if (motor_time > longest_time)
 				longest_time = motor_time;

@@ -492,6 +492,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 		motor[0].planType(input_serial_buffer[0]);
 		motor[1].planType(input_serial_buffer[0]);
 		motor[2].planType(input_serial_buffer[0]);
+
+		// For modes other than SMS, max shots should be set to 0 (unlimited), since program stopping will be controlled by run time
+		if (motor[0].planType() != SMS)
+			Camera.maxShots = 0;
 		response(true);
 		break;
 
@@ -513,7 +517,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 25 sends all motors to their start positions. 
 	case 25:
-		if (usb_debug && DB_GEN_SER)
+		if (usb_debug & DB_GEN_SER)
 			USBSerial.println("Sending motors home");
 		sendAllToStart();
 		response(true);
@@ -524,7 +528,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			tempPos = motor[i].currentPos();
 			motor[i].startPos(tempPos);
-			if (usb_debug && DB_GEN_SER){
+			if (usb_debug & DB_GEN_SER){
 				USBSerial.print("Motor ");
 				USBSerial.print(i);
 				USBSerial.print(" start: ");
@@ -540,7 +544,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			tempPos = motor[i].currentPos();
 			motor[i].stopPos(tempPos);
-			if (usb_debug && DB_GEN_SER){
+			if (usb_debug & DB_GEN_SER){
 				USBSerial.print("Motor ");
 				USBSerial.print(i);
 				USBSerial.print(" stop: ");
@@ -591,7 +595,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 					status = 1;
 				else
 					status = 0;
-				if (usb_debug && DB_GEN_SER){
+				if (usb_debug & DB_GEN_SER){
 					USBSerial.print("Run Status: ");
 					USBSerial.println(status);
 				}
@@ -601,7 +605,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Run time: ");
 			USBSerial.println (last_run_time);
 		}
@@ -704,8 +708,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 	//Command 118 reads motors' continuous mode setting
 	case 118:
-		//USBSerial.print("Plan type: ");
-		//USBSerial.println(motor[0].planType());
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Plan type: ");
+			USBSerial.println(motor[0].planType());
+		}
 		response(true, motor[0].planType());
 		break;
 
@@ -721,7 +727,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 121 reads the ping-pong flag setting
 	case 121:
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Ping pong mode: ");
 			if (ping_pong_mode)
 				USBSerial.println("True");
@@ -751,7 +757,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Total run time: ");
 			USBSerial.println(totalProgramTime());
 			USBSerial.println("");
@@ -825,13 +831,13 @@ void serMain(byte command, byte* input_serial_buffer) {
 				}
 				
 				// Check the motor attachment
-				uint8_t _motor_attach = checkMotorAttach();		
+				uint8_t motor_attach = checkMotorAttach();		
 				delay(250);
 								
 				// Report via enable lights which motors were detected
 				for (byte i = 0; i < MOTOR_COUNT; i++){
 					// If a motor is detected, turn on the LED by turning off sleep mode
-					if ((_motor_attach >> i) & 1){
+					if ((motor_attach >> i) & 1){
 						motor[i].sleep(false);
 						delay(250);
 						motor[i].sleep(true);
@@ -990,7 +996,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				motor[subaddr - 1].move(dir, 0);
 				startISR();
 
-				if (usb_debug && DB_GEN_SER)
+				if (usb_debug & DB_GEN_SER)
 					USBSerial.println("Auto-starting continuous move");
 			}
 		}
@@ -1069,14 +1075,20 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
       break;
 
 	//Command 19 set motor's lead-in shots (number of shots to wait after program start to begin moving)
+	//Because the mobile app (as of the version current on 2-6-15) assumes a lead-out of 0 and currently has
+	//no way to set it directly, the lead-out will be reset to 0 when the lead-in is set. This means the lead-in
+	//must always be set before the lead-out in order for the lead-out value to be saved.
 	case 19:
 		motor[subaddr - 1].planLeadIn(Node.ntoi(input_serial_buffer));
+		motor[subaddr - 1].planLeadOut(0);
+		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
 		response(true);
 		break;
 
 	//Command 20 set shots (SMS) / motor travel time (cont.)
 	case 20:
 		motor[subaddr - 1].planTravelLength(Node.ntoul(input_serial_buffer));
+		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
 		response(true);
 		break;
 
@@ -1109,64 +1121,18 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 25 steps forward one planned cycle for SMS
+	//Command 25 sets the motor lead-out
 	case 25:
-		// step forward one interleaved (sms) plan cycle
-	  	
-		if( ! motor[subaddr-1].mt_plan ) {
-			response(false);
-		}
-		else {
-			// dig this?  We advance one frame by simply turning on autopausing
-			// and then playing.  This is a convienence function for clients,
-			// rather than forcing them to run both commands.
-		  	
-			// go ahead and make sure we fire immediately
-			camera_tm = millis() - Camera.interval;
-
-			motor[subaddr-1].autoPause = true;
-			startProgram();
-			response(true);
-		}
-	  	
+		motor[subaddr - 1].planLeadOut(Node.ntoi(input_serial_buffer));
+		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
+		response(true);
 		break;
-	  	
-	//command 26 steps back one sms planed cycle
+
+	//Command 26 is not yet allocated
 	case 26:
-	// step back one interleaved (sms) plan cycle
-	  	
-	// return an error if we don't actually have a planned move
-		if( ! motor[subaddr-1].mt_plan )
-			response(false);
-		else {
-			if( motor[subaddr-1].planLeadIn() > 0 && camera_fired < motor[subaddr-1].planLeadIn() ) {
-				// do not reverse the plan, the motor isn't supposed to move here
-			}
-			else {
-				// rollback one shot in the program
-				if( camera_fired > 0 )
-					camera_fired--;
-			  	
-				motor[subaddr-1].planReverse();
-				startISR();
-			}
-		  	
-			// need to decrease run time counter
-			{
-				unsigned long delayTime = ( Camera.interval > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime()) ) ? Camera.interval : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
-			  	
-				if( run_time >= delayTime )
-					run_time -= delayTime;
-				else
-					run_time = 0;
-			}
-			response(true);
-		  	
-		} // end else (mt_plan
-	  	
 		break;
 
-	//command 27 reset limits and program positions
+	//Command 27 reset limits and program positions
 	case 27:
 		motor[subaddr - 1].homeSet();
 		motor[subaddr - 1].endPos(0);
@@ -1176,25 +1142,25 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//command 28 automatically sets the motor to the highest resolution microstepping possible given program parameters
+	//Command 28 automatically sets the motor to the highest resolution microstepping possible given program parameters
 	//The command will respond with the value that is selected or with 0 if a program is in progress or the selected motor is running.
 	case 28:
 		response(true, msAutoSet(subaddr - 1));
 		break;
 
-	//command 29 sets the motor's start position to its current position
+	//Command 29 sets the motor's start position to its current position
 	case 29:
 		motor[subaddr - 1].startPos(motor[subaddr - 1].currentPos());
 		response(true);
 		break;
 
-	//command 30 sets the motor's start position to its current position
+	//Command 30 sets the motor's start position to its current position
 	case 30:
 		motor[subaddr - 1].stopPos(motor[subaddr - 1].currentPos());
 		response(true);
 		break;
 
-	//command 40 sets the motor's key frame lead-in
+	//Command 40 sets the motor's key frame lead-in
 	case 40:
 	{
 			   uint8_t frame = input_serial_buffer[0];
@@ -1202,7 +1168,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyLead(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   if (usb_debug && DB_GEN_SER){
+			   if (usb_debug & DB_GEN_SER){
 				   USBSerial.print("Motor ");
 				   USBSerial.print(subaddr - 1);
 				   USBSerial.print(" lead-in set to ");
@@ -1214,7 +1180,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   break;
 	}
 
-	//command 41 sets the motor's key frame acceleration
+	//Command 41 sets the motor's key frame acceleration
 	case 41:
 	{
 			   uint8_t frame = input_serial_buffer[0];
@@ -1222,7 +1188,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyAccel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   if (usb_debug && DB_GEN_SER){
+			   if (usb_debug & DB_GEN_SER){
 				   USBSerial.print("Motor ");
 				   USBSerial.print(subaddr - 1);
 				   USBSerial.print(" accel set to ");
@@ -1234,7 +1200,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   break;
 	}
 
-	//command 42 sets the motor's key frame deceleration
+	//Command 42 sets the motor's key frame deceleration
 	case 42:
 	{
 			   uint8_t frame = input_serial_buffer[0];
@@ -1242,7 +1208,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyDecel(frame, Node.ntoul(input_serial_buffer));
 			   response(true);
 
-			   if (usb_debug && DB_GEN_SER){
+			   if (usb_debug & DB_GEN_SER){
 				   USBSerial.print("Motor ");
 				   USBSerial.print(subaddr - 1);
 				   USBSerial.print(" decel set to ");
@@ -1254,7 +1220,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   break;
 	}
 
-	//command 43 sets the motor's key frame arrival time
+	//Command 43 sets the motor's key frame arrival time
 	case 43:
 	{
 			   uint8_t frame = input_serial_buffer[0];
@@ -1262,7 +1228,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   motor[subaddr - 1].keyTime(frame, Node.ntoui(input_serial_buffer));
 			   response(true);
 
-			   if (usb_debug && DB_GEN_SER){
+			   if (usb_debug & DB_GEN_SER){
 				   USBSerial.print("Motor ");
 				   USBSerial.print(subaddr - 1);
 				   USBSerial.print(" time set to ");
@@ -1273,6 +1239,63 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   break;
 	}    
+
+		//Command 25 steps forward one planned cycle for SMS
+	case 50:
+		// step forward one interleaved (sms) plan cycle
+
+		if (!motor[subaddr - 1].mt_plan) {
+			response(false);
+		}
+		else {
+			// dig this?  We advance one frame by simply turning on autopausing
+			// and then playing.  This is a convienence function for clients,
+			// rather than forcing them to run both commands.
+
+			// go ahead and make sure we fire immediately
+			camera_tm = millis() - Camera.interval;
+
+			motor[subaddr - 1].autoPause = true;
+			startProgram();
+			response(true);
+		}
+
+		break;
+
+		//Command 26 steps back one sms planed cycle
+	case 51:
+		// step back one interleaved (sms) plan cycle
+
+		// return an error if we don't actually have a planned move
+		if (!motor[subaddr - 1].mt_plan)
+			response(false);
+		else {
+			if (motor[subaddr - 1].planLeadIn() > 0 && camera_fired < motor[subaddr - 1].planLeadIn()) {
+				// do not reverse the plan, the motor isn't supposed to move here
+			}
+			else {
+				// rollback one shot in the program
+				if (camera_fired > 0)
+					camera_fired--;
+
+				motor[subaddr - 1].planReverse();
+				startISR();
+			}
+
+			// need to decrease run time counter
+			{
+				unsigned long delayTime = (Camera.interval > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.interval : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
+
+				if (run_time >= delayTime)
+					run_time -= delayTime;
+				else
+					run_time = 0;
+			}
+			response(true);
+
+		} // end else (mt_plan
+
+		break;
 
     
     //*****************MOTOR READ COMMANDS********************
@@ -1315,7 +1338,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 107 reads whether the motor is currently running
 	case 107:
 		response(true, motor[subaddr - 1].running());
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Motor running? ");
 			USBSerial.println(motor[subaddr - 1].running());
 		}
@@ -1373,7 +1396,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 117 returns whether the specified motor can achieve the speed required by the currently set program parameters
 	case 118:
-		response(true, validateProgram(subaddr - 1));
+		response(true, validateProgram(subaddr - 1, false));
+
+	//Command 119 reads the motor's lead-out shots count
+	case 119:
+		response(true, motor[subaddr - 1].planLeadOut());
+		break;
 
     //Error    
     default: 
@@ -1421,7 +1449,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 6 set camera's max shots 
     case 6:
       Camera.maxShots = Node.ntoui(input_serial_buffer);
-	  if (usb_debug && DB_GEN_SER){
+	  if (usb_debug & DB_GEN_SER){
 		  USBSerial.print("Max shots: ");
 		  USBSerial.println(Camera.maxShots);
 	  }
@@ -1509,7 +1537,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 109 gets the number of shots fired 
 	case 109:
 		response(true, camera_fired);
-		if (usb_debug && DB_GEN_SER){
+		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Camera fired: ");
 			USBSerial.println(camera_fired);
 		}
