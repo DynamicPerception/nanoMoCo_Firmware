@@ -300,7 +300,7 @@ int validateProgram(byte p_motor, bool p_autosteps) {
 	// If the requested speed is too high, send error value, don't change microstepping setting
 	if (comparison_speed >= MAX_CUTOFF ) {
 		//USBSerial.println("Excessive speed requested");
-		return (int) round(comparison_speed);
+		return 0;
 	}
 	else {
 		// Return the appropriate microstep value if called from msAutoSet(), otherwise return true for OK
@@ -313,7 +313,7 @@ int validateProgram(byte p_motor, bool p_autosteps) {
 				return SIXTHEENTH;
 		}
 		else
-			return (int)round(comparison_speed);
+			return 1;
 	}
 
 }
