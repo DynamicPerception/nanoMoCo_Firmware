@@ -68,6 +68,13 @@ See dynamicperception.com for more information
   greater than or equal to 1.  
        
 */
+
+/* Handles Node 1 Commands
+
+only Node1 goes through this function, determines which node
+to respond to
+
+*/
     
     
 /* Handles Node 1 Commands
@@ -1394,9 +1401,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, motor[subaddr - 1].sleep());
 		break;
 
-	//Command 117 returns whether the specified motor can achieve the speed required by the currently set program parameters
+	//Command 118 returns whether the specified motor can achieve the speed required by the currently set program parameters
 	case 118:
 		response(true, validateProgram(subaddr - 1, false));
+		break;
 
 	//Command 119 reads the motor's lead-out shots count
 	case 119:

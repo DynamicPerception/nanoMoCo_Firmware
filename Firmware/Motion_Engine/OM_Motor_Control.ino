@@ -233,10 +233,10 @@ byte validateProgram() {
 
 	byte validation = B00000000;
 
-	// If any of the motors fail validation, return false
+	// If a motor is valid, mark that bit true
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		if (validateProgram(i, false) == true)
-			validation &= 1 << i;
+		if (validateProgram(i) == true)
+			validation |= (1 << i);
 	}
 
 	// Return byte indicating status of all three motors
@@ -252,7 +252,7 @@ p_motor: Motor to check (0 through MOTOR_COUNT)
 
 */
 
-int validateProgram(byte p_motor) {
+byte validateProgram(byte p_motor) {
 	return validateProgram(p_motor, false);
 }
 
@@ -267,8 +267,7 @@ p_autosteps:	Optional parameter. Function will return required microstep setting
 
 */
 
-
-int validateProgram(byte p_motor, bool p_autosteps) {
+byte validateProgram(byte p_motor, bool p_autosteps) {
 	
 	//USBSerial.println("Break 1");
 	// The microstepping cutoff values below are in 16th steps
@@ -276,7 +275,7 @@ int validateProgram(byte p_motor, bool p_autosteps) {
 	const int QUARTER_CUTOFF = 8000;
 	const int EIGHTH_CUTOFF = 4000;
 	float comparison_speed;
-
+	
 	// For time lapse SMS mode
 	if (motor[p_motor].planType() == SMS) {
 
@@ -292,8 +291,14 @@ int validateProgram(byte p_motor, bool p_autosteps) {
 	}
 
 	// For time lapse continuous mode and video continuous mode
-	else if (motor[p_motor].planType() == CONT_TL || motor[p_motor].planType() == CONT_VID) {
+	else if (motor[p_motor].planType() != SMS) {
 		comparison_speed = motor[p_motor].getTopSpeed();
+	}
+
+	// USB print the debug value, if necessary
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print("Top speed requested: ");
+		USBSerial.println(comparison_speed);
 	}
 
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
