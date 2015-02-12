@@ -89,9 +89,37 @@ void motor_com_line(unsigned int p_time) {
   }
 }
 
+/*
+void motorSleep(byte p_motor, bool p_sleep)
+
+Sets and saves motor sleep state
+
+p_motor: Which motor to set the sleep state (0,1,2)
+p_sleep: Sleep state (true/false)
+
+*/
+
+void motorSleep(byte p_motor, bool p_sleep) {
+	motor[p_motor].sleep(p_sleep);
+	OMEEPROM::write(EE_SLEEP_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), p_sleep);
+}
 
 /*
-	startProgramCom()
+byte motorSleep(byte p_motor)
+
+Returns the sleep state of the selected motor
+
+p_motor: Which motor to query the sleep state of (0,1,2)
+
+*/
+
+byte motorSleep(byte p_motor) {
+	return motor[p_motor].sleep();
+}
+
+
+/*
+	void startProgramCom()
 
 	Runs all pre-program checks after a start program command is received from a master device. 
 	Actual motor movement is started by calling startProgram() at the end of this function.
@@ -223,7 +251,7 @@ void startProgramCom() {
 }
 
 /*
-validateProgram()
+byte validateProgram()
 
 Checks all motors to see if they can achieve the speed required given the current program parameters.
 
@@ -244,7 +272,7 @@ byte validateProgram() {
 }
 
 /*
-validateProgram(byte p_motor)
+byte validateProgram(byte p_motor)
 
 Checks specified motor to see if it can achieve the speed required given the current program parameters.
 
@@ -258,7 +286,7 @@ byte validateProgram(byte p_motor) {
 
 
 /*
-validateProgram(byte p_motor, bool p_autosteps)
+byte validateProgram(byte p_motor, bool p_autosteps)
 
 Checks specified motor to see if it can achieve the speed required given the current program parameters.
 
@@ -324,7 +352,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 }
 
 /*
-msAutoSet(uint8_t p_motor_number)
+byte msAutoSet(uint8_t p_motor_number)
 
 Set the appropriate microstep value for the motor based upon currently set program move parameters.
 
@@ -352,7 +380,7 @@ byte msAutoSet(uint8_t p_motor) {
 			motor[p_motor].ms(microsteps);
 
 		// Save the microstep settings
-		eepromWrite();
+		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
 		// USB print the debug value, if necessary
 		if (usb_debug & DB_GEN_SER){
@@ -373,7 +401,7 @@ byte msAutoSet(uint8_t p_motor) {
 }
 
 /*
-joystickSet(byte p_input)
+void joystickSet(byte p_input)
 
 Sets joystick mode on or off. If turning off joystick mode, watchdog mode is also turned off automatically.
 
@@ -401,7 +429,7 @@ void joystickSet(byte p_input) {
 }
 
 /**
-joystickSet()
+byte joystickSet()
 
 Returns joystick mode status
 
@@ -413,7 +441,7 @@ byte joystickSet() {
 
 
 /**
-pingPongMode(byte p_input)
+void pingPongMode(byte p_input)
 
 Sets ping-pong mode on or off.
 
@@ -432,7 +460,7 @@ void pingPongMode(byte p_input) {
 
 
 /**
-pingPongMode()
+byte pingPongMode()
 
 Returns ping-pong mode status
 

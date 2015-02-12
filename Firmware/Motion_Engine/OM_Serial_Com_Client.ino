@@ -275,7 +275,7 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 		USBSerial.println("Setting new address!");
 	  if (buf[0] <= 255 && buf[0] >= 2){
 		  	device_address = buf[0];
-			eepromWrite();
+			OMEEPROM::write(EE_ADDR, device_address);
 			Node.address(device_address);
 			NodeBlue.address(device_address);
 			flasher(DEBUG_PIN, 5);	
@@ -896,7 +896,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 2 set the sleep mode of the motor
 	case 2:
-		motor[subaddr - 1].sleep(input_serial_buffer[0]);
+		motorSleep((subaddr - 1), input_serial_buffer[0]);
 		response(true);
 		break;
     
@@ -1398,7 +1398,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
    
 	//Command 117 reads the program sleep state
 	case 117:
-		response(true, motor[subaddr - 1].sleep());
+		response(true, motorSleep(subaddr - 1));
 		break;
 
 	//Command 118 returns whether the specified motor can achieve the speed required by the currently set program parameters

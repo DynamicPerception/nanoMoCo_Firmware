@@ -121,20 +121,23 @@ const int EE_END_0   = EE_POS_0   + 4;		// Motor 0 end limit position (long int)
 const int EE_START_0 = EE_END_0   + 4;		// Motor 0 program start position (long int)
 const int EE_STOP_0  = EE_START_0 + 4;		// Motor 0 program stop position (long int)
 const int EE_MS_0    = EE_STOP_0  + 4;		// Motor 0 microstep value (byte)
+const int EE_SLEEP_0 = EE_MS_0    + 1;		// Motor 0 sleep state (byte)
 
-const int EE_POS_1   = EE_MS_0    + 1;		// Motor 1 current position (long int)
+const int EE_POS_1   = EE_SLEEP_0 + 1;		// Motor 1 current position (long int)
 const int EE_END_1   = EE_POS_1   + 4;		// Motor 1 end limit position (long int)
 const int EE_START_1 = EE_END_1   + 4;		// Motor 1 program start position (long int)
 const int EE_STOP_1  = EE_START_1 + 4;		// Motor 1 program stop position (long int)
 const int EE_MS_1    = EE_STOP_1  + 4;		// Motor 1 microstep value (byte)
+const int EE_SLEEP_1 = EE_MS_1    + 1;		// Motor 0 sleep state (byte)
 
-const int EE_POS_2   = EE_MS_1    + 1;		// Motor 2 current position (long int)
+const int EE_POS_2   = EE_SLEEP_1 + 1;		// Motor 2 current position (long int)
 const int EE_END_2   = EE_POS_2   + 4;		// Motor 2 end limit position (long int)
 const int EE_START_2 = EE_END_2   + 4;		// Motor 2 program start position (long int)
 const int EE_STOP_2  = EE_START_2 + 4;		// Motor 2 program stop position (long int)
 const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
+const int EE_SLEEP_2 = EE_MS_2    + 1;		// Motor 0 sleep state (byte)
 
-const int EE_MOTOR_MEMORY_SPACE = 17;		//Number of bytes required for storage for each motor's variables
+const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
 
 
 //temp values for EEPROM
