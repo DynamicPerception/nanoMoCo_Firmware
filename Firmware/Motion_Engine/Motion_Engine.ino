@@ -47,7 +47,7 @@ See dynamicperception.com for more information
 const char SERIAL_TYPE[] = "OMAXISVX";
 
   // serial api version
-const int SERIAL_VERSION = 26;
+const int SERIAL_VERSION = 27;
 
   // # of flashes of debug led at startup
 const byte START_FLASH_CNT = 5;
