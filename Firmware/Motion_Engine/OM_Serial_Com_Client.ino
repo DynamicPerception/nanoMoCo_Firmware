@@ -798,7 +798,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 129:
 		response(true, validateProgram());
 		break;
-		
+
+	//Command 130 checks the sleep state of all motors
+	case 130:
+		response(true, motorSleep());
+		break;		
 
 	//Command 254 sets the USB debug reporting state
 	case 254:

@@ -90,6 +90,26 @@ void motor_com_line(unsigned int p_time) {
 }
 
 /*
+byte motorSleep()
+
+Returns the sleep state of all motors, where the state of each motor is 
+indicated by the boolean state of bits 0, 1, and 2 of the returned byte.
+
+*/
+
+byte motorSleep() {
+	
+	byte sleep_state = B000;
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (motorSleep(i) == true)
+			sleep_state |= (1 << i);
+	}
+
+	return sleep_state;
+}
+
+/*
 void motorSleep(byte p_motor, bool p_sleep)
 
 Sets and saves motor sleep state
