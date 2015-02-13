@@ -316,8 +316,6 @@ p_autosteps:	Optional parameter. Function will return required microstep setting
 */
 
 byte validateProgram(byte p_motor, bool p_autosteps) {
-	
-	//USBSerial.println("Break 1");
 	// The microstepping cutoff values below are in 16th steps
 	const int MAX_CUTOFF = 16000;
 	const int QUARTER_CUTOFF = 8000;
@@ -472,7 +470,7 @@ p_input: True or false setting.
 void pingPongMode(byte p_input) {
 
 	// Ignore non-true/false input
-	if (p_input != 0 || p_input != 1)
+	if (p_input != 0 && p_input != 1)
 		return;
 
 	ping_pong_mode = p_input;

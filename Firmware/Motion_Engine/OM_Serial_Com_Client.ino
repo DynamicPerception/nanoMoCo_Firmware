@@ -741,7 +741,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 			else
 				USBSerial.println("False");
 		}
-		response(true, ping_pong_mode);
+		response(true, pingPongMode());
 		break;
 
 	//Command 122 reads the joystick watchdog mode status
