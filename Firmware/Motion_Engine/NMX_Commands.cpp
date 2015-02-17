@@ -4,12 +4,12 @@
 
 #include "NMX_Commands.h"
 
-void NMX_CommandsClass::init()
-{
+// Declare the structs containing the command names and codes
 
-
-}
-
-
-NMX_CommandsClass NMX_Command_Library;
-
+NMX_Aux_Commands aux;
+NMX_Broadcast_Commands bcast;
+NMX_Camera_Commands cam;
+NMX_Debug_Commands debug;
+NMX_General_Commands gen;
+NMX_Motor_Commands mot;
+NMX_Program_Commands pro;
