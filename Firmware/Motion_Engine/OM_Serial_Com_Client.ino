@@ -804,6 +804,25 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, motorSleep());
 		break;		
 
+	/*********************************
+
+		Commands for DP Belt Cutter
+		
+	**********************************/
+
+
+	//Command 200 sets the number of times the belt cutter should repeat an operation
+	case 200:
+		cutterRepeats(input_serial_buffer[0]);
+		response(true);
+		break;
+
+	//Command 201 executes the requested belt cutter operation. If an auto-execute function is requested, it repeats the set number of times
+	case 201:
+		response(true);
+		runCutter(input_serial_buffer[0]);
+		break;
+
 	//Command 254 sets the USB debug reporting state
 	case 254:
 	{
@@ -1030,27 +1049,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	 //Command 15 move motor simple  
 	case 15:
 	{
-			   // set direction
+			   // get motor
+			   byte motor = subaddr - 1;
+			   // get direction
 			   byte dir = input_serial_buffer[0];
 			   input_serial_buffer++;
-
-			   // if in joystick mode, check whether the speed is currently set to zero and needs to change
-			   if (joystick_mode && motor[subaddr - 1].desiredSpeed() < 1.0 && motor[subaddr - 1].desiredSpeed() > - 1.0) {
-				   if (dir == 1)
-					   motor[subaddr - 1].contSpeed(10);
-				   else
-					   motor[subaddr - 1].contSpeed(-10);
-			   }
-
-			   // how many steps to take
+			   // get distance
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
-
-			   // move
-			   if (steps == 0)
-				 motor[subaddr - 1].continuous(true);
-				
-			   motor[subaddr - 1].move(dir, steps);
-			   startISR();
+			   simpleMove(motor, dir, steps);
 
 			   response(true);
 			   break;

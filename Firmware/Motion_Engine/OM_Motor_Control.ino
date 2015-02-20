@@ -36,6 +36,24 @@ See dynamicperception.com for more information
 const byte MT_COM_DIR1 = 50;
 const byte MT_COM_DIR2 = 100;
 
+void simpleMove(byte p_motor,  byte p_dir, unsigned long p_steps) {
+	 
+			   // if in joystick mode, check whether the speed is currently set to zero and needs to change
+			   if (joystick_mode && motor[p_motor].desiredSpeed() < 1.0 && motor[p_motor].desiredSpeed() > - 1.0) {
+				   if (p_dir == 1)
+					   motor[p_motor].contSpeed(10);
+				   else
+					   motor[p_motor].contSpeed(-10);
+			   }
+
+			   // set continuous mode, if necessary
+			   if (p_steps == 0)
+				   motor[p_motor].continuous(true);
+				
+			   motor[p_motor].move(p_dir, p_steps);
+			   startISR();
+}
+
 void move_motor() {
 
     // do we revert back to "ready" or "waiting" if there
