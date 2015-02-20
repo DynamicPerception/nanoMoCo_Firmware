@@ -25,7 +25,7 @@ See dynamicperception.com for more information
 */
 
 
-#include "NMX_Command_Library.h"
+//#include "NMX_Commands.h"
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>

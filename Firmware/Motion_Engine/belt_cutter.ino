@@ -4,12 +4,8 @@
 
 *****************************/
 
-
-// Enum the constants used for the belt cutter commands
-enum cutter_constants { FORWARD_6IN, FORWARD_12IN, BACK_6IN, BACK_12IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15 };
-
 const byte CUTTER_MOTOR = 0; // The belt cutter only has one motor, so always use motor 0
-byte cutter_repeats = 0;
+byte feed_count = 0;
 
 
 /****************************
@@ -27,23 +23,64 @@ Set the number of times to repeat the requested automated belt cutter function.
 
 */
 
-void cutterRepeats(byte p_count) {
-	cutter_repeats = p_count;
+void cutterFeedCount(byte p_count) {
+	feed_count = p_count;
+
+	if (usb_debug & DB_COM_OUT){
+		USBSerial.print("Cutter feed count set: ");
+		USBSerial.println(feed_count);
+	}
 }
 
 
 /*
 
-byte cutterRepeats() {
+byte cutterFeedCount() {
 
 Gets the number of times to repeat the requested automated belt cutter function.
 
 */
 
-byte cutterRepeats() {
-	return cutter_repeats;
+byte cutterFeedCount() {
+
+	if (usb_debug & DB_COM_OUT){
+		USBSerial.print("Cutter feed count set: ");
+		USBSerial.println(feed_count);
+	}
+	return feed_count;
 }
 
+/*
+
+void runCutter(byte p_feet, byte p_inches, byte dir, bool p_cut = false, byte p_repeats = 0)
+
+Executes belt cutter moves.
+
+p_feet:						Number of feet to feed
+p_inches:					Number of inches to feed
+p_dir:						Motor direction
+p_cut (optional):			Whether to actuate the cutter after feeding (default = false)
+p_feed_count (optional):	Number of times the action should be executed (default = 0)
+
+*/
+
+void runCutter(byte p_feet, byte p_inches, byte dir, bool p_cut = false, byte p_feed_count = 1) {
+	
+	if (usb_debug & DB_COM_OUT){
+		USBSerial.println("Running cutterSerial()");
+	}
+
+	// Execute the move the requested number of times
+	for (byte i = 0; i < p_feed_count; i++) {
+		simpleMove(CUTTER_MOTOR, dir, stepCalculator(p_feet, p_inches));
+		while (motor[CUTTER_MOTOR].running()) {
+			// Wait until motor is done running to proceed
+		}
+		if (p_cut)
+			cutBelt();
+	}
+
+}
 
 /*
 
@@ -68,13 +105,25 @@ The possible values for this parameter are populated in enum cutter_constants.
 */
 
 void cutterSerial(byte p_cutter_command) {
+	
+	if (usb_debug & DB_COM_OUT){
+		USBSerial.println("Running cutterSerial()");
+		USBSerial.print("Incoming command: ");
+		USBSerial.println(p_cutter_command);
+	}
+	
+	// Enum the constants used for the belt cutter commands
+	enum cutter_constants { FORWARD_6IN, FORWARD_12IN, BACK_6IN, BACK_12IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15 };
+
 	const byte FORWARD = 1;
 	const byte BACK = 0;
 
 	// Set the bet cutter motor to full stepping for fastest operation.  Also, the stepCalculator calculates in full steps,
 	// so it needs to be in full stepping to produce an accurate belth length.
-	motor[CUTTER_MOTOR].ms(1);
-	motor[CUTTER_MOTOR].contSpeed(4000); // Set the motor to a high, but reasonable speed
+	motor[CUTTER_MOTOR].enable(true);
+	motor[CUTTER_MOTOR].ms(2);
+	motor[CUTTER_MOTOR].contSpeed(4500); // Set the motor to a high, but reasonable speed
+	motor[CUTTER_MOTOR].continuous(false);
 
 	switch (p_cutter_command) {
 		case FORWARD_6IN:
@@ -93,56 +142,27 @@ void cutterSerial(byte p_cutter_command) {
 			cutBelt();
 			break;
 		case AUTO_4:
-			runCutter(4, 0, FORWARD, true, cutterRepeats());
+			runCutter(4, 0, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_6:
-			runCutter(6, 0, FORWARD, true, cutterRepeats());
+			runCutter(6, 0, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_12:
-			runCutter(12, 0, FORWARD, true, cutterRepeats());
+			runCutter(12, 0, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_15:
-			runCutter(15, 0, FORWARD, true, cutterRepeats());
+			runCutter(15, 0, FORWARD, true, cutterFeedCount());
 			break;
 	}
-}
-
-
-/*
-
-void runCutter(byte p_feet, byte p_inches, byte dir, bool p_cut = false, byte p_repeats = 0)
-
-Executes belt cutter moves. 
-
-p_feet:					Number of feet to feed
-p_inches:				Number of inches to feed
-p_dir:					Motor direction
-p_cut (optional):		Whether to actuate the cutter after feeding (default = false)	
-p_repeats (optional):	Number of times the action should be repeated (default = 0)
-
-*/
-
-void runCutter(byte p_feet, byte p_inches, byte dir, bool p_cut = false, byte p_repeats = 0) {
-	
-	// Execute the move the requested number of times
-	for (byte i = 0; i < p_repeats; i++) {
-		simpleMove(CUTTER_MOTOR, dir, stepCalculator(p_feet, p_inches));
-		while (motor[CUTTER_MOTOR].running()) {
-			// Wait until motor is done running to proceed
-		}
-		if (p_cut)
-			cutBelt();
-	}
-	
 }
 
 /*
 
 unsigned long stepCalculator(int p_feet, int p_inches)
 
-Returns the number of *full* steps needed to move the requested distance. This
-is primarily meant for the DP belt cutter, but could be enchanced later for general
-purpose, fixed distance moves.
+Returns the number of steps (based on motor's current microstep setting) needed to move 
+the requested distance. This is primarily meant for the DP belt cutter, but could be 
+enchanced later for general purpose, absolute distance moves.
 
 */
 
@@ -162,8 +182,12 @@ unsigned long stepCalculator(int p_feet, int p_inches) {
 
 	float steps_per_inch = (MM_PER_INCH * GEAR_RATIO * STEPS_PER_ROT) / (TOOTH_PITCH * TOOTH_COUNT);
 	int inches = (p_feet * INCHES_PER_FOOT) + p_inches;
-	unsigned long steps = (unsigned long)round(steps_per_inch * (float)inches);
+	unsigned long steps = (unsigned long)round(steps_per_inch * (float)inches) * motor[CUTTER_MOTOR].ms();
 
+	if (usb_debug & DB_COM_OUT){
+		USBSerial.print("Calculated step length: ");
+		USBSerial.println(steps);
+	}
 	return steps;
 }
 

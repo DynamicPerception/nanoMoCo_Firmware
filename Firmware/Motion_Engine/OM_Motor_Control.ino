@@ -37,21 +37,41 @@ const byte MT_COM_DIR1 = 50;
 const byte MT_COM_DIR2 = 100;
 
 void simpleMove(byte p_motor,  byte p_dir, unsigned long p_steps) {
-	 
-			   // if in joystick mode, check whether the speed is currently set to zero and needs to change
-			   if (joystick_mode && motor[p_motor].desiredSpeed() < 1.0 && motor[p_motor].desiredSpeed() > - 1.0) {
-				   if (p_dir == 1)
-					   motor[p_motor].contSpeed(10);
-				   else
-					   motor[p_motor].contSpeed(-10);
-			   }
+	
+	if (usb_debug & DB_COM_OUT) {
+		USBSerial.println("Running simpleMove()");
+		USBSerial.print("Motor: ");
+		USBSerial.println(p_motor);
+		USBSerial.print("Dir: ");
+		USBSerial.println(p_dir);
+		USBSerial.print("Steps: ");
+		USBSerial.println(p_steps);
+		USBSerial.print("Speed (steps/s): ");
+		USBSerial.println(motor[p_motor].desiredSpeed());
+		USBSerial.println("");
+	}
 
-			   // set continuous mode, if necessary
-			   if (p_steps == 0)
-				   motor[p_motor].continuous(true);
+	// if in joystick mode, check whether the speed is currently set to zero and needs to change
+	if (joystick_mode && motor[p_motor].desiredSpeed() < 1.0 && motor[p_motor].desiredSpeed() > - 1.0) {
+		if (usb_debug & DB_COM_OUT)
+			USBSerial.println("simpleMove() if 1");
+		if (p_dir == 1)
+			motor[p_motor].contSpeed(10);
+		else
+			motor[p_motor].contSpeed(-10);
+	}
+
+	// set continuous mode, if necessary
+	if (p_steps == 0){
+		if (usb_debug & DB_COM_OUT)
+			USBSerial.println("simpleMove() if 2");
+		motor[p_motor].continuous(true);
+	}
+	else
+		motor[p_motor].continuous(false);
 				
-			   motor[p_motor].move(p_dir, p_steps);
-			   startISR();
+	motor[p_motor].move(p_dir, p_steps);
+	startISR();
 }
 
 void move_motor() {

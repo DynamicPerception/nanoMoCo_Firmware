@@ -813,14 +813,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 200 sets the number of times the belt cutter should repeat an operation
 	case 200:
-		cutterRepeats(input_serial_buffer[0]);
+		cutterFeedCount(input_serial_buffer[0]);
 		response(true);
 		break;
 
 	//Command 201 executes the requested belt cutter operation. If an auto-execute function is requested, it repeats the set number of times
 	case 201:
 		response(true);
-		runCutter(input_serial_buffer[0]);
+		cutterSerial(input_serial_buffer[0]);
 		break;
 
 	//Command 254 sets the USB debug reporting state
