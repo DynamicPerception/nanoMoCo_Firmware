@@ -38,7 +38,7 @@ See dynamicperception.com for more information
 
 
 // EEPROM Memory Layout Version, change this any time you modify what is stored
-const unsigned int MEMORY_VERSION = 4;
+const unsigned int MEMORY_VERSION = 5;
 
 
 

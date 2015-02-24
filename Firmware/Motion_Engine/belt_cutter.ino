@@ -5,7 +5,7 @@
 *****************************/
 
 const byte CUTTER_MOTOR = 0; // The belt cutter only has one motor, so always use motor 0
-byte feed_count = 0;
+byte feed_count = 1;
 
 
 /****************************
@@ -113,7 +113,7 @@ void cutterSerial(byte p_cutter_command) {
 	}
 	
 	// Enum the constants used for the belt cutter commands
-	enum cutter_constants { FORWARD_6IN, FORWARD_12IN, BACK_6IN, BACK_12IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15 };
+	enum cutter_constants { FORWARD_1IN, FORWARD_2IN, BACK_1IN, BACK_2IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15 };
 
 	const byte FORWARD = 1;
 	const byte BACK = 0;
@@ -121,22 +121,22 @@ void cutterSerial(byte p_cutter_command) {
 	// Set the bet cutter motor to full stepping for fastest operation.  Also, the stepCalculator calculates in full steps,
 	// so it needs to be in full stepping to produce an accurate belth length.
 	motor[CUTTER_MOTOR].enable(true);
-	motor[CUTTER_MOTOR].ms(2);
-	motor[CUTTER_MOTOR].contSpeed(4500); // Set the motor to a high, but reasonable speed
+	motor[CUTTER_MOTOR].ms(4);
+	motor[CUTTER_MOTOR].contSpeed(5000); // Set the motor to a high, but reasonable speed
 	motor[CUTTER_MOTOR].continuous(false);
 
 	switch (p_cutter_command) {
-		case FORWARD_6IN:
-			runCutter(0, 6, FORWARD);
+		case FORWARD_1IN:
+			runCutter(0, 1, FORWARD);
 			break;
-		case FORWARD_12IN:
-			runCutter(0, 12, FORWARD);
+		case FORWARD_2IN:
+			runCutter(0, 2, FORWARD);
 			break;
-		case BACK_6IN:
-			runCutter(0, 6, BACK);
+		case BACK_1IN:
+			runCutter(0, 1, BACK);
 			break;
-		case BACK_12IN:
-			runCutter(0, 12, BACK);
+		case BACK_2IN:
+			runCutter(0, 2, BACK);
 			break;
 		case CUTTER:
 			cutBelt();
@@ -216,6 +216,8 @@ void cutBelt() {
 
 	digitalWrite(AUX_TIP, HIGH);
 	// Wait half a second for the cutter to complete its operation
-	delay(500);
+	delay(300);
 	digitalWrite(AUX_TIP, LOW);
+	// Wait a moment for the cutter to move out of the way before continuing
+	delay(200);
 }

@@ -423,7 +423,7 @@ void setup() {
 	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 	  motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 	  motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
-	  motor[i].sleep(false);
+	  motor[i].sleep(true);
 	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
 	  // Set the slide motor to 4th stepping and pan/tilt motors to 16th
 	  if (i == 0)
@@ -673,42 +673,8 @@ void eStop() {
 
 		if (running && !camera_test_mode)
 			stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
-		
 		else if (running && camera_test_mode)
 			stopProgram();
-		
-		else if (!motor[0].running() && !motor[1].running() && !motor[2].running()) {
-			// If the button was pressed recently enough, increase the enable count, otherwise reset it to 0.
-			if (millis() - _time < 1500)
-				enable_count++;
-			else
-				enable_count = 1;
-			//USBSerial.print("Switch count ");
-			//USBSerial.println(_enable_count);
-
-			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
-			if (enable_count >= THRESHOLD && !external_intervalometer) {
-				limitSwitchAttach(0);
-				altConnect(1, ALT_EXTINT);
-				altSetup();
-				external_intervalometer = true;
-				enable_count = 0;
-				
-				// Turn the debug light on to confirm the setting
-				debugOn();
-			}
-			else if (enable_count >= THRESHOLD && external_intervalometer) {
-				altConnect(1, ALT_OFF);
-				altSetup();
-				external_intervalometer = false;
-				enable_count = 0;
-
-				// Turn the debug light off to confirm the setting
-				debugOff();
-			}
-			time = millis();
-		}
-
 		else
 			stopAllMotors();
 	}
