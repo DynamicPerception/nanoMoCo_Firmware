@@ -24,14 +24,18 @@ See dynamicperception.com for more information
 
 */
 
+/***************************************
+
+		   Library Includes
+
+****************************************/
 
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
-
 #include <AltSoftSerial.h>
 
-  // openmoco standard libraries
+// openmoco standard libraries
 #include <OMComHandler.h>
 #include <OMMotorMaster.h>
 #include <OMMotorFunctions.h>
@@ -43,71 +47,18 @@ See dynamicperception.com for more information
 #include <OMEEPROM.h>
 
 
+/***************************************
 
-const char SERIAL_TYPE[] = "OMAXISVX";
+	   EEPROM Address Constants
 
-  // serial api version
-const int SERIAL_VERSION = 27;
-
-  // # of flashes of debug led at startup
-const byte START_FLASH_CNT = 5;
-const byte FLASH_DELAY     = 250;
-
-  // # of milliseconds PBT must be held low to do a factory reset
-const unsigned int START_RST_TM = 5000;
-
-const byte CAM_DEFAULT_EXP      = 120;
-const byte CAM_DEFAULT_WAIT     = 0;
-const byte CAM_DEFAULT_FOCUS    = 0;
-
-const unsigned int MOT_DEFAULT_MAX_STEP  = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD   = 5000;
-const float MOT_DEFAULT_CONT_ACCEL	     = 15000.0;
-
-const unsigned int MOT_DEFAULT_BACKLASH = 0;
-
- // digital I/O line definitions
-
-const byte DE_PIN					= 28;
-const byte DEBUG_PIN				= 12;
-const byte VOLTAGE_PIN				= 42;
-const byte CURRENT_PIN				= 41;
-const byte BLUETOOTH_ENABLE_PIN		= 0;
-
-// motor count constant
-const byte MOTOR_COUNT				= 3;
-
-// plan move types
-#define SMS 0
-#define CONT_TL 1
-#define CONT_VID 2
-
-// General computational constants
-#define MILLIS_PER_SECOND	1000.0
-
-// Valid microstep settings
-#define FULL				1
-#define HALF				2
-#define QUARTER				4
-#define EIGHTH				8
-#define SIXTHEENTH			16
-
-
-bool respond_flag = false;
-unsigned int interferences = 0;
-unsigned int old_interferences = 0;
+****************************************/
 
 
 /* 
  Need to declare these as early as possible
  
- *******************************
- Mapping of Data Positions in EEPROM memory
- *******************************
-
  (position count starts at zero)
- 
- 
+  
  dev_addr        = 0
  name            = 2
  
@@ -140,165 +91,46 @@ const int EE_SLEEP_2 = EE_MS_2    + 1;		// Motor 0 sleep state (byte)
 const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
 
 
-//temp values for EEPROM
-long tempPos = 0;
-byte tempMS = 0;  
+/***************************************
 
-// default device address
-int device_address = 3;
+	Controller Constants and Vars
 
-//Motor variables
-uint8_t ISR_On = false;
+****************************************/
 
-// predefine this function to declare the default argument
-void stopProgram(uint8_t force_clear = true);
-
-
- // program timer counters
-
-unsigned long run_time    = 0;	// Amount of time since the program has started (ms)
-unsigned long last_run_time = 0; // Stores the run time, even after the program has ended
-unsigned long last_time   = 0;
-uint8_t running = false;
-volatile byte force_stop = false;
-
-//Variables for joystick move, if watchdog is true the system expects a command at least once
-//every watchdogTimeMax (mS), if it doesn't receive a command it'll stop the motors
-uint8_t watchdog = false;
-const int watchdogTimeMax = 1000;
-unsigned long commandTime = 0;
-byte joystick_mode = false;
- 
-
-  // do we generate timing for all devices on the network?
-  // i.e. -are we the timing master?
-uint8_t timing_master = true;
-
-uint8_t debug_led_enable = false;
-uint8_t stepReady = false;
-char byteFired = 0;
+const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
+const int SERIAL_VERSION			= 27;				// Serial API version
+byte node							= 1;				// default node to use (Hardware Serial = 1; AltSoftSerial = 2)
+byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
+int device_address					= 3;				// NMX address (default = 3)
+const byte START_FLASH_CNT			= 5;				// # of flashes of debug led at startup
+const byte FLASH_DELAY				= 250;				// Time between flashes in milliseconds
+const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be held low to do a factory reset
+uint8_t debug_led_enable			= false;			// Debug led state
+uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
+unsigned long loop_time				= 0;				// Timing variable used for triggering events within loop()
 
 
+/***************************************
 
- // necessary camera control variables
-unsigned int  camera_fired     = 0;
-uint8_t		  camera_test_mode = false;
-uint8_t					fps    = true;
+	  Controller I/O Pin Constants
 
-// ping pong mode variable
-uint8_t ping_pong_mode = false;
-
- // maximum run time
-unsigned long max_time = 0;
-
-// time delay for program starting
-unsigned long start_delay = 0;
-
-// pause flag for later call of pauseProgram() 
-bool pause_flag = false;
-
-// key frame variables
-int key_frames = 0;
-int current_frame = 0;
-bool key_move = false;
-
-// program completion flag
-bool program_complete = false;
-
- // default device name, exactly 9 characters + null terminator
-byte device_name[] = "DEFAULT   ";
+****************************************/
 
 
- // default node to use (Hardware Serial = 1; AltSoftSerial = 2)
-byte node =1;
-
- /*  state transitions
- 
-  ST_BLOCK - do not allow any action to occur (some event is in process, block the state engine)
-  ST_CLEAR - clear to start cycle
-  ST_MOVE  - clear to move motor
-  ST_RUN   - motor is currently running
-  ST_EXP   - clear to expose camera (or not...)
-  ST_WAIT  - in camera delay 
-  ST_ALTP  - check for alt output post 
-  
- */
- 
-const byte ST_BLOCK = 0;
-const byte ST_CLEAR = 1;
-const byte ST_MOVE  = 2;
-const byte ST_RUN   = 3;
-const byte ST_EXP   = 4;
-const byte ST_WAIT  = 5;
-const byte ST_ALTP  = 6;
-unsigned long time  = 0;
-
- // initialize core objects
-OMCamera     Camera = OMCamera();
-OMMotorFunctions motor[MOTOR_COUNT] = {
-    OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG),
- 	OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG),
- 	OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG)};
-
-OMMoCoNode   Node   = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
-OMComHandler ComMgr = OMComHandler();
-    // there are 7 possible states in 
-    // our engine (0-6)
-OMState      Engine = OMState(7);
-
-int incomingByte = 0;
-
-/*
-
-=========================================
-Debugging Variable and Associated Flags
-=========================================
-
-*/
-
-byte usb_debug			= B00000000;
-const byte DB_COM_OUT	= B00000001;
-const byte DB_STEPS		= B00000010;
-const byte DB_MOTOR		= B00000100;
-const byte DB_GEN_SER	= B00010000;
-const byte DB_FUNCT		= B00100000;
-const byte DB_CONFIRM	= B01000000;
-
-/* 
-
- =========================================
- USB Serial Variables
- =========================================
- 
-*/
-
-OMMoCoNode   NodeUSB   = OMMoCoNode(&USBSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
+// digital I/O line definitions
+const byte DE_PIN = 28;
+const byte DEBUG_PIN = 12;
+const byte VOLTAGE_PIN = 42;
+const byte CURRENT_PIN = 41;
+const byte BLUETOOTH_ENABLE_PIN = 0;
 
 
-/* 
+/***************************************
 
- =========================================
- Bluetooth Variables
- =========================================
- 
-*/
+	  Aux Port Constants and Vars
 
+****************************************/
 
-AltSoftSerial altSerial;
-OMMoCoNode   NodeBlue   = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*) SERIAL_TYPE);
-
-int timeStart = 0;
-int timeEnd = 0;
-
-
-
-/* 
-
- =========================================
- Aux I/O Variables
- =========================================
- 
-*/
 
 // I/O modes
 const byte         ALT_OFF = 0;		//Turns off the I/O
@@ -324,294 +156,429 @@ uint8_t        altForceShot = false;
 uint8_t           altExtInt = false;
 byte           altDirection = FALLING;
 byte             altOutTrig = HIGH;
+bool external_intervalometer = false;	// Indicates whether the aux port has been set to external trigger mode via physical button press
 
-//Temp variable for storing information for node response
-int temp = 0;
-bool external_intervalometer = false;
+
+/***************************************
+
+	    Camera Constants and Vars
+
+****************************************/
+
+
+// Default camera settings
+const byte CAM_DEFAULT_EXP		= 120;
+const byte CAM_DEFAULT_WAIT		= 0;
+const byte CAM_DEFAULT_FOCUS	= 0;
+
+// necessary camera control variables
+unsigned int  camera_fired		= 0;
+uint8_t		  camera_test_mode	= false;
+uint8_t		  fps				= true;
+
+
+/***************************************
+
+		Motor Constants and Vars
+
+****************************************/
+
+
+// Deafult motor settings
+const unsigned int MOT_DEFAULT_MAX_STEP = 5000;
+const unsigned int MOT_DEFAULT_MAX_SPD = 5000;
+const float MOT_DEFAULT_CONT_ACCEL = 15000.0;
+const unsigned int MOT_DEFAULT_BACKLASH = 0;
+const byte MOTOR_COUNT = 3;
+
+// plan move types
+#define SMS				0		// Shoot-move-shoot mode
+#define CONT_TL			1		// Continuous time lapse mode
+#define CONT_VID		2		// Continuous video mode
+
+// Valid microstep settings
+#define FULL			1
+#define HALF			2
+#define QUARTER			4
+#define EIGHTH			8
+#define SIXTHEENTH		16
+
+uint8_t ISR_On = false;
+char byteFired = 0;				// Byte used to toggle the step pin for each motor within the ISR
+
+
+/***************************************
+
+	General Computational Constants
+
+****************************************/
+
+
+#define MILLIS_PER_SECOND	1000.0
+
+
+/***************************************
+
+	   Program Constants and Vars
+
+****************************************/
+
+
+// program timer counters
+unsigned long run_time		= 0;				// Amount of time since the program has started (ms)
+unsigned long last_run_time = 0;				// Stores the run time, even after the program has ended
+unsigned long start_time	= 0;				// Current time when program starts
+uint8_t running				= false;			// Program run status
+volatile byte force_stop	= false;	
+uint8_t ping_pong_mode		= false;			// ping pong mode variable
+unsigned long max_time		= 0;				// maximum run time
+unsigned long start_delay	= 0;				// Time delay for program starting
+bool pause_flag				= false;			// pause flag for later call of pauseProgram() 
+bool program_complete		= false;			// program completion flag
+
+void stopProgram(uint8_t force_clear = true);	// Predefine this function to declare the default argument
+
+
+/***************************************
+
+    Joystick Mode Constants and Vars
+
+****************************************/
+
+
+//Variables for joystick move, if watchdog is true the system expects a command at least once
+//every WATCHDOG_MAX_TIME (mS), if it doesn't receive a command it'll stop the motors
+const unsigned int WATCHDOG_MAX_TIME = 1000;
+uint8_t watchdog = false;
+unsigned long commandTime = 0;
+byte joystick_mode = false;
+
+
+/***************************************
+
+	  Key-frame Constants and Vars
+
+****************************************/
+
+
+/*** Key frames have not yet been implemented  ***/
+
+int key_frames = 0;
+int current_frame = 0;
+bool key_move = false;
+
+
+/***************************************
+
+Debugging Constants and Associated Flags
+
+****************************************/
+
+
+byte usb_debug = B00000000;
+const byte DB_COM_OUT = B00000001;
+const byte DB_STEPS = B00000010;
+const byte DB_MOTOR = B00000100;
+const byte DB_GEN_SER = B00010000;
+const byte DB_FUNCT = B00100000;
+const byte DB_CONFIRM = B01000000;
+
+
+/***************************************
+
+	     Object Initialization
+
+****************************************/
+
+
+AltSoftSerial altSerial;																			// altSerial library object
+OMMoCoNode   NodeBlue = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*)SERIAL_TYPE);	// Bluetooth Node Object
+OMMoCoNode   NodeUSB = OMMoCoNode(&USBSerial, device_address, SERIAL_VERSION, (char*)SERIAL_TYPE);	// USB Serial Node Object
+OMMoCoNode   Node = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*)SERIAL_TYPE);		// MoCoBus Node object
+OMComHandler ComMgr = OMComHandler();																// Communications handler object
+OMCamera     Camera = OMCamera();																	// Camera object
+OMMotorFunctions motor[MOTOR_COUNT] = {																// Motor object
+	OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG),
+	OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG),
+	OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG) };
+
+OMState      Engine = OMState(7);			// State engine object with 7 possible states. See state declarations below.
+
+ //  state transitions 
+const byte ST_BLOCK = 0;	// ST_BLOCK - do not allow any action to occur (some event is in process, block the state engine)
+const byte ST_CLEAR = 1;	// ST_CLEAR - clear to start cycle
+const byte ST_MOVE  = 2;	// ST_MOVE  - clear to move motor
+const byte ST_RUN   = 3;	// ST_RUN   - motor is currently running
+const byte ST_EXP   = 4;	// ST_EXP   - clear to expose camera (or not...)
+const byte ST_WAIT  = 5;	// ST_WAIT  - in camera delay
+const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
 
 
 /* 
 
  =========================================
- Setup and loop functions
+		Setup and loop functions
  =========================================
  
 */
 
 
-
 void setup() {
 
-   //altSerial.begin(9600);
-	
-  USBSerial.begin(19200);
-  delay(100);
+	// Start USB serial communications
+	USBSerial.begin(19200);
+	delay(100);
   
-  altSerial.begin(9600);
-  time = millis();
+	// Start Bluetooth communications
+	altSerial.begin(9600);
 
-  if (usb_debug & DB_FUNCT)
+	loop_time = millis();
+
+	if (usb_debug & DB_FUNCT)
 	USBSerial.println("Done setting things up!");
-
-
-  pinMode(DEBUG_PIN, OUTPUT);
-  pinMode(BLUETOOTH_ENABLE_PIN, OUTPUT);
-  digitalWrite(BLUETOOTH_ENABLE_PIN,HIGH);
-  pinMode(VOLTAGE_PIN, INPUT);
-  pinMode(CURRENT_PIN, INPUT);
-
-    
-
-
-  // initalize state engine
- setupControlCycle();
- Engine.state(ST_BLOCK);
+  
+	// Set controller I/O pin modes
+	pinMode(DEBUG_PIN, OUTPUT);
+	pinMode(BLUETOOTH_ENABLE_PIN, OUTPUT);
+	digitalWrite(BLUETOOTH_ENABLE_PIN,HIGH);
+	pinMode(VOLTAGE_PIN, INPUT);
+	pinMode(CURRENT_PIN, INPUT);    
+  
+	// initalize state engine
+	setupControlCycle();
+	Engine.state(ST_BLOCK);
  
-   // default to master timing node
- ComMgr.master(true);
-   // set handler for watched common lines
- ComMgr.watchHandler(motor_com_line);
+	// default to master timing node
+	ComMgr.master(true);
  
-   // setup camera defaults
- Camera.triggerTime(CAM_DEFAULT_EXP);
- Camera.delayTime(CAM_DEFAULT_WAIT);
- Camera.focusTime(CAM_DEFAULT_FOCUS);
+	// set handler for watched common lines
+	ComMgr.watchHandler(motor_com_line);
  
- Camera.setHandler(camCallBack);
+	// setup camera defaults
+	Camera.triggerTime(CAM_DEFAULT_EXP);
+	Camera.delayTime(CAM_DEFAULT_WAIT);
+	Camera.focusTime(CAM_DEFAULT_FOCUS);
+	Camera.setHandler(camCallBack);
 
-  // setup serial connection  OM_SER_BPS is defined in OMMoCoBus library
- Serial.begin(OM_SER_BPS);
+	// setup serial connection  OM_SER_BPS is defined in OMMoCoBus library
+	Serial.begin(OM_SER_BPS);
 
-  // setup MoCoBus Node object
- Node.address(device_address);
- Node.setHandler(serNode1Handler);
- Node.setNotUsHandler(serNotUsNode1Handler);
- Node.setBCastHandler(serBroadcastHandler);
- Node.setSoftSerial(false);
+	// setup MoCoBus Node object
+	Node.address(device_address);
+	Node.setHandler(serNode1Handler);
+	Node.setNotUsHandler(serNotUsNode1Handler);
+	Node.setBCastHandler(serBroadcastHandler);
+	Node.setSoftSerial(false);
  
-  // setup MoCoBus Node object for bluetooth
+	// setup MoCoBus Node object for bluetooth
+	NodeBlue.address(device_address);
+	NodeBlue.setHandler(serNodeBlueHandler);
+	NodeBlue.setNotUsHandler(serNotUsNodeBlueHandler);
+	NodeBlue.setBCastHandler(serBroadcastHandler);
+	NodeBlue.setSoftSerial(true);
 
- NodeBlue.address(device_address);
- NodeBlue.setHandler(serNodeBlueHandler);
- NodeBlue.setNotUsHandler(serNotUsNodeBlueHandler);
- NodeBlue.setBCastHandler(serBroadcastHandler);
- NodeBlue.setSoftSerial(true);
 
-
-  // setup MoCoBus Node object for USB Serial
-
-  NodeUSB.address(device_address);
-  NodeUSB.setHandler(serNodeUSBHandler);
-  NodeUSB.setNotUsHandler(serNotUsNodeUSBHandler);
-  NodeUSB.setBCastHandler(serBroadcastHandler);
-  NodeUSB.setSoftSerial(true);
+	// setup MoCoBus Node object for USB Serial
+	NodeUSB.address(device_address);
+	NodeUSB.setHandler(serNodeUSBHandler);
+	NodeUSB.setNotUsHandler(serNotUsNodeUSBHandler);
+	NodeUSB.setBCastHandler(serBroadcastHandler);
+	NodeUSB.setSoftSerial(true);
 
  
  
-  // Listen for address change
- Node.addressCallback(changeNodeAddr);
+	// Listen for address change
+	Node.addressCallback(changeNodeAddr);
  
- NodeBlue.addressCallback(changeNodeAddr);
+	NodeBlue.addressCallback(changeNodeAddr);
  
- NodeUSB.addressCallback(changeNodeAddr);
+	NodeUSB.addressCallback(changeNodeAddr);
  
   
-  // defaults for motor
- for( int i = 0; i < MOTOR_COUNT; i++){
-	  motor[i].enable(false);
-	  motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
-	  motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
-	  motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
-	  motor[i].sleep(false);
-	  motor[i].backlash(MOT_DEFAULT_BACKLASH);
-	  // Set the slide motor to 4th stepping and pan/tilt motors to 16th
-	  if (i == 0)
-		  motor[i].ms(4);
-	  else
-		  motor[i].ms(16);
-	  motor[i].programBackCheck(false);	 
- }
+	// defaults for motor
+	for( int i = 0; i < MOTOR_COUNT; i++){
+		motor[i].enable(false);
+		motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
+		motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
+		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
+		motor[i].sleep(false);
+		motor[i].backlash(MOT_DEFAULT_BACKLASH);
+		// Set the slide motor to 4th stepping and pan/tilt motors to 16th
+		if (i == 0)
+			motor[i].ms(4);
+		else
+			motor[i].ms(16);
+		motor[i].programBackCheck(false);	 
+	}
 
-  // restore/store eeprom memory
-  eepromCheck();
+	// restore/store eeprom memory
+	eepromCheck();
  
-  // enable limit switch handler
-// limitSwitch(true);
+	// enable limit switch handler
+	// limitSwitch(true);
  
-  // startup LED signal
- flasher(DEBUG_PIN, START_FLASH_CNT);
- //startISR();
+	// startup LED signal
+	flasher(DEBUG_PIN, START_FLASH_CNT);
 
+	//startISR();
 
- attachInterrupt(1, eStop, FALLING); 
+	// Attach interrupt to watch for e-stop button press
+	attachInterrupt(1, eStop, FALLING); 
 }
 
 
-
-
 void loop() {
-	
-	if(USBSerial.available())
-		incomingByte = 1;
-  
 
-   // check to see if we have any commands waiting      
-  Node.check();
-  NodeBlue.check();
-  NodeUSB.check();
+	// check to see if we have any commands waiting      
+	Node.check();
+	NodeBlue.check();
+	NodeUSB.check();
 
-  if ((millis() - time) > 500 && (usb_debug & DB_STEPS))
-  {
+	// If the the DB_STEPS debug flag is true, print diagnostic info
+	if ((millis() - loop_time) > 500 && (usb_debug & DB_STEPS)) {
 
-	  USBSerial.print(motor[0].currentPos());
-	  USBSerial.print(" continious Speed: ");
-	  USBSerial.print(motor[0].contSpeed());
-	  USBSerial.print(" backlash: ");
-	  USBSerial.print(motor[0].backlash());
-	  USBSerial.print(" startPos: ");
-	  USBSerial.print(motor[0].startPos());
-	  USBSerial.print(" stopPos: ");
-	  USBSerial.print(motor[0].stopPos());
-	  USBSerial.print(" endPos: ");
-	  USBSerial.print(motor[0].endPos());
-	  USBSerial.print(" running: ");
-	  USBSerial.print(motor[0].running());
-	  USBSerial.print(" enable: ");
-	  USBSerial.print(motor[0].enable());
-	  USBSerial.print(" Type: ");
-	  USBSerial.println(motor[0].planType());
-	  USBSerial.print(" shots: ");
-	  USBSerial.print(camera_fired);
-	  USBSerial.print(" leadIn: ");
-	  USBSerial.println(motor[0].planLeadIn());
+		USBSerial.print(motor[0].currentPos());
+		USBSerial.print(" continious Speed: ");
+		USBSerial.print(motor[0].contSpeed());
+		USBSerial.print(" backlash: ");
+		USBSerial.print(motor[0].backlash());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[0].startPos());
+		USBSerial.print(" stopPos: ");
+		USBSerial.print(motor[0].stopPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.print(motor[0].endPos());
+		USBSerial.print(" running: ");
+		USBSerial.print(motor[0].running());
+		USBSerial.print(" enable: ");
+		USBSerial.print(motor[0].enable());
+		USBSerial.print(" Type: ");
+		USBSerial.println(motor[0].planType());
+		USBSerial.print(" shots: ");
+		USBSerial.print(camera_fired);
+		USBSerial.print(" leadIn: ");
+		USBSerial.println(motor[0].planLeadIn());
 
-	  USBSerial.print("Current Steps ");
-	  USBSerial.print(motor[1].currentPos());
-	  USBSerial.print(" continious Speed: ");
-	  USBSerial.print(motor[1].contSpeed());
-	  USBSerial.print(" backlash: ");
-	  USBSerial.print(motor[1].backlash());
-	  USBSerial.print(" startPos: ");
-	  USBSerial.print(motor[1].startPos());
-	  USBSerial.print(" stopPos: ");
-	  USBSerial.print(motor[1].stopPos());
-	  USBSerial.print(" endPos: ");
-	  USBSerial.print(motor[1].endPos());
-	  USBSerial.print(" Type: ");
-	  USBSerial.println(motor[1].planType());
-	  USBSerial.print(" leadIn: ");
-	  USBSerial.println(motor[1].planLeadIn());
+		USBSerial.print("Current Steps ");
+		USBSerial.print(motor[1].currentPos());
+		USBSerial.print(" continious Speed: ");
+		USBSerial.print(motor[1].contSpeed());
+		USBSerial.print(" backlash: ");
+		USBSerial.print(motor[1].backlash());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[1].startPos());
+		USBSerial.print(" stopPos: ");
+		USBSerial.print(motor[1].stopPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.print(motor[1].endPos());
+		USBSerial.print(" Type: ");
+		USBSerial.println(motor[1].planType());
+		USBSerial.print(" leadIn: ");
+		USBSerial.println(motor[1].planLeadIn());
 
-	  USBSerial.print("Current Steps ");
-	  USBSerial.print(motor[2].currentPos());
-	  USBSerial.print(" continious Speed: ");
-	  USBSerial.print(motor[2].contSpeed());
-	  USBSerial.print(" backlash: ");
-	  USBSerial.print(motor[2].backlash());
-	  USBSerial.print(" startPos: ");
-	  USBSerial.print(motor[2].startPos());
-	  USBSerial.print(" stopPos: ");
-	  USBSerial.print(motor[2].stopPos());
-	  USBSerial.print(" endPos: ");
-	  USBSerial.println(motor[2].endPos());
-	  USBSerial.println("");
-  }
+		USBSerial.print("Current Steps ");
+		USBSerial.print(motor[2].currentPos());
+		USBSerial.print(" continious Speed: ");
+		USBSerial.print(motor[2].contSpeed());
+		USBSerial.print(" backlash: ");
+		USBSerial.print(motor[2].backlash());
+		USBSerial.print(" startPos: ");
+		USBSerial.print(motor[2].startPos());
+		USBSerial.print(" stopPos: ");
+		USBSerial.print(motor[2].stopPos());
+		USBSerial.print(" endPos: ");
+		USBSerial.println(motor[2].endPos());
+		USBSerial.println("");
+	}
 		
-		time = millis();
+	loop_time = millis();
 	
-
-	//Check to see if joystick watchdog is on and motors are moving
-	//must see a command from the master every second or it'll stop
+	//Stop the motors if they're running and the watchdog timeout (time since last received command) has been exceeded
 	if ((motor[0].running() || motor[1].running() || motor[2].running()) && watchdog){
-		if(millis() - commandTime > watchdogTimeMax) {
+		if(millis() - commandTime > WATCHDOG_MAX_TIME) {
 			stopAllMotors();
 		}
-	}
+	}   
    
-   
-   
-	for(int i = 0; i<MOTOR_COUNT; i++){
-		if(motor[i].running()){
+	// Update motor splines
+	for(int i = 0; i < MOTOR_COUNT; i++){
+		if(motor[i].running())
 			motor[i].updateSpline();
-		}// end if( motor[i].m_isRun
-	} // end for loop
-	  	   
-	  
+	}
 	  
 	  
 	// if our program is currently running...      
    if( running ) {
 
-		// update run timer
+		// update program run time
 		unsigned long cur_time = millis();  
-		run_time += cur_time - last_time;
-		last_time = cur_time;
+		run_time += cur_time - start_time;
+		start_time = cur_time;
 
+		// Saving the run time to last_run_time makes it accessible even after the program as ended and run_time has been reset
 		if (run_time != 0)
 			last_run_time = run_time;
 
-		// Got an external stop somewhere, that wasn't a command?
+		// Got an external stop somewhere that wasn't a command?
 		if( force_stop == true )
 			stopProgram();
        
-		// hit max runtime? done!
+		// Hit max runtime? Done!
 		if( ComMgr.master() && max_time > 0 && run_time > max_time )
 			stopProgram();
        
-		// if we're the slave and a interrupt has been triggered by the master,
-		// set to clear to fire mode (for multi-node sync)
+		// If we're the slave and a interrupt has been triggered by the master, set to clear to fire mode (for multi-node sync)
 		if( ComMgr.master() == false && ComMgr.slaveClear() == true ) 
 			Engine.state(ST_CLEAR);
      
-		// if the start delay is done then check current engine state and handle appropriately
+		// If the start delay is done then check current engine state and handle appropriately
 		if(run_time >= start_delay)
 			Engine.checkCycle();
    }
 
 }
 
-void pauseProgram() {
-     // pause program
-  Camera.stop();
-  stopAllMotors();
-  running = false;
- // USBSerial.println("Pausing program!!!");
-}
+/*
 
+=========================================
+	  Program Control Functions
+=========================================
+
+*/
+
+
+void pauseProgram() {
+	// pause program
+	Camera.stop();
+	stopAllMotors();
+	running = false;
+}
 
 
 void stopProgram(uint8_t force_clear) {
-              
-   // stop/clear program
-   
-   stopAllMotors();
-  if( force_clear == true ) {
-    run_time     = 0;
-    camera_fired = 0;
-	for( int i = 0; i < MOTOR_COUNT; i++){
-		//resets the program move
-		motor[i].resetProgramMove();
+
+	// stop/clear program
+	stopAllMotors();
+	if( force_clear == true ) {
+		run_time     = 0;
+		camera_fired = 0;
+		for( int i = 0; i < MOTOR_COUNT; i++){
+			//resets the program move
+			motor[i].resetProgramMove();
+		}
 	}
-
-  }
-
-  running      = false;
-  
-    // clear out motor moved data
-    // and stop motor 
-	clearAll();
 	
+	running = false;
 
-  Camera.stop();
- 
-  
+	// clear out motor moved data and stop motor 
+	clearAll();	
+	Camera.stop(); 
 }
 
 
-
 void startProgram() {
-     // start program
-  last_time = millis();
+  // start program
+  start_time = millis();
 
   running   = true;
 	for( int i = 0; i < MOTOR_COUNT; i++){
@@ -634,51 +601,27 @@ void startProgram() {
                     
 }
 
-
-void flasher(byte pin, int count) {
-    // flash a pin several times (blink)
-    
-   for(int i = 0; i < count; i++) {
-      digitalWrite(pin, HIGH);
-      delay(250);
-      digitalWrite(pin, LOW);
-      delay(250); 
-   }
-   
-}
-
-byte powerCycled() {
-	
-	// This function will respond true the first time it is
-	// called after a power cycle and false thereafter
-	static byte cycled = true;
-	byte response = cycled;
-	cycled = false;
-
-	return(response);
-}
-
 void eStop() {
 
 	static unsigned long last_interrupt_time = 0;
 	unsigned long interrupt_time = millis();
 
-	static unsigned long _time = millis();
+	static unsigned long times_since_press = millis();
 	static byte enable_count = 0;
 	const byte THRESHOLD = 3;
-	
+
 	// If interrupts come faster than 200ms, assume it's a bounce and ignore
 	if (interrupt_time - last_interrupt_time > 200) {
 
 		if (running && !camera_test_mode)
 			stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
-		
+
 		else if (running && camera_test_mode)
 			stopProgram();
-		
+
 		else if (!motor[0].running() && !motor[1].running() && !motor[2].running()) {
 			// If the button was pressed recently enough, increase the enable count, otherwise reset it to 0.
-			if (millis() - _time < 1500)
+			if (millis() - times_since_press < 1500)
 				enable_count++;
 			else
 				enable_count = 1;
@@ -692,7 +635,7 @@ void eStop() {
 				altSetup();
 				external_intervalometer = true;
 				enable_count = 0;
-				
+
 				// Turn the debug light on to confirm the setting
 				debugOn();
 			}
@@ -705,29 +648,38 @@ void eStop() {
 				// Turn the debug light off to confirm the setting
 				debugOff();
 			}
-			time = millis();
+			loop_time = millis();
 		}
 
 		else
 			stopAllMotors();
 	}
-	last_interrupt_time = interrupt_time;	
+	last_interrupt_time = interrupt_time;
 }
 
+
+/*
+
+=========================================
+		Program Query Functions
+=========================================
+
+*/
+
 uint8_t programPercent() {
-	
+
 	unsigned long time = millis();
 	static uint8_t percent = 0;
 
 	unsigned long longest_move = 0;
-	
+
 	// Check the total length of each motor's move and save the longest one
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		
+
 		// If the motor isn't enabled, don't check its move length
 		if (!motor[i].enable())
 			continue;
-		
+
 		unsigned long current_move;
 
 		current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadIn();
@@ -761,6 +713,96 @@ uint8_t programPercent() {
 	else
 		percent = percent_new;
 	return(percent);
+}
+
+// Returns the total run time of the currently set program in milliseconds
+unsigned long totalProgramTime() {
+
+	unsigned long longest_time = 0;
+	unsigned long motor_time = 0;
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		// If the motor is enabled, check its program time
+		if (motor[i].enable()) {
+			// SMS: Total the exposures for the program and multiply by the interval
+			if (motor[i].planType() == SMS) {
+				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
+				if (usb_debug & DB_FUNCT){
+					USBSerial.print("Interval: ");
+					USBSerial.print(Camera.interval);
+					USBSerial.print("  Lead in: ");
+					USBSerial.print(motor[i].planLeadIn());
+					USBSerial.print("  Accel: ");
+					USBSerial.print(motor[i].planAccelLength());
+					USBSerial.print("  Travel: ");
+					USBSerial.print(motor[i].planTravelLength());
+					USBSerial.print("  Decel: ");
+					USBSerial.print(motor[i].planDecelLength());
+					USBSerial.print("  Lead out: ");
+					USBSerial.print(motor[i].planLeadOut());
+					USBSerial.print("  Motor time: ");
+					USBSerial.println(motor_time);
+				}
+			}
+			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
+			else
+				motor_time = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
+			// Overwrite longest_time if the last checked motor is longer
+			if (motor_time > longest_time)
+				longest_time = motor_time;
+		}
+	}
+
+	return(longest_time);
+}
+
+
+uint8_t programComplete() {
+
+	// This function will respond true the first time it is
+	// called after a power cycle and false thereafter
+
+	uint8_t status = false;
+
+	if (program_complete == true)
+		status = true;
+
+	program_complete = false;
+	return(status);
+}
+
+
+/*
+
+=========================================
+		   Helper Functions
+=========================================
+
+*/
+
+
+void flasher(byte pin, int count) {
+    // flash a pin several times (blink)
+    
+   for(int i = 0; i < count; i++) {
+      digitalWrite(pin, HIGH);
+      delay(250);
+      digitalWrite(pin, LOW);
+      delay(250); 
+   }
+   
+}
+
+
+byte powerCycled() {
+	
+	// This function will respond true the first time it is
+	// called after a power cycle and false thereafter
+	static byte cycled = true;
+	byte response = cycled;
+	cycled = false;
+
+	return(response);
 }
 
 
@@ -810,67 +852,4 @@ uint8_t checkMotorAttach() {
 
 	// The bits of the attached byte indicate each motor's attached status
 	return(attached);
-}
-
-
-/**
-
-	Returns the total run time of the currently set program in milliseconds
-	
-*/
-unsigned long totalProgramTime() {
-
-	unsigned long longest_time = 0;
-	unsigned long motor_time = 0;
-
-	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		// If the motor is enabled, check its program time
-		if (motor[i].enable()) {
-			// SMS: Total the exposures for the program and multiply by the interval
-			if (motor[i].planType() == SMS) {
-				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				if (usb_debug & DB_FUNCT){
-					USBSerial.print("Interval: ");
-					USBSerial.print(Camera.interval);
-					USBSerial.print("  Lead in: ");
-					USBSerial.print(motor[i].planLeadIn());
-					USBSerial.print("  Accel: ");
-					USBSerial.print(motor[i].planAccelLength());
-					USBSerial.print("  Travel: ");
-					USBSerial.print(motor[i].planTravelLength());
-					USBSerial.print("  Decel: ");
-					USBSerial.print(motor[i].planDecelLength());
-					USBSerial.print("  Lead out: ");
-					USBSerial.print(motor[i].planLeadOut());
-					USBSerial.print("  Motor time: ");
-					USBSerial.println(motor_time);
-				}
-			}
-			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
-			else
-				motor_time = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
-			// Overwrite longest_time if the last checked motor is longer
-			if (motor_time > longest_time)
-				longest_time = motor_time;
-		}
-	}
-
-	return(longest_time);
-}
-
-uint8_t programComplete() {
-
-	// This function will respond true the first time it is
-	// called after a power cycle and false thereafter
-
-	uint8_t status = false;
-
-	if (program_complete == true)
-		status = true;
-
-	program_complete = false;
-
-	return(status);
-
-	
 }

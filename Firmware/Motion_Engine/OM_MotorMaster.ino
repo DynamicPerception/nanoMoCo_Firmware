@@ -294,9 +294,6 @@ void _runISR() {
         stopAllMotors();
     }
 
-	if (respond_flag)
-		interferences++;
-
 	//PORTF &= ~(1 << motor[2].stpflg);
 }
 

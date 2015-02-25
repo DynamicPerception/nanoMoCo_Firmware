@@ -532,8 +532,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 26 set program start point here
 	case 26:
+	{
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			tempPos = motor[i].currentPos();
+			long tempPos = motor[i].currentPos();
 			motor[i].startPos(tempPos);
 			if (usb_debug & DB_GEN_SER){
 				USBSerial.print("Motor ");
@@ -541,15 +542,17 @@ void serMain(byte command, byte* input_serial_buffer) {
 				USBSerial.print(" start: ");
 				USBSerial.println(motor[i].startPos());
 			}
-			OMEEPROM::write(EE_START_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPos);
+			OMEEPROM::write(EE_START_0 + (i)* EE_MOTOR_MEMORY_SPACE, tempPos);
 		}
 		response(true);
 		break;
+	}
 
 	//Command 27 set program stop point here
 	case 27:
+	{
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			tempPos = motor[i].currentPos();
+			long tempPos = motor[i].currentPos();
 			motor[i].stopPos(tempPos);
 			if (usb_debug & DB_GEN_SER){
 				USBSerial.print("Motor ");
@@ -561,6 +564,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		}
 		response(true);
 		break;
+	}
 
 	//Command 28 set frames/second flag
 	case 28:
@@ -671,19 +675,23 @@ void serMain(byte command, byte* input_serial_buffer) {
 	
 	//Command 110 reads limit switch mode
 	case 110:
-		temp = 0;
-		temp |= altInputs[0]<<8;
-		temp |= altInputs[1];
-		response(true, temp);
+	{
+		int limit_switch_mode = 0;
+		limit_switch_mode |= altInputs[0] << 8;
+		limit_switch_mode |= altInputs[1];
+		response(true, limit_switch_mode);
 		break;
+	}
 	
 	//Command 111 reads limit switch status high or low (1 or 0)
 	case 111:
-		temp = 0;
-		temp |= digitalRead(AUX_RING)<<8;
-		temp |= digitalRead(AUX_TIP);
-		response(true, temp);
+	{
+		int limit_switch_mode = 0;
+		limit_switch_mode |= digitalRead(AUX_RING) << 8;
+		limit_switch_mode |= digitalRead(AUX_TIP);
+		response(true, limit_switch_mode);
 		break;
+	}
 	
 	//Command 112 reads Alt Output Before Shot Delay Time
 	case 112:
@@ -925,12 +933,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     
 	//Command 6 set the microstep for the motor
 	case 6:
+	{
 		// set motor microstep (1,2,4,8,16)
-		tempMS = input_serial_buffer[0];
+		byte tempMS = input_serial_buffer[0];
 		motor[subaddr - 1].ms(tempMS);
 		OMEEPROM::write(EE_MS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempMS);
 		response(true);
 		break;
+	}
 	
 	//Command 7 set the max step speed of the motor
 	case 7:
@@ -954,11 +964,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 10 set motor's end limit
 	case 10:
-		tempPos = motor[subaddr - 1].currentPos();
+	{
+		long tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
 		OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
+	}
 
 	//Command 11 send motor to home limit
 	case 11:
@@ -1058,19 +1070,23 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 16 set program start point
 	case 16:
-		tempPos = Node.ntol(input_serial_buffer);
+	{
+		long tempPos = Node.ntol(input_serial_buffer);
 		motor[subaddr - 1].startPos(tempPos);
 		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
+	}
 
 	//Command 17 set program stop point
 	case 17:
-		tempPos = Node.ntol(input_serial_buffer);
+	{
+		long tempPos = Node.ntol(input_serial_buffer);
 		motor[subaddr - 1].stopPos(tempPos);
 		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
+	}
    
     //Command 18 set motor's easing mode  
 	case 18:
