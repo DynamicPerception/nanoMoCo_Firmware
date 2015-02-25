@@ -435,61 +435,8 @@ void loop() {
 	NodeUSB.check();
 
 	// If the the DB_STEPS debug flag is true, print diagnostic info
-	if ((millis() - loop_time) > 500 && (usb_debug & DB_STEPS)) {
-
-		USBSerial.print(motor[0].currentPos());
-		USBSerial.print(" continious Speed: ");
-		USBSerial.print(motor[0].contSpeed());
-		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[0].backlash());
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[0].startPos());
-		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[0].stopPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.print(motor[0].endPos());
-		USBSerial.print(" running: ");
-		USBSerial.print(motor[0].running());
-		USBSerial.print(" enable: ");
-		USBSerial.print(motor[0].enable());
-		USBSerial.print(" Type: ");
-		USBSerial.println(motor[0].planType());
-		USBSerial.print(" shots: ");
-		USBSerial.print(camera_fired);
-		USBSerial.print(" leadIn: ");
-		USBSerial.println(motor[0].planLeadIn());
-
-		USBSerial.print("Current Steps ");
-		USBSerial.print(motor[1].currentPos());
-		USBSerial.print(" continious Speed: ");
-		USBSerial.print(motor[1].contSpeed());
-		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[1].backlash());
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[1].startPos());
-		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[1].stopPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.print(motor[1].endPos());
-		USBSerial.print(" Type: ");
-		USBSerial.println(motor[1].planType());
-		USBSerial.print(" leadIn: ");
-		USBSerial.println(motor[1].planLeadIn());
-
-		USBSerial.print("Current Steps ");
-		USBSerial.print(motor[2].currentPos());
-		USBSerial.print(" continious Speed: ");
-		USBSerial.print(motor[2].contSpeed());
-		USBSerial.print(" backlash: ");
-		USBSerial.print(motor[2].backlash());
-		USBSerial.print(" startPos: ");
-		USBSerial.print(motor[2].startPos());
-		USBSerial.print(" stopPos: ");
-		USBSerial.print(motor[2].stopPos());
-		USBSerial.print(" endPos: ");
-		USBSerial.println(motor[2].endPos());
-		USBSerial.println("");
-	}
+	if ((millis() - loop_time) > 500 && (usb_debug & DB_STEPS))
+		motorDebug();
 		
 	loop_time = millis();
 	
@@ -852,4 +799,59 @@ uint8_t checkMotorAttach() {
 
 	// The bits of the attached byte indicate each motor's attached status
 	return(attached);
+}
+
+void motorDebug() {
+	USBSerial.print(motor[0].currentPos());
+	USBSerial.print(" continious Speed: ");
+	USBSerial.print(motor[0].contSpeed());
+	USBSerial.print(" backlash: ");
+	USBSerial.print(motor[0].backlash());
+	USBSerial.print(" startPos: ");
+	USBSerial.print(motor[0].startPos());
+	USBSerial.print(" stopPos: ");
+	USBSerial.print(motor[0].stopPos());
+	USBSerial.print(" endPos: ");
+	USBSerial.print(motor[0].endPos());
+	USBSerial.print(" running: ");
+	USBSerial.print(motor[0].running());
+	USBSerial.print(" enable: ");
+	USBSerial.print(motor[0].enable());
+	USBSerial.print(" Type: ");
+	USBSerial.println(motor[0].planType());
+	USBSerial.print(" shots: ");
+	USBSerial.print(camera_fired);
+	USBSerial.print(" leadIn: ");
+	USBSerial.println(motor[0].planLeadIn());
+
+	USBSerial.print("Current Steps ");
+	USBSerial.print(motor[1].currentPos());
+	USBSerial.print(" continious Speed: ");
+	USBSerial.print(motor[1].contSpeed());
+	USBSerial.print(" backlash: ");
+	USBSerial.print(motor[1].backlash());
+	USBSerial.print(" startPos: ");
+	USBSerial.print(motor[1].startPos());
+	USBSerial.print(" stopPos: ");
+	USBSerial.print(motor[1].stopPos());
+	USBSerial.print(" endPos: ");
+	USBSerial.print(motor[1].endPos());
+	USBSerial.print(" Type: ");
+	USBSerial.println(motor[1].planType());
+	USBSerial.print(" leadIn: ");
+	USBSerial.println(motor[1].planLeadIn());
+
+	USBSerial.print("Current Steps ");
+	USBSerial.print(motor[2].currentPos());
+	USBSerial.print(" continious Speed: ");
+	USBSerial.print(motor[2].contSpeed());
+	USBSerial.print(" backlash: ");
+	USBSerial.print(motor[2].backlash());
+	USBSerial.print(" startPos: ");
+	USBSerial.print(motor[2].startPos());
+	USBSerial.print(" stopPos: ");
+	USBSerial.print(motor[2].stopPos());
+	USBSerial.print(" endPos: ");
+	USBSerial.println(motor[2].endPos());
+	USBSerial.println("");
 }
