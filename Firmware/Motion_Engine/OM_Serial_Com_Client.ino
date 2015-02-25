@@ -914,9 +914,6 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
   
-	// Make sure the e-stop flag is off before proceeding, otherwise the cutter won't trigger
-	eStopFlag(false);
-  
     switch(command) {
 
 	//Command 2 set the sleep mode of the motor

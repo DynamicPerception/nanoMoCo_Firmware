@@ -108,6 +108,9 @@ The possible values for this parameter are populated in enum cutter_constants.
 */
 
 void cutterSerial(byte p_cutter_command) {
+
+	// Make sure the e-stop flag is off before proceeding, otherwise the cutter won't trigger
+	eStopFlag(false);
 	
 	if (usb_debug & DB_COM_OUT){
 		USBSerial.println("Running cutterSerial()");
