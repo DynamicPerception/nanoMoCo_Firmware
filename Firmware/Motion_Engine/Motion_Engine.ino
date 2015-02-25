@@ -108,6 +108,7 @@ const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be hel
 uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
 unsigned long loop_time				= 0;				// Timing variable used for triggering events within loop()
+bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
 
 
 /***************************************
@@ -147,16 +148,16 @@ const byte	   ALT_SET_END = 10;	//INPUT  - sets the motor's end position
 
 // These defines are used for the Limit Switch Pin Change Registers
 
-byte            altInputs[] = { ALT_OFF, ALT_OFF };
-unsigned int altBeforeDelay = 100;
-unsigned int  altAfterDelay = 100;
-unsigned int    altBeforeMs = 1000;
-unsigned int     altAfterMs = 1000;
-uint8_t        altForceShot = false;
-uint8_t           altExtInt = false;
-byte           altDirection = FALLING;
-byte             altOutTrig = HIGH;
-bool external_intervalometer = false;	// Indicates whether the aux port has been set to external trigger mode via physical button press
+byte            altInputs[]		= { ALT_OFF, ALT_OFF };
+unsigned int altBeforeDelay		= 100;
+unsigned int  altAfterDelay		= 100;
+unsigned int    altBeforeMs		= 1000;
+unsigned int     altAfterMs		= 1000;
+uint8_t        altForceShot		= false;
+uint8_t           altExtInt		= false;
+byte           altDirection		= FALLING;
+byte             altOutTrig		= HIGH;
+bool external_intervalometer	= false;	// Indicates whether the aux port has been set to external trigger mode via physical button press
 
 
 /***************************************
@@ -187,7 +188,7 @@ uint8_t		  fps				= true;
 // Deafult motor settings
 const unsigned int MOT_DEFAULT_MAX_STEP = 5000;
 const unsigned int MOT_DEFAULT_MAX_SPD = 5000;
-const float MOT_DEFAULT_CONT_ACCEL = 15000.0;
+const float MOT_DEFAULT_CONT_ACCEL = 5000.0;
 const unsigned int MOT_DEFAULT_BACKLASH = 0;
 const byte MOTOR_COUNT = 3;
 
@@ -854,4 +855,27 @@ void motorDebug() {
 	USBSerial.print(" endPos: ");
 	USBSerial.println(motor[2].endPos());
 	USBSerial.println("");
+}
+
+
+/*
+
+=========================================
+	  Graffik Specific Functions
+=========================================
+
+*/
+
+void graffikMode(bool p_setting) {
+
+	// Ignore non-boolean input
+	if (p_setting != 0 && p_setting != 1)
+		return;
+
+	graffik_mode = p_setting;
+
+}
+
+bool graffikMode() {
+	return graffik_mode;
 }

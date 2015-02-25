@@ -437,13 +437,18 @@ void joystickSet(byte p_input) {
 
 	// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 	if (joystick_mode){
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
+		for (byte i = 0; i < MOTOR_COUNT; i++)
 			motor[i].contSpeed(0);
-		}
 	}
 	// If we're exiting joystick mode, turn off the joystick watchdog mode
-	else if (!joystick_mode)
+	else if (!joystick_mode) {
 		watchdog = false;
+
+		if (graffik_mode) {
+			for (byte i = 0; i < MOTOR_COUNT; i++)
+				motor[i].contSpeed(0);
+		}
+	}
 }
 
 /**
