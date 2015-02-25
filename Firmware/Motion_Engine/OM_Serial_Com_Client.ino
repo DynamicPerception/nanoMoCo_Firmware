@@ -584,6 +584,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
+	// Command 50 sets Graffik Mode on or off
+	case 50:
+		graffikMode(input_serial_buffer[0]);
+		response(true);
+
 
     
     //*****************MAIN READ COMMANDS********************
@@ -810,7 +815,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 130 checks the sleep state of all motors
 	case 130:
 		response(true, motorSleep());
-		break;		
+		break;
+
+	//Command 150 returns whether the controller is in Graffik Mode
+	case 150:
+		response(true, graffikMode());
+		break;
 
 	//Command 254 sets the USB debug reporting state
 	case 254:

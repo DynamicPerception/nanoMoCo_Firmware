@@ -98,7 +98,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 ****************************************/
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 27;				// Serial API version
+const int SERIAL_VERSION			= 28;				// Serial API version
 byte node							= 1;				// default node to use (Hardware Serial = 1; AltSoftSerial = 2)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
