@@ -659,6 +659,16 @@ byte powerCycled() {
 	return(response);
 }
 
+bool e_stop_flag = false;
+
+void eStopFlag(bool p_setting) {
+	e_stop_flag = p_setting;
+}
+
+bool eStopFlag() {
+	return e_stop_flag;
+}
+
 void eStop() {
 
 	static unsigned long last_interrupt_time = 0;
@@ -675,8 +685,10 @@ void eStop() {
 			stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
 		else if (running && camera_test_mode)
 			stopProgram();
-		else
+		else {
 			stopAllMotors();
+			eStopFlag(true);
+		}
 	}
 	last_interrupt_time = interrupt_time;	
 }

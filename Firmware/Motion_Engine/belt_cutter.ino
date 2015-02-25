@@ -76,6 +76,9 @@ void runCutter(byte p_feet, byte p_inches, byte dir, bool p_cut = false, byte p_
 		while (motor[CUTTER_MOTOR].running()) {
 			// Wait until motor is done running to proceed
 		}
+		// Check to see if we've e-stopped and if we have, bail instead of cutting
+		if (eStopFlag())
+			return;
 		if (p_cut)
 			cutBelt();
 	}
@@ -113,10 +116,10 @@ void cutterSerial(byte p_cutter_command) {
 	}
 	
 	// Enum the constants used for the belt cutter commands
-	enum cutter_constants { FORWARD_1IN, FORWARD_2IN, BACK_1IN, BACK_2IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15 };
+	enum cutter_constants { FORWARD_CONT, BACK_CONT, FORWARD_1IN, FORWARD_2IN, BACK_1IN, BACK_2IN, CUTTER, AUTO_4, AUTO_6, AUTO_12, AUTO_15, STOP };
 
-	const byte FORWARD = 1;
-	const byte BACK = 0;
+	const byte FORWARD = 0;
+	const byte BACK = 1;
 
 	// Set the bet cutter motor to full stepping for fastest operation.  Also, the stepCalculator calculates in full steps,
 	// so it needs to be in full stepping to produce an accurate belth length.
@@ -126,6 +129,18 @@ void cutterSerial(byte p_cutter_command) {
 	motor[CUTTER_MOTOR].continuous(false);
 
 	switch (p_cutter_command) {
+		case FORWARD_CONT:
+			if (!motor[CUTTER_MOTOR].running())
+				runCutter(100, 0, FORWARD);
+			else
+				stopAllMotors();
+			break;
+		case BACK_CONT:
+			if (!motor[CUTTER_MOTOR].running())
+				runCutter(100, 0, BACK);
+			else
+				stopAllMotors();
+			break;
 		case FORWARD_1IN:
 			runCutter(0, 1, FORWARD);
 			break;
@@ -142,16 +157,19 @@ void cutterSerial(byte p_cutter_command) {
 			cutBelt();
 			break;
 		case AUTO_4:
-			runCutter(4, 0, FORWARD, true, cutterFeedCount());
+			runCutter(4, 2, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_6:
-			runCutter(6, 0, FORWARD, true, cutterFeedCount());
+			runCutter(6, 2, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_12:
-			runCutter(12, 0, FORWARD, true, cutterFeedCount());
+			runCutter(12, 2, FORWARD, true, cutterFeedCount());
 			break;
 		case AUTO_15:
-			runCutter(15, 0, FORWARD, true, cutterFeedCount());
+			runCutter(15, 2, FORWARD, true, cutterFeedCount());
+			break;
+		case STOP:
+			stopAllMotors();
 			break;
 	}
 }
@@ -175,7 +193,7 @@ unsigned long stepCalculator(int p_feet, int p_inches) {
 	const float TOOTH_PITCH = 5;				// 5mm per tooth on standard DP pulley
 	const float TOOTH_COUNT = 17;				// 17 teeth on standard DP pulley
 	const float MM_PER_INCH = 25.4;
-	const float GEAR_RATIO = 19 + (38 / 187);	// Gear ratio of Ningbo-Leison gearheads
+	const float GEAR_RATIO = 19.4739763;		// Gear ratio of Ningbo-Leison gearheads
 	const float STEPS_PER_ROT = 200;			// Steppers have 200 steps per rotation
 	const byte INCHES_PER_FOOT = 12;
 
