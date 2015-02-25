@@ -188,7 +188,7 @@ uint8_t		  fps				= true;
 // Deafult motor settings
 const unsigned int MOT_DEFAULT_MAX_STEP = 5000;
 const unsigned int MOT_DEFAULT_MAX_SPD = 5000;
-const float MOT_DEFAULT_CONT_ACCEL = 5000.0;
+const float MOT_DEFAULT_CONT_ACCEL = 15000.0;
 const unsigned int MOT_DEFAULT_BACKLASH = 0;
 const byte MOTOR_COUNT = 3;
 
