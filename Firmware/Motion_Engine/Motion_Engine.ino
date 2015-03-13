@@ -109,6 +109,7 @@ uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
 unsigned long loop_time				= 0;				// Timing variable used for triggering events within loop()
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
+bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
 
 
 /***************************************
@@ -123,6 +124,7 @@ const byte DE_PIN = 28;
 const byte DEBUG_PIN = 12;
 const byte VOLTAGE_PIN = 42;
 const byte CURRENT_PIN = 41;
+const byte ESTOP_PIN = 40;
 const byte BLUETOOTH_ENABLE_PIN = 0;
 
 
@@ -242,6 +244,10 @@ bool pause_flag				= false;			// pause flag for later call of pauseProgram()
 bool program_complete		= false;			// program completion flag
 
 void stopProgram(uint8_t force_clear = true);	// Predefine this function to declare the default argument
+
+extern void df_setup();
+extern void df_loop();
+extern void df_TimerHandler(void);
 
 
 /***************************************
@@ -433,6 +439,22 @@ void setup() {
 
 
 void loop() {
+
+	static unsigned long estop_time; // Remembers last time eStop was NOT pressed
+		if (df_mode) {
+		df_loop();
+		return;
+	}
+	
+	// If eStop button has been held more than 5 sec, switch to DF mode
+	if (digitalRead(ESTOP_PIN) == HIGH)
+		 estop_time = millis();
+	else if (!df_mode && millis() - estop_time > 5000) {
+		df_setup();
+		df_mode = true;
+		return;
+		
+	}
 
 	// check to see if we have any commands waiting      
 	Node.check();
