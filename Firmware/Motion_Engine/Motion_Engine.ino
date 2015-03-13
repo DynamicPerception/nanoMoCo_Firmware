@@ -172,10 +172,11 @@ const byte CAM_DEFAULT_EXP		= 120;
 const byte CAM_DEFAULT_WAIT		= 0;
 const byte CAM_DEFAULT_FOCUS	= 0;
 
+
 // necessary camera control variables
 unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
-uint8_t		  fps				= true;
+uint8_t		  fps				= 1;
 
 
 /***************************************
@@ -186,11 +187,14 @@ uint8_t		  fps				= true;
 
 
 // Deafult motor settings
-const unsigned int MOT_DEFAULT_MAX_STEP = 5000;
-const unsigned int MOT_DEFAULT_MAX_SPD = 5000;
-const float MOT_DEFAULT_CONT_ACCEL = 15000.0;
-const unsigned int MOT_DEFAULT_BACKLASH = 0;
-const byte MOTOR_COUNT = 3;
+const unsigned int MOT_DEFAULT_MAX_STEP		= 5000;			// Default maximum controller step rate output
+const unsigned int MOT_DEFAULT_MAX_SPD		= 5000;			// Default maximum motor speed in steps / sec
+const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel rate for non-program continuous moves
+const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction
+const byte MOTOR_COUNT = 3;									// Number of motors possibly attached to controller
+
+// Speed variables
+unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in steps / sec
 
 // plan move types
 #define SMS				0		// Shoot-move-shoot mode
@@ -656,7 +660,8 @@ uint8_t programPercent() {
 		percent_new = round((float)run_time / (float)longest_move * 100.0);
 
 	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
-	if (percent_new == 0 && percent != 0)
+	// Don't execute this behavior in Graffik mode
+	if (percent_new == 0 && percent != 0 & !graffikMode())
 		percent = 100;
 	else
 		percent = percent_new;

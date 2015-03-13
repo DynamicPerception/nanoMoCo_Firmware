@@ -63,7 +63,7 @@ void sendToStart(uint8_t p_motor) {
 
 	// Move at the maximum motor speed
 	motor[p_motor].ms(4);
-	motor[p_motor].contSpeed(MOT_DEFAULT_MAX_STEP);
+	motor[p_motor].contSpeed(mot_max_speed);
 
 	// Start the move
 	motor[p_motor].moveToStart();

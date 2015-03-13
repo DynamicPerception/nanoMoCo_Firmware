@@ -172,7 +172,7 @@ void startProgramCom() {
 
 				// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
 				motor[i].ms(4);
-				motor[i].contSpeed(MOT_DEFAULT_MAX_STEP);
+				motor[i].contSpeed(mot_max_speed);
 
 				// Determine the direction of the programmed move
 				uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;

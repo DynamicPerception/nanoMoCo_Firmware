@@ -986,7 +986,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 11:
 		//// Move at the maximum motor speed
 		//motor[subaddr - 1].ms(4);
-		//motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+		//motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		//// send a motor home
 		//motor[subaddr - 1].home();
@@ -998,7 +998,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 12:
 		// Move at the maximum motor speed
 		motor[subaddr - 1].ms(4);
-		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		motor[subaddr - 1].moveToEnd();
 		startISR();
@@ -1013,6 +1013,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			float old_speed = motor[subaddr - 1].desiredSpeed();
 			float new_speed = Node.ntof(input_serial_buffer);
+
+			// Don't allow the speed to be set higher than the maximum
+			if (abs(new_speed) > (float)mot_max_speed) {
+				if (new_speed < 0.0)
+					new_speed = (float)mot_max_speed * -1.0;
+				else
+					new_speed = mot_max_speed;
+			}
 
 			// Set speed
 			motor[subaddr - 1].contSpeed(new_speed);
@@ -1035,8 +1043,16 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		}
 
 		// Normal speed change handling
-		else
-			motor[subaddr - 1].contSpeed(Node.ntof(input_serial_buffer));		
+		else {
+			float input_speed = Node.ntof(input_serial_buffer);
+			
+			// If the requested speed is higher than allowed, just use the highest permissible value
+			if (input_speed > mot_max_speed)
+				input_speed = mot_max_speed;
+
+			motor[subaddr - 1].contSpeed(input_speed);
+		}
+		
 
 		if (!joystick_mode)
 			response(true);
@@ -1151,7 +1167,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 24:
 		// Move at the maximum motor speed
 		motor[subaddr - 1].ms(4);
-		motor[subaddr - 1].contSpeed(MOT_DEFAULT_MAX_STEP);
+		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		motor[subaddr - 1].moveToStop();
 		startISR();
