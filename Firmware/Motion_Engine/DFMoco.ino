@@ -608,6 +608,8 @@ void df_setup()
 #if (DFBOARD == NMX)
     motors[i].stepPin = nmx_step_pins[i];
     motors[i].dirPin = nmx_dir_pins[i];
+	//for (byte i = 0; i < MOTOR_COUNT; i++)
+	//	motor[i].ms(4);
     pinMode(nmx_en_pins[i], OUTPUT);
     enableMotor(i, false);
 #else

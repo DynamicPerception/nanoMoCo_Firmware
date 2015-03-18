@@ -190,7 +190,7 @@ void stopAllMotors() {
 
       // signal completion
       _fireCallback(OM_MOT_DONE);
-                  // let go of interrupt cycle
+      // let go of interrupt cycle
       Timer1.detachInterrupt();
 
 }

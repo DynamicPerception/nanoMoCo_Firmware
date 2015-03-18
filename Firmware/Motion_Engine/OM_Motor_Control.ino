@@ -321,6 +321,23 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	const int QUARTER_CUTOFF = 8000;
 	const int EIGHTH_CUTOFF = 4000;
 	float comparison_speed;
+	float max_time_per_move;
+	float steps_per_move;
+
+	// When the controller is in external intervalometer mode, rather than determining the step speed based upon the given interval,
+	// the interval will be determined based upon movement at full speed in 8th stepping mode. 
+	if (external_intervalometer) {
+		comparison_speed = 8000.0;																						// All external intervalometer moves will run at top speed in 8th stepping mode
+		steps_per_move = motor[p_motor].getTopSpeed();																	// Maximum number of steps per move
+		max_time_per_move = (steps_per_move / comparison_speed) * MILLIS_PER_SECOND;									// Max time in milliseconds
+		Camera.interval = max_time_per_move - (float)(Camera.delayTime() + Camera.triggerTime() + Camera.focusTime());	// Minimum camera interval
+		
+		// Always run in eight steps for external intervalometer mode
+		if (p_autosteps)
+			return EIGHTH;
+		else
+			return 1;
+	}
 	
 	// For time lapse SMS mode
 	if (motor[p_motor].planType() == SMS) {
@@ -330,7 +347,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 
 
 		// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
-		float steps_per_move = motor[p_motor].getTopSpeed();
+		steps_per_move = motor[p_motor].getTopSpeed();
 
 		comparison_speed = steps_per_move / (float)max_time_per_move;
 

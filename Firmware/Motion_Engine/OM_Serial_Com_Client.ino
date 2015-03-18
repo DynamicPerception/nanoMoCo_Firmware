@@ -612,7 +612,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				else
 					status = 0;
 				if (usb_debug & DB_GEN_SER){
-					USBSerial.print("Run Status: ");
+					USBSerial.print("Command Gen.101 - Run Status: ");
 					USBSerial.println(status);
 				}
 				response(true, status);
@@ -622,7 +622,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
 		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Run time: ");
+			USBSerial.print("Command Gen.102 - Run time: ");
 			USBSerial.println (last_run_time);
 		}
 		if (external_intervalometer)
@@ -778,7 +778,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
 		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Total run time: ");
+			USBSerial.print("Command Gen.125 - Total run time: ");
 			USBSerial.println(totalProgramTime());
 			USBSerial.println("");
 		}
@@ -1082,7 +1082,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   // how many steps to take
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
-
+			   USBSerial.print("Commanded steps: ");
+			   USBSerial.println(steps);
 			   // move
 			   if (steps == 0)
 				 motor[subaddr - 1].continuous(true);
@@ -1392,7 +1393,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 107:
 		response(true, motor[subaddr - 1].running());
 		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Motor running? ");
+			USBSerial.print("Command gen.107 - Motor running? ");
 			USBSerial.println(motor[subaddr - 1].running());
 		}
 		break;
@@ -1592,7 +1593,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 109:
 		response(true, camera_fired);
 		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Camera fired: ");
+			USBSerial.print("Command Cam.109 - Camera fired: ");
 			USBSerial.println(camera_fired);
 		}
 		break;

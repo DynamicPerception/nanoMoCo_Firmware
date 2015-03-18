@@ -116,7 +116,7 @@ void altHandler(byte p_which) {
     else if( altInputs[p_which] == ALT_EXTINT ) {
         
 		if (usb_debug & DB_GEN_SER)
-		USBSerial.println("External trigger detected");
+			USBSerial.println("External trigger detected");
 		
 		// set camera ok to fire
         altForceShot = true;
