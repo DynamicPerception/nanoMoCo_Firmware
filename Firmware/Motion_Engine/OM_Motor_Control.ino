@@ -159,8 +159,6 @@ void startProgramCom() {
 		// Reset the program completion flag
 		program_complete = false;
 
-		//USBSerial.println("Start Break 1");
-
 		uint8_t wait_required = false;
 
 		// Check each motor to see if it needs backlash compensation
@@ -203,7 +201,7 @@ void startProgramCom() {
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
 		if (motor[1].planType() == SMS) {
-			////USBSerial.println("Start Break 4");
+			
 			// Determine the max time in seconds allowed for moving the motors
 			float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 			// If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
@@ -233,7 +231,7 @@ void startProgramCom() {
 	// Don't start a new program if one is already running
 	if (!running) {
 
-		if (usb_debug & DB_GEN_SER){
+		if (usb_debug & DB_FUNCT){
 			USBSerial.println("Motor distances:");
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
@@ -261,8 +259,6 @@ void startProgramCom() {
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				if (motor[i].enable())
 					motor[i].resumeMove();
-				//USBSerial.print("New Run Time: ");
-				//USBSerial.println(motor[i].planTravelLength());
 			}
 		}
 
@@ -321,6 +317,23 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	const int QUARTER_CUTOFF = 8000;
 	const int EIGHTH_CUTOFF = 4000;
 	float comparison_speed;
+	float max_time_per_move;
+	float steps_per_move;
+
+	// When the controller is in external intervalometer mode, rather than determining the step speed based upon the given interval,
+	// the interval will be determined based upon movement at full speed in 8th stepping mode. 
+	if (external_intervalometer) {
+		comparison_speed = 8000.0;																						// All external intervalometer moves will run at top speed in 8th stepping mode
+		steps_per_move = motor[p_motor].getTopSpeed();																	// Maximum number of steps per move
+		max_time_per_move = (steps_per_move / comparison_speed) * MILLIS_PER_SECOND;									// Max time in milliseconds
+		Camera.interval = max_time_per_move - (float)(Camera.delayTime() + Camera.triggerTime() + Camera.focusTime());	// Minimum camera interval
+		
+		// Always run in eight steps for external intervalometer mode
+		if (p_autosteps)
+			return EIGHTH;
+		else
+			return 1;
+	}
 	
 	// For time lapse SMS mode
 	if (motor[p_motor].planType() == SMS) {
@@ -330,7 +343,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 
 
 		// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
-		float steps_per_move = motor[p_motor].getTopSpeed();
+		steps_per_move = motor[p_motor].getTopSpeed();
 
 		comparison_speed = steps_per_move / (float)max_time_per_move;
 
@@ -350,7 +363,8 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 	// If the requested speed is too high, send error value, don't change microstepping setting
 	if (comparison_speed >= MAX_CUTOFF ) {
-		//USBSerial.println("Excessive speed requested");
+		if (usb_debug & DB_FUNCT)
+			USBSerial.println("Excessive speed requested");
 		return 0;
 	}
 	else {
@@ -401,7 +415,7 @@ byte msAutoSet(uint8_t p_motor) {
 		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
 		// USB print the debug value, if necessary
-		if (usb_debug & DB_GEN_SER){
+		if (usb_debug & DB_FUNCT){
 			USBSerial.print("Requested Microsteps: ");
 			USBSerial.println(microsteps);
 			USBSerial.println("Microsteps successfully set");
@@ -412,7 +426,7 @@ byte msAutoSet(uint8_t p_motor) {
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
 	else {
-		if (usb_debug & DB_GEN_SER)
+		if (usb_debug & DB_FUNCT)
 				USBSerial.println("Motors are running, can't auto-set microsteps");
 			return false;
 	}

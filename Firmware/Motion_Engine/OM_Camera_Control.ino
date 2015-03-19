@@ -68,10 +68,14 @@ void camCallBack(byte code) {
   // which can result in unexpected behavior
   
   if( code == OM_CAM_FFIN ) {
-    Engine.state(ST_EXP);
+	  if (usb_debug & DB_FUNCT)
+		USBSerial.println("camCallBack() - Entering exposure state");
+	  Engine.state(ST_EXP);
   }
   else if( code == OM_CAM_EFIN ) {
-    camera_fired++;
+	if (usb_debug & DB_FUNCT)
+	  USBSerial.println("camCallBack() - Entering wait state");
+	camera_fired++;
     Engine.state(ST_WAIT);
   }
   else if( code == OM_CAM_WFIN ) {

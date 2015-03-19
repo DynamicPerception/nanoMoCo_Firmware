@@ -31,6 +31,51 @@ See dynamicperception.com for more information
   
 */
 
+/*
+byte setDebugOutput(byte p_setting)
+
+Sets the USB debug output flags. This allows for turning on and off of specific debug message types.
+
+@param 
+p_setting is an 8-bit number where each bit is a debug flag. A bit will toggle the corresponding bit
+in the usb_debug variable to its opposite state. Set only one bit at a time to avoid conflicting on/off requests.
+
+*/
+
+byte setDebugOutput(byte p_setting) {
+
+	// If the specified flag is already on, turn it off, otherwise turn it on.
+	if (usb_debug & p_setting)
+		usb_debug &= ~p_setting;
+	else
+		usb_debug |= p_setting;
+
+	USBSerial.print("Requested setting change: ");
+	USBSerial.println(p_setting, BIN);
+	USBSerial.print("Debug flags: ");
+	USBSerial.println(usb_debug, BIN);
+	USBSerial.println("");
+
+	// Set debug states for libraries
+	bool motor_debug = false;
+	bool camera_debug = false;
+	if (usb_debug & DB_FUNCT)
+		camera_debug = true;
+	if (usb_debug & DB_MOTOR)
+		motor_debug = true;
+	OMCamera::debugOutput(camera_debug);
+	OMMotorFunctions::debugOutput(motor_debug);
+
+	// Return the full USB debug flag byte
+	return usb_debug;
+}
+
+/*
+void debugOn() / void debugOff()
+
+Sets the debug LED on or off, respectively
+
+*/
 
 void debugOn() {
   
@@ -42,5 +87,56 @@ void debugOff() {
   digitalWrite(DEBUG_PIN, LOW);
 }
 
+void selfDiagnostic() {
+	// Check camera trigger
+	for (byte i = 0; i < 2; i++) {
+		Camera.expose();
+		delay(1000);
+	}
+
+	// Enable and sleep all the motors so all LEDs are off
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		motor[i].enable(true);
+		motor[i].sleep(true);
+	}
+
+	// Check the motor attachment
+	uint8_t motor_attach = checkMotorAttach();
+	delay(250);
+
+	// Report via enable lights which motors were detected
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		// If a motor is detected, turn on the LED by turning off sleep mode
+		if ((motor_attach >> i) & 1){
+			motor[i].sleep(false);
+			delay(250);
+			motor[i].sleep(true);
+			delay(250);
+		}
+		else
+			delay(1000);
+	}
+
+	// Turn sleep mode back off for all motor channels
+	for (byte i = 0; i < MOTOR_COUNT; i++)
+		motor[i].sleep(false);
+
+	// Move motors forward
+	unsigned long _time = millis();
+	int _speed = 4000;
+	int _seconds = 3;
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		motor[i].contSpeed(_speed);
+		motor[i].continuous(false);
+		motor[i].move(0, (_speed * _seconds)); // Determine the distanced based upon the speed and desired seconds above.
+	}
+	startISR();
+	while (motor[0].running() || motor[1].running() || motor[2].running()){
+		// Do nothing until all motors have stopped
+	}
+	for (byte i = 0; i < MOTOR_COUNT; i++)
+		motor[i].move(1, (_speed * _seconds));
+	startISR();
+}
     
   

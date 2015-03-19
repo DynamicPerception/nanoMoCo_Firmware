@@ -107,7 +107,6 @@ const byte FLASH_DELAY				= 250;				// Time between flashes in milliseconds
 const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be held low to do a factory reset
 uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
-unsigned long loop_time				= 0;				// Timing variable used for triggering events within loop()
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
 bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
 
@@ -286,13 +285,13 @@ Debugging Constants and Associated Flags
 ****************************************/
 
 
-byte usb_debug = B00000000;
-const byte DB_COM_OUT = B00000001;
-const byte DB_STEPS = B00000010;
-const byte DB_MOTOR = B00000100;
-const byte DB_GEN_SER = B00010000;
-const byte DB_FUNCT = B00100000;
-const byte DB_CONFIRM = B01000000;
+byte usb_debug			= B00000000;	// Byte holding debug output flags
+const byte DB_COM_OUT	= B00000001;	// Debug flag -- toggles output of received serial commands
+const byte DB_STEPS		= B00000010;	// Debug flag -- toggles output of motor step information 
+const byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general motor information 
+const byte DB_GEN_SER	= B00010000;	// Debug flag -- toggles output of responses to certain serial commands
+const byte DB_FUNCT		= B00100000;	// Debug flag -- toggles output of debug messages within most functions
+const byte DB_CONFIRM	= B01000000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
 
 
 /***************************************
@@ -343,10 +342,8 @@ void setup() {
 	// Start Bluetooth communications
 	altSerial.begin(9600);
 
-	loop_time = millis();
-
 	if (usb_debug & DB_FUNCT)
-	USBSerial.println("Done setting things up!");
+		USBSerial.println("setup() - Done setting things up!");
   
 	// Set controller I/O pin modes
 	pinMode(DEBUG_PIN, OUTPUT);
@@ -440,32 +437,44 @@ void setup() {
 
 void loop() {
 
-	static unsigned long estop_time; // Remembers last time eStop was NOT pressed
-		if (df_mode) {
-		df_loop();
-		return;
-	}
-	
-	// If eStop button has been held more than 5 sec, switch to DF mode
-	if (digitalRead(ESTOP_PIN) == HIGH)
-		 estop_time = millis();
-	else if (!df_mode && millis() - estop_time > 5000) {
-		df_setup();
-		df_mode = true;
-		return;
-		
-	}
+	static unsigned long estop_time = 0; // Remembers last time eStop was NOT pressed
+	static unsigned long df_time = 0;
+	static unsigned long debug_time = 0;
 
 	// check to see if we have any commands waiting      
 	Node.check();
 	NodeBlue.check();
 	NodeUSB.check();
 
-	// If the the DB_STEPS debug flag is true, print diagnostic info
-	if ((millis() - loop_time) > 500 && (usb_debug & DB_STEPS))
+	// Only do these things every 100ms so we don't waste cycles during every loop
+	if ((millis() - df_time) > 100) {
+
+		// If eStop button has been held more than 3 sec, switch to DF mode
+		if (digitalRead(ESTOP_PIN) == HIGH)
+			estop_time = millis();
+		else if (!df_mode && millis() - estop_time > 3000) {
+			ledChase(2);
+			if (usb_debug & DB_FUNCT)
+				USBSerial.print("Entering DF mode");
+			df_mode = true;
+			return;
+		}
+					
+		// If the the DB_STEPS debug flag is true, print diagnostic info
+		if (df_mode) {
+			df_setup();
+			df_loop();
+			return;
+		}
+		df_time = millis();
+	}	
+
+	if ((usb_debug & DB_STEPS) && (millis() - debug_time) > 500) {
 		motorDebug();
-		
-	loop_time = millis();
+		debug_time = millis();
+	}
+
+	
 	
 	//Stop the motors if they're running and the watchdog timeout (time since last received command) has been exceeded
 	if ((motor[0].running() || motor[1].running() || motor[2].running()) && watchdog){
@@ -580,12 +589,11 @@ void eStop() {
 	static unsigned long last_interrupt_time = 0;
 	unsigned long interrupt_time = millis();
 
-	static unsigned long times_since_press = millis();
 	static byte enable_count = 0;
 	const byte THRESHOLD = 3;
 
 	// If interrupts come faster than 200ms, assume it's a bounce and ignore
-	if (interrupt_time - last_interrupt_time > 200) {
+	if (interrupt_time - last_interrupt_time > 150) {
 
 		if (running && !camera_test_mode)
 			stopProgram();	// This previously paused the running program, but that caused weird state issues with the mobile app
@@ -595,12 +603,15 @@ void eStop() {
 
 		else if (!motor[0].running() && !motor[1].running() && !motor[2].running()) {
 			// If the button was pressed recently enough, increase the enable count, otherwise reset it to 0.
-			if (millis() - times_since_press < 1500)
+			if (interrupt_time - last_interrupt_time < 1000)
 				enable_count++;
 			else
 				enable_count = 1;
-			//USBSerial.print("Switch count ");
-			//USBSerial.println(_enable_count);
+
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("eStop() - Switch count ");
+				USBSerial.println(enable_count);
+			}
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
 			if (enable_count >= THRESHOLD && !external_intervalometer) {
@@ -622,7 +633,6 @@ void eStop() {
 				// Turn the debug light off to confirm the setting
 				debugOff();
 			}
-			loop_time = millis();
 		}
 
 		else
@@ -703,7 +713,7 @@ unsigned long totalProgramTime() {
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
 				if (usb_debug & DB_FUNCT){
-					USBSerial.print("Interval: ");
+					USBSerial.print("totalProgramTime() - Interval: ");
 					USBSerial.print(Camera.interval);
 					USBSerial.print("  Lead in: ");
 					USBSerial.print(motor[i].planLeadIn());
@@ -768,6 +778,48 @@ void flasher(byte pin, int count) {
    
 }
 
+/*
+void ledChase(byte p_chases)
+
+Wipes LEDs forward and back a specified number of times. Can be used as an indicator,
+but if holding position is critical, be aware that motors will be briefly put into sleep mode.
+
+*/
+
+void ledChase(byte p_chases) {
+	
+	bool current_sleep[MOTOR_COUNT];
+	
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		// Save the current sleep state of all the motors so they can be restored later
+		current_sleep[i] = motor[i].sleep();
+		// Put them into sleep mode in case it isn't already
+		motor[i].sleep(true);
+	}
+
+	for (byte chase_count = 0; chase_count < p_chases; chase_count++) {
+		int bounce_count = p_chases * MOTOR_COUNT;
+		int current_motor = 0;
+		int chase_dir = 1;
+		
+		for (int i = 0; i < bounce_count; i++){
+			motor[current_motor].sleep(false);
+			delay(75);
+			motor[current_motor].sleep(true);
+			current_motor += chase_dir;
+			
+			// Change direction when at the last LED
+			if (current_motor == MOTOR_COUNT)
+				chase_dir *= -1;
+
+		}
+	}
+	// Restore the motor sleep states
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		motor[i].sleep(current_sleep[i]);
+	}
+}
+
 
 byte powerCycled() {
 	
@@ -804,7 +856,7 @@ uint8_t checkMotorAttach() {
 		motor[i].sleep(false);
 		delay(100);
 		// Read the analog value from current sensing pin
-		int current = analogRead(CURRENT_PIN);		
+		int current = analogRead(CURRENT_PIN);
 		// Convert the value to current in millamps
 		float amps = (float)current / 1023 * 5;
 		// This is the threshold in amps above which a motor will register as being detected;
@@ -814,10 +866,12 @@ uint8_t checkMotorAttach() {
 			attached |= (1 << i);
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
-		//USBSerial.print("Motor ");
-		//USBSerial.print(i);
-		//USBSerial.print(" current draw: ");
-		//USBSerial.println(amps);
+		if (usb_debug & DB_FUNCT) {
+			USBSerial.print("Motor ");
+			USBSerial.print(i);
+			USBSerial.print(" current draw: ");
+			USBSerial.println(amps);
+		}
 	}
 
 	// Restore the saved sleep states
@@ -830,6 +884,8 @@ uint8_t checkMotorAttach() {
 }
 
 void motorDebug() {
+
+	USBSerial.print("Current Steps ");
 	USBSerial.print(motor[0].currentPos());
 	USBSerial.print(" continious Speed: ");
 	USBSerial.print(motor[0].contSpeed());
