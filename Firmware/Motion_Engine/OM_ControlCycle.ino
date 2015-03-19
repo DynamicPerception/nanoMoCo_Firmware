@@ -126,12 +126,9 @@ void cycleCamera() {
 
 		//else if (key_move && current_frame >= key_frames)
 		//	current_frame = 0;
+  	   //}
   
-	// if in external interval mode, don't do anything if a force shot isn't registered
-  //if (usb_debug & DB_FUNCT){
-	 // USBSerial.print("cycleCamera() - altForceShot state: ");
-	 // USBSerial.println(altForceShot);
-  //}
+  // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
 	  if (usb_debug & DB_FUNCT)
 		USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
@@ -198,8 +195,6 @@ void cycleCamera() {
     } 
     
   }
-
-  //USBSerial.println("cycleCamera() - End of function");
   
 }
 
@@ -325,9 +320,9 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
-		  if (usb_debug & DB_GEN_SER)
-		  USBSerial.println("Auto pausing!!!");
-            pauseProgram();
+		  if (usb_debug & DB_FUNCT)
+			USBSerial.println("Auto pausing!!!");
+          pauseProgram();
       }
     }
     else { 

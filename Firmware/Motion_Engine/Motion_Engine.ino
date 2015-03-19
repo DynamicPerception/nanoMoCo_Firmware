@@ -285,13 +285,13 @@ Debugging Constants and Associated Flags
 ****************************************/
 
 
-byte usb_debug			= B00000000;
-const byte DB_COM_OUT	= B00000001;
-const byte DB_STEPS		= B00000010;
-const byte DB_MOTOR		= B00000100;
-const byte DB_GEN_SER	= B00010000;
-const byte DB_FUNCT		= B00100000;
-const byte DB_CONFIRM	= B01000000;
+byte usb_debug			= B00000000;	// Byte holding debug output flags
+const byte DB_COM_OUT	= B00000001;	// Debug flag -- toggles output of received serial commands
+const byte DB_STEPS		= B00000010;	// Debug flag -- toggles output of motor step information 
+const byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general motor information 
+const byte DB_GEN_SER	= B00010000;	// Debug flag -- toggles output of responses to certain serial commands
+const byte DB_FUNCT		= B00100000;	// Debug flag -- toggles output of debug messages within most functions
+const byte DB_CONFIRM	= B01000000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
 
 
 /***************************************
@@ -343,7 +343,7 @@ void setup() {
 	altSerial.begin(9600);
 
 	if (usb_debug & DB_FUNCT)
-	USBSerial.println("setup() - Done setting things up!");
+		USBSerial.println("setup() - Done setting things up!");
   
 	// Set controller I/O pin modes
 	pinMode(DEBUG_PIN, OUTPUT);
@@ -454,12 +454,12 @@ void loop() {
 			estop_time = millis();
 		else if (!df_mode && millis() - estop_time > 3000) {
 			ledChase(2);
-			//USBSerial.print("Entering DF mode");
+			if (usb_debug & DB_FUNCT)
+				USBSerial.print("Entering DF mode");
 			df_mode = true;
 			return;
 		}
-		//USBSerial.println(millis() - estop_time);
-			
+					
 		// If the the DB_STEPS debug flag is true, print diagnostic info
 		if (df_mode) {
 			df_setup();
@@ -856,7 +856,7 @@ uint8_t checkMotorAttach() {
 		motor[i].sleep(false);
 		delay(100);
 		// Read the analog value from current sensing pin
-		int current = analogRead(CURRENT_PIN);		
+		int current = analogRead(CURRENT_PIN);
 		// Convert the value to current in millamps
 		float amps = (float)current / 1023 * 5;
 		// This is the threshold in amps above which a motor will register as being detected;
@@ -866,10 +866,12 @@ uint8_t checkMotorAttach() {
 			attached |= (1 << i);
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
-		//USBSerial.print("Motor ");
-		//USBSerial.print(i);
-		//USBSerial.print(" current draw: ");
-		//USBSerial.println(amps);
+		if (usb_debug & DB_FUNCT) {
+			USBSerial.print("Motor ");
+			USBSerial.print(i);
+			USBSerial.print(" current draw: ");
+			USBSerial.println(amps);
+		}
 	}
 
 	// Restore the saved sleep states
@@ -882,6 +884,8 @@ uint8_t checkMotorAttach() {
 }
 
 void motorDebug() {
+
+	USBSerial.print("Current Steps ");
 	USBSerial.print(motor[0].currentPos());
 	USBSerial.print(" continious Speed: ");
 	USBSerial.print(motor[0].contSpeed());
