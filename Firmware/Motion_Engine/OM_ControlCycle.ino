@@ -128,10 +128,10 @@ void cycleCamera() {
 		//	current_frame = 0;
   
 	// if in external interval mode, don't do anything if a force shot isn't registered
-  if (usb_debug & DB_FUNCT){
-	  USBSerial.println("cycleCamera() - altForceShot state: ");
-	  USBSerial.print(altForceShot);
-  }
+  //if (usb_debug & DB_FUNCT){
+	 // USBSerial.print("cycleCamera() - altForceShot state: ");
+	 // USBSerial.println(altForceShot);
+  //}
   if (altExtInt && !altForceShot) {
 	  if (usb_debug & DB_FUNCT)
 		USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
@@ -151,7 +151,7 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable  ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable || external_intervalometer ) {
 
 	  if (usb_debug & DB_FUNCT){
 		  USBSerial.print("cycleCamera() - Shots: ");
@@ -182,14 +182,16 @@ void cycleCamera() {
       // callback executions that will walk us through the complete exposure cycle.
       // -- if no focus is configured, nothing will happen but trigger
       // the callback that will trigger exposing the camera immediately
-	if (usb_debug & DB_FUNCT)
-		  USBSerial.println("cycleCamera() - Resetting altForceShot");
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print("cycleCamera() - Camera busy: ");
+		USBSerial.print(Camera.busy());
+	}
     if( ! Camera.busy() ) {
-        // only execute cycle if the camera is not currently busy
+		if (usb_debug & DB_FUNCT)
+			USBSerial.println("cycleCamera() - Initiating exposure cycle");
+      // only execute cycle if the camera is not currently busy
       Engine.state(ST_BLOCK);
 	  altBlock = ALT_OFF;
-	  if (usb_debug & DB_FUNCT)
-		  USBSerial.println("cycleCamera() - Resetting altForceShot");
 	  altForceShot = false;
       camera_tm = millis();  
       Camera.focus();
@@ -197,7 +199,7 @@ void cycleCamera() {
     
   }
 
-  USBSerial.println("cycleCamera() - End of function");
+  //USBSerial.println("cycleCamera() - End of function");
   
 }
 
