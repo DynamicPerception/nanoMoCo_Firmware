@@ -32,12 +32,7 @@ See dynamicperception.com for more information
   
 */
 
-  
-
- // necessary camera control variables
-
-unsigned int  camera_max_shots = 0;
-byte          camera_repeat    = 0;
+ 
 
 
 void camExpose() {
@@ -62,7 +57,7 @@ void camWait() {
 
 void camCallBack(byte code) {
     
-  // This callback is called whenever an asynchronous activity begi  ns or ends, and 
+  // This callback is called whenever an asynchronous activity begins or ends, and 
   // is able to take some actions as different states are reported out of the
   // camera object.
   //
@@ -73,10 +68,14 @@ void camCallBack(byte code) {
   // which can result in unexpected behavior
   
   if( code == OM_CAM_FFIN ) {
-    Engine.state(ST_EXP);
+	  if (usb_debug & DB_FUNCT)
+		USBSerial.println("camCallBack() - Entering exposure state");
+	  Engine.state(ST_EXP);
   }
   else if( code == OM_CAM_EFIN ) {
-    camera_fired++;
+	if (usb_debug & DB_FUNCT)
+	  USBSerial.println("camCallBack() - Entering wait state");
+	camera_fired++;
     Engine.state(ST_WAIT);
   }
   else if( code == OM_CAM_WFIN ) {
@@ -90,27 +89,114 @@ void camCallBack(byte code) {
 
  // check for camera repeat cycle
 void checkCameraRepeat() {
+	
   
     static byte repdone = 0;
     
       // if we don't have camera repeat function enabled,
-      // then go ahead and clear for a move
-    if( camera_repeat == 0 ) {
-      Engine.state(ST_MOVE);
+      // then go ahead and clear for alt out post shot check
+    if( Camera.repeat == 0 ) {
+      Engine.state(ST_ALTP);
       return;
     }
     
-   if( repdone >= camera_repeat ) {
+   if( repdone >= Camera.repeat ) {
        // we've done all of the repeat cycles
      repdone = 0;
-       // clear for moving
-     Engine.state(ST_MOVE);
+       // clear for check post-exposure alt output trigger
+     Engine.state(ST_ALTP);
      return;
    }
    
      // trigger another exposure
    repdone++;
    Engine.state(ST_EXP);
+}
+
+/**
+Start or stop camera test mode
+*/
+void cameraTest(uint8_t p_start) {
+
+	// If the command doesn't change the test mode, ignore it and exit the fucntion
+	if (camera_test_mode == p_start)
+		return;
+
+	static uint8_t old_enable[MOTOR_COUNT];
+	static unsigned long old_max_shots;
+	camera_test_mode = p_start;
+
+	// Entering test mode
+	if (camera_test_mode) {
+		// Remember each motor's enable mode and disable all of them
+		for (byte i = 0; i < MOTOR_COUNT; i++) {
+			old_enable[i] = motor[i].enable();
+			motor[i].enable(false);
+		}
+
+		// Remember the current max shots setting
+		old_max_shots = Camera.maxShots;
+
+		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
+		Camera.maxShots = 10000;
+
+		// Starting the program will make the camera fire, but the motors won't move
+		startProgram();
+
+	}
+
+	// Exiting test mode
+	else if (!camera_test_mode) {
+
+		// Stop the camera firing
+		stopProgram();
+
+		// Restore motor enable statuses and camera max shots
+		for (byte i = 0; i < MOTOR_COUNT; i++)
+			motor[i].enable(old_enable[i]);
+
+		Camera.maxShots = old_max_shots;
+
+		// Reset the shot count to 0
+		camera_fired = 0;
+	}
+}
+
+
+/**
+
+Return whether the camera is in test mode
+
+*/
+uint8_t cameraTest() {
+
+	return(camera_test_mode);
+
+}
+
+
+/**
+
+Automatically sets the max shots value based upon the lead-in, travel, and lead-out shots.
+
+*/
+void cameraAutoMaxShots() {
+
+	// This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
+	if (motor[0].planType() != SMS)
+		return;
+
+	unsigned int longest = 0;
+	unsigned int current = 0;
+
+	// Find the longest combination of leads and travel, then set that as the max shots
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		current = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
+		if (current > longest)
+			longest = current;
+	}
+
+	Camera.maxShots = longest;
 }
 
 

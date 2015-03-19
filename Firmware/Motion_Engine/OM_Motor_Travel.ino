@@ -35,4 +35,37 @@ See dynamicperception.com for more information
  */
  
  
- 
+void sendAllToStart() {
+
+	// If any of the motors are currently running, don't start the motors moving
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (motor[i].running()) {
+			return;
+		}
+	}
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		sendToStart(i);
+	}
+}
+
+void sendToStart(uint8_t p_motor) {
+
+	// Determine whether this move will induce backlash that needs to be taken up before starting the program move
+	uint8_t program_dir = (motor[p_motor].stopPos() - motor[p_motor].startPos()) > 0 ? 1 : 0;
+	uint8_t this_move_dir = (motor[p_motor].startPos() - motor[p_motor].currentPos()) > 0 ? 1 : 0;
+
+	if (program_dir != this_move_dir)
+		motor[p_motor].programBackCheck(true);
+	else
+		motor[p_motor].programBackCheck(false);
+
+
+	// Move at the maximum motor speed
+	motor[p_motor].ms(4);
+	motor[p_motor].contSpeed(mot_max_speed);
+
+	// Start the move
+	motor[p_motor].moveToStart();
+	startISR();
+}
