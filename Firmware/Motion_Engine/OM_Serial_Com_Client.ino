@@ -573,6 +573,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
+	// Command 29 swaps all motors' start and stop positions
+	case 29:
+		reverseStartStop();
+		response(true);
+		break;
+
 	//Command 40 sets key frames flag
 	case 40:
 		kfSet(input_serial_buffer[0]);
