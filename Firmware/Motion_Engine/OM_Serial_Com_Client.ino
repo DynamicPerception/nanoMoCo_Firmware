@@ -279,6 +279,7 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 			OMEEPROM::write(EE_ADDR, device_address);
 			Node.address(device_address);
 			NodeBlue.address(device_address);
+			if (graffikMode())
 			response(true);
 			flasher(DEBUG_PIN, 5);
 
@@ -288,12 +289,9 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	case OM_GRAFFIK_MODE_USB:
 	{
 		node = USB;
-		byte graffik_setting = buf[0];
-		if (usb_debug & DB_GEN_SER) {
-			USBSerial.print("Graffik mode setting: ");
-			USBSerial.println(graffik_setting);
-		}
-		graffikMode(graffik_setting);
+		if (usb_debug & DB_GEN_SER)
+			USBSerial.print("Graffik mode enabled");
+		graffikMode(true);
 		response(true);
 	}
 
