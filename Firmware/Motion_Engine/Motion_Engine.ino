@@ -97,9 +97,14 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 
 ****************************************/
 
+// Serial node types
+#define MOCOBUS 1
+#define BLE 2
+#define USB 3
+
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
 const int SERIAL_VERSION			= 30;				// Serial API version
-byte node							= 1;				// default node to use (Hardware Serial = 1; AltSoftSerial = 2)
+byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
 const byte START_FLASH_CNT			= 5;				// # of flashes of debug led at startup

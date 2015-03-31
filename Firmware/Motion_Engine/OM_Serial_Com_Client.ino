@@ -85,7 +85,7 @@ to respond to
   */
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
-  node = 1;
+  node = MOCOBUS;
   commandTime = millis();
   if(usb_debug & DB_COM_OUT){
 	  USBSerial.print("MocoBus ");
@@ -118,7 +118,7 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   */
 
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
-  node = 2;
+  node = BLE;
   commandTime = millis();
   if (usb_debug & DB_COM_OUT){
 	  USBSerial.print("Bluetooth ");
@@ -153,7 +153,7 @@ void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
   */
 
 void serNodeUSBHandler(byte subaddr, byte command, byte*buf) {
-  node = 3;
+  node = USB;
   serCommandHandler(subaddr, command, buf);
 }
 
@@ -270,7 +270,7 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
       pauseProgram();
       break;
 	  
-	  //resets controller to default address/name, flashes the debug LED 10 times to indicate restart required      
+	  //resets controller to default address/name, flashes the debug LED 5 times to indicate restart required      
     case OM_BCAST_SET_ADDRESS:
 		if (usb_debug & DB_GEN_SER)
 			USBSerial.println("Setting new address!");
@@ -279,11 +279,24 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 			OMEEPROM::write(EE_ADDR, device_address);
 			Node.address(device_address);
 			NodeBlue.address(device_address);
-			flasher(DEBUG_PIN, 5);	
 			response(true);
+			flasher(DEBUG_PIN, 5);
+
 	  }
       break;
-      
+
+	case OM_GRAFFIK_MODE_USB:
+	{
+		node = USB;
+		byte graffik_setting = buf[0];
+		if (usb_debug & DB_GEN_SER) {
+			USBSerial.print("Graffik mode setting: ");
+			USBSerial.println(graffik_setting);
+		}
+		graffikMode(graffik_setting);
+		response(true);
+	}
+
     default:
       break;
   }
@@ -604,7 +617,6 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 100:
       // serial api version
       response( true, (unsigned long) SERIAL_VERSION );
-      
       break;
     
     //Command 101 reads run status
