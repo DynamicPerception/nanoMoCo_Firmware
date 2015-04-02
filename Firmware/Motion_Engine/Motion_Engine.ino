@@ -464,6 +464,7 @@ void loop() {
 			// Change motors to 8th stepping before starting DF mode
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				motor[i].ms(8);
+				motor[i].sleep(true);
 			}
 			df_mode = true;
 			return;
