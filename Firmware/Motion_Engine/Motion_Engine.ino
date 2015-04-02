@@ -461,6 +461,10 @@ void loop() {
 			ledChase(2);
 			if (usb_debug & DB_FUNCT)
 				USBSerial.print("Entering DF mode");
+			// Change motors to 8th stepping before starting DF mode
+			for (byte i = 0; i < MOTOR_COUNT; i++){
+				motor[i].ms(8);
+			}
 			df_mode = true;
 			return;
 		}
