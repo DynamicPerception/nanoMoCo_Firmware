@@ -1040,8 +1040,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   // how many steps to take
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
-			   USBSerial.print("Command Mot.15 - Commanded steps: ");
-			   USBSerial.println(steps);
+			   if (usb_debug & DB_GEN_SER){
+				   USBSerial.print("Command Mot.15 - Commanded steps: ");
+				   USBSerial.println(steps);
+			   }
 			   // move
 			   if (steps == 0)
 				 motor[subaddr - 1].continuous(true);
