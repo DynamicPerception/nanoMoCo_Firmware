@@ -230,7 +230,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 3:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 15) {
+	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13) {
 		   if (usb_debug & DB_GEN_SER)
 			   USBSerial.println("Invalid motor command");
 		   response(false);
@@ -1250,10 +1250,20 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			   }
 
 			   break;
-	}    
+	}
 
-		//Command 25 steps forward one planned cycle for SMS
-	case 50:
+	// Command 50
+	case 50: 
+	{
+		byte stop_motion_setting = input_serial_buffer[0];
+		for (byte i = 0; i < MOTOR_COUNT; i++) {
+			motor[i].mt_plan = stop_motion_setting;
+		}		
+		break;
+	}
+
+	// Command 51 steps forward one planned cycle for SMS
+	case 51:
 		// step forward one interleaved (sms) plan cycle
 
 		if (!motor[subaddr - 1].mt_plan) {
@@ -1274,8 +1284,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 		break;
 
-		//Command 26 steps back one sms planed cycle
-	case 51:
+	// Command 52 steps back one sms planed cycle
+	case 52:
 		// step back one interleaved (sms) plan cycle
 
 		// return an error if we don't actually have a planned move
@@ -1444,8 +1454,6 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       Camera.expose();
       response(true);
       break;
-    
-
 
     //Command 4 set camera's exposure time  
     case 4:

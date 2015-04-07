@@ -262,7 +262,7 @@ extern void df_TimerHandler(void);
 
 
 //Variables for joystick move, if watchdog is true the system expects a command at least once
-//every WATCHDOG_MAX_TIME (mS), if it doesn't receive a command it'll stop the motors
+//every WATCHDOG_MAX_TIME (mS), if it doesn't receive a command it will stop the motors
 const unsigned int WATCHDOG_MAX_TIME = 1000;
 uint8_t watchdog = false;
 unsigned long commandTime = 0;
@@ -703,7 +703,6 @@ uint8_t programPercent() {
 
 	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
 	// Don't execute this behavior in Graffik mode
-	if (percent_new == 0 && percent != 0 & !graffikMode())
 		percent = 100;
 	else
 		percent = percent_new;

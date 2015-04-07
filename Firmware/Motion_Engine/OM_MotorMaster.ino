@@ -155,7 +155,7 @@ uint8_t maxStepRate( unsigned int p_Rate ) {
 
 /** Get Maximum Stepping Rate
 
- Returns the current maximum stepping rate in steps per second. m_curSampleRate is a static variable, therefore
+ Returns the current maximum stepping rate in steps per second. m_curSampleTime is a static variable, therefore
  we can grab it from any of the motors.
 
  @return
