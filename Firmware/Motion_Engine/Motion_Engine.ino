@@ -703,6 +703,7 @@ uint8_t programPercent() {
 
 	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
 	// Don't execute this behavior in Graffik mode
+	if (percent_new == 0 && percent != 0 && !graffikMode())
 		percent = 100;
 	else
 		percent = percent_new;
