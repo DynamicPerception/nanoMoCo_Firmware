@@ -675,8 +675,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 107 reads voltage in
 	case 107:
 	{
-		int voltage=analogRead(VOLTAGE_PIN);
-		float converted = (float)voltage/1023*25;
+		int voltage = analogRead(VOLTAGE_PIN);
+		unsigned long converted = (unsigned long) (((float)voltage/1023*25) * FLOAT_TO_FIXED);
 		response(true, converted);
 		break;
 	}
@@ -685,7 +685,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 108:
 	{
 		int current = analogRead(CURRENT_PIN);
-		float converted = (float)current/1023*5;
+		unsigned long converted = (unsigned long) (((float)current / 1023 * 5) * FLOAT_TO_FIXED);
 		response(true, converted);
 		break;
 	}
@@ -1368,12 +1368,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 108 reads the continuous speed for the motor
 	case 108:
-		response(true, motor[subaddr - 1].contSpeed());
+		response(true, (unsigned long) (motor[subaddr - 1].contSpeed() * FLOAT_TO_FIXED));
 		break;
 
 	//Command 109 reads the accel/decel value continuous motion
 	case 109:
-		response(true, motor[subaddr - 1].contAccel());
+		response(true, (unsigned long) (motor[subaddr - 1].contAccel() * FLOAT_TO_FIXED));
 		break;
 
 	//Command 110 reads the easing algorithm

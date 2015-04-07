@@ -249,6 +249,7 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
   
 }
 
+
 /** Move Motors Callback Handler
 
   Executes any required move
@@ -256,11 +257,8 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
   @author
   C. A. Church
   */
- 
 
 void cycleClearToMove() {
-	
-	
 	
        // signal any slaves that they're ok to proceed, if master
        ComMgr.masterSignal();

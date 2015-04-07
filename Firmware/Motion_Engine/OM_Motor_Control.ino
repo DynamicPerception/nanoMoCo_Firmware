@@ -50,7 +50,7 @@ void move_motor() {
    }
    
    for(int i = 0; i < MOTOR_COUNT; i++){
-	   //only check the motors that are enable
+	   //only check the motors that are enabled
 	   if( motor[i].enable()){
 		   //check to see if there's a shot delay for the motor
 		   if (!(motor[i].planLeadIn() > 0 && ((camera_fired <= motor[i].planLeadIn() && motor[i].planType() == SMS) || (motor[i].planType() != SMS && run_time <= motor[i].planLeadIn())))){

@@ -225,7 +225,8 @@ char byteFired = 0;				// Byte used to toggle the step pin for each motor within
 ****************************************/
 
 
-#define MILLIS_PER_SECOND	1000.0
+const float MILLIS_PER_SECOND = 1000.0;
+const int FLOAT_TO_FIXED = 100;				// Multiply any floats to be transmitted in a serial response by this constant. Float responses don't seem to work correctly
 
 
 /***************************************
