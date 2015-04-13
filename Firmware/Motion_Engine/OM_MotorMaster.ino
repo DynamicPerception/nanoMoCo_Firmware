@@ -271,8 +271,8 @@ void _runISR() {
     //steps all motors at once   
 	for(int i = 0; i < MOTOR_COUNT; i++){
 		if(motor[i].running()){				    
-			motor[i].checkRefresh();
-			if (motor[i].checkStep()){
+			motor[i].checkRefresh();					// Reset motor steps, cycles, error, etc for the new ISR run
+			if (motor[i].checkStep()){					// 
 				byteFired |= (1 << motor[i].stpflg);
 			}
 		} // end if( motor[i].m_isRun

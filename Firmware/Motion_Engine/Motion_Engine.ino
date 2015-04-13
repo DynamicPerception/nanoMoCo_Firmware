@@ -417,6 +417,7 @@ void setup() {
 		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
 		motor[i].sleep(false);
 		motor[i].backlash(MOT_DEFAULT_BACKLASH);
+		motor[i].easing(OM_MOT_QUAD);
 		// Set the slide motor to 4th stepping and pan/tilt motors to 16th
 		if (i == 0)
 			motor[i].ms(4);
@@ -465,7 +466,6 @@ void loop() {
 			// Change motors to 8th stepping before starting DF mode
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				motor[i].ms(8);
-				motor[i].sleep(true);
 			}
 			df_mode = true;
 			return;
