@@ -915,6 +915,15 @@ ISR(TIMER1_OVF_vect)
       PIN_OFF(MOTOR7_STEP_PORT, MOTOR7_STEP_PIN);
     #endif
   }
+
+  // Restore the motor sleep states
+  for (int i = 0; i < MOTOR_COUNT; i++){
+	  bool tempSleep = false;	 
+	  OMEEPROM::read(EE_SLEEP_0 + EE_MOTOR_MEMORY_SPACE * i, tempSleep);
+	  motor[i].sleep(tempSleep);
+  }
+  
+
 }
 
 #if (DFBOARD == CHIPKITMAX32)
