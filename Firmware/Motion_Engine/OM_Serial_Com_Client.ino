@@ -1092,13 +1092,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Because the mobile app (as of the version current on 2-6-15) assumes a lead-out of 0 and currently has
 	//no way to set it directly, the lead-out will be reset to 0 when the lead-in is set. This means the lead-in
 	//must always be set before the lead-out in order for the lead-out value to be saved.
-	//If Graffik mode is enabled, setting the lead-in will not reset the lead-out
 	case 19:
-		motor[subaddr - 1].planLeadIn(Node.ntoul(input_serial_buffer));
-		//USBSerial.print("Lead-in:");
-		//USBSerial.println(motor[subaddr - 1].planLeadIn());
-		if (!graffik_mode)
-			motor[subaddr - 1].planLeadOut(0);
+		motor[subaddr - 1].planLeadIn(Node.ntoi(input_serial_buffer));
+		motor[subaddr - 1].planLeadOut(0);
 		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
 		response(true);
 		break;
@@ -1141,7 +1137,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 25 sets the motor lead-out
 	case 25:
-		motor[subaddr - 1].planLeadOut(Node.ntoul(input_serial_buffer));
+		motor[subaddr - 1].planLeadOut(Node.ntoi(input_serial_buffer));
 		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
 		response(true);
 		break;
