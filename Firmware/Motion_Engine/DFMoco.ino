@@ -915,15 +915,6 @@ ISR(TIMER1_OVF_vect)
       PIN_OFF(MOTOR7_STEP_PORT, MOTOR7_STEP_PIN);
     #endif
   }
-
-  // Restore the motor sleep states
-  for (int i = 0; i < MOTOR_COUNT; i++){
-	  bool tempSleep = false;	 
-	  OMEEPROM::read(EE_SLEEP_0 + EE_MOTOR_MEMORY_SPACE * i, tempSleep);
-	  motor[i].sleep(tempSleep);
-  }
-  
-
 }
 
 #if (DFBOARD == CHIPKITMAX32)
@@ -943,6 +934,13 @@ void df_loop()
   int32_t ramNotValues[MOTOR_COUNT];
 #endif
   
+  //Restore the motor sleep states
+  for (int i = 0; i < MOTOR_COUNT; i++){
+	  bool tempSleep = false;
+	  OMEEPROM::read(EE_SLEEP_0 + EE_MOTOR_MEMORY_SPACE * i, tempSleep);
+	  motor[i].sleep(tempSleep);
+  }
+
   while (true)
   {
     if (!nextMoveLoaded)
@@ -1000,56 +998,58 @@ void updateMotorVelocities()
   
   for (int m = 0; m < MOTOR_COUNT; m++)
   {
-    Motor *motor = &motors[m];
-    motor->nextMotorMoveSteps = 0;
-    motor->nextMotorMoveSpeed = 0;
+    Motor *df_motor = &motors[m];
+	df_motor->nextMotorMoveSteps = 0;
+	df_motor->nextMotorMoveSpeed = 0;
 
     if (bitRead(motorMoving, m))
     {
-      int seg = motor->currentMove;
+		int seg = df_motor->currentMove;
       
-      if (motor->moveTime[seg] == 0)
+		if (df_motor->moveTime[seg] == 0)
       {
         bitClear(motorMoving, m);
-        enableMotor(m, false);
+		if (motor[m].sleep()){
+			enableMotor(m, false);
+		}
       }
       else
       {
-        float originalMoveTime = motor->currentMoveTime;
-        int originalMove = motor->currentMove;
+		  float originalMoveTime = df_motor->currentMoveTime;
+		  int originalMove = df_motor->currentMove;
         
-        motor->currentMoveTime += 0.05f;
+		  df_motor->currentMoveTime += 0.05f;
         
-        if (motor->currentMoveTime >= motor->moveTime[seg])
+		  if (df_motor->currentMoveTime >= df_motor->moveTime[seg])
         {
-          motor->currentMoveTime -= motor->moveTime[seg];
-          motor->currentMove++;
+			  df_motor->currentMoveTime -= df_motor->moveTime[seg];
+			  df_motor->currentMove++;
           seg++;
         }
-        float t = motor->currentMoveTime;
-        int32_t xn = (int32_t)(motor->movePosition[seg] + motor->moveVelocity[seg] * t + motor->moveAcceleration[seg] * t * t); // accel was already multiplied * 0.5
+		  float t = df_motor->currentMoveTime;
+		  int32_t xn = (int32_t)(df_motor->movePosition[seg] + df_motor->moveVelocity[seg] * t + df_motor->moveAcceleration[seg] * t * t); // accel was already multiplied * 0.5
 
-        int32_t dx = abs(xn - motor->position);
+		  int32_t dx = abs(xn - df_motor->position);
 
         if (!dx) // don't change direction flag unless we are actually stepping in new direction
           continue;
           
-        boolean forward = xn > motor->position;
+		boolean forward = xn > df_motor->position;
 
-        if (forward != motor->dir) // direction setup time 1/20th second should be plenty
+		if (forward != df_motor->dir) // direction setup time 1/20th second should be plenty
         {
           // revert everything except for dir flag
-          motor->currentMoveTime = originalMoveTime;
-          motor->currentMove = originalMove;
+			df_motor->currentMoveTime = originalMoveTime;
+			df_motor->currentMove = originalMove;
         }
         else
         {
-          motor->nextMotorMoveSpeed = max(1, min(65535, dx * 65.6f));
-          motor->nextMotorMoveSteps = dx;
-          motor->position = xn;
+			df_motor->nextMotorMoveSpeed = max(1, min(65535, dx * 65.6f));
+			df_motor->nextMotorMoveSteps = dx;
+			df_motor->position = xn;
         }
         
-        motor->dir = forward;
+		df_motor->dir = forward;
       }      
     }
   }
