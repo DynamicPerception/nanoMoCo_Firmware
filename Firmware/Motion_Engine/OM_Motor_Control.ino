@@ -457,11 +457,6 @@ void joystickSet(byte p_input) {
 	// If we're exiting joystick mode, turn off the joystick watchdog mode
 	else if (!joystick_mode) {
 		watchdog = false;
-
-		if (graffik_mode) {
-			for (byte i = 0; i < MOTOR_COUNT; i++)
-				motor[i].contSpeed(0);
-		}
 	}
 }
 
