@@ -103,7 +103,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 36;				// Serial API version
+const int SERIAL_VERSION			= 37;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -113,6 +113,7 @@ const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be hel
 uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
+bool app_mode						= false;			// Indicates whether the controller is currently communicating with the mobile app
 bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
 
 
@@ -955,7 +956,7 @@ void motorDebug() {
 /*
 
 =========================================
-	  Graffik Specific Functions
+	  Mode Specific Functions
 =========================================
 
 */
@@ -968,8 +969,30 @@ void graffikMode(bool p_setting) {
 
 	graffik_mode = p_setting;
 
+	// Don't allow app mode to be active at the same time
+	if (graffik_mode)
+		app_mode = false;
+
 }
 
 bool graffikMode() {
 	return graffik_mode;
+}
+
+void appMode(bool p_setting) {
+
+	// Ignore non-boolean input
+	if (p_setting != 0 && p_setting != 1)
+		return;
+
+	app_mode = p_setting;
+
+	// Don't allow graffik mode to be active at the same time
+	if (app_mode)
+		graffik_mode = false;
+
+}
+
+bool appMode() {
+	return app_mode;
 }

@@ -215,7 +215,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 0:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 14 && command != 23 && command != 120 && command != 122) {
+	   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122) {
 		   if (usb_debug & DB_GEN_SER)
 			   USBSerial.println("Invalid general command");
 		   response(false);
@@ -606,7 +606,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 50:
 		graffikMode(input_serial_buffer[0]);
 		response(true);
+		break;
 
+	case 51:
+		graffikMode(false);
+		appMode(input_serial_buffer[0]);
+		break;
 
     
     //*****************MAIN READ COMMANDS********************
