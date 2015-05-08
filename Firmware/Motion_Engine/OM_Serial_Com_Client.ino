@@ -245,9 +245,13 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
          //serial camera commands
          serCamera(subaddr, command, buf);
          break;
-   default:
-         response(false);
-         break;
+   case 5:
+	   //serial key frame commands
+	   serKeyFrame(command, buf);
+	   break;
+   default:	   
+       response(false);
+       break;
  }
 
 }
@@ -305,7 +309,6 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 /*=========================================
               Main Functions
 =========================================== */
-
 
 void serMain(byte command, byte* input_serial_buffer) {
   
@@ -588,19 +591,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 29:
 		reverseStartStop();
 		response(true);
-		break;
-
-	//Command 40 sets key frames flag
-	case 40:
-		kfSet(input_serial_buffer[0]);
-		response(true);
-		break;
-
-	//Command 41 sets the next key frame position for all motors
-	case 41:
-		kfNext();
-		response(true);
-		break;
+		break;			
 
 	// Command 50 sets Graffik Mode on or off
 	case 50:
@@ -844,6 +835,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, graffikMode());
 		break;
 
+	//Command 200 returns the NMX's available memory in bytes
+	case 200:
+		response(true, freeMemory());
+		break;
+
 	//Command 254 sets the USB debug reporting state
 	case 254:
 	{
@@ -869,10 +865,10 @@ void serMain(byte command, byte* input_serial_buffer) {
   }               
 }
 
+
 /*=========================================
               Motor Functions
 =========================================== */
-
 
 void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
   
@@ -1445,10 +1441,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
   
 }
 
+
 /*=========================================
               Camera Functions
 =========================================== */
-
 
 void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
   
@@ -1605,6 +1601,108 @@ void serialComplexMove(byte subaddr, byte* buf) {
    unsigned long decel  = Node.ntoul(buf);
 
    motor[subaddr-1].move(dir, dist, arrive, accel, decel); 
+}
+
+
+/*=========================================
+			Key Frame Functions
+=========================================== */
+
+void serKeyFrame(byte command, byte* input_serial_buffer){
+
+	switch (command){
+
+	// Command 10 signals start & key frame count/end of key frame point transmission. Send 0 to end transmission.
+	case 10:
+	{
+			  
+			  int in_val = Node.ntoi(input_serial_buffer);
+			  
+			   // If this is the start of a new transmission, reinitialize the holding matrix
+			   if (in_val != 0){
+				   kf_getting_kf_pts = true;
+				   kf_count = in_val;
+				   kf_locations.init(kf_count, 2);
+				   // Reset the variable for checking point receipt consistency
+				   kf_half_pnts_received = 0;
+				   response(true);
+				   break;
+			   }
+			   else{				   
+				   // Done getting key frame points
+				   kf_getting_kf_pts = false;				   
+				   
+				   // If the correct number of point locations was not received, indicate that by seting KF_count to zero
+				   if (kf_half_pnts_received != kf_count * 2){
+					   kf_count = 0;
+					   response(false);
+					   break;
+				   }					
+
+				   // Transfer the points to a new 1D array
+				   const int XY_SIZE = 2;
+				   float kf_locations_1D[7 * XY_SIZE];	// Maximum of 7 key frames
+				   for (byte i = 0; i < kf_count * XY_SIZE; i++){
+					   byte row = floor((float)i/2);
+					   byte col = i % 2 == 0 ? 0 : 1;
+					   kf_locations_1D[i] = kf_locations.getValue(row, col);
+				   }
+
+				   // Pass the key frame locations to the spline object
+				   spline.setInterpPts(kf_locations_1D, kf_count);
+				   				   
+				   response(true);
+				   break;
+			   }			   
+			   
+	}
+
+	// Command 11 sets the next key frame point half-value (need two of these for full XY coordinate)
+	case 11:
+	{
+			   byte row = floor((float)kf_half_pnts_received / 2.0);
+			   byte col = kf_half_pnts_received % 2 == 0 ? 0 : 1;
+			   kf_locations.setValue(row, col, Node.ntof(input_serial_buffer));
+			   kf_half_pnts_received++;
+			   response(true);
+			   break;
+	}
+
+	// Command 12 sets the number of spline points to calculate
+	case 12:
+	{		
+		kf_spline_pnt_count = Node.ntoi(input_serial_buffer);
+		response(true);
+		break;
+	}	
+
+	//*****************KEY FRAME READ COMMANDS********************
+
+	// Command 100 reads the number of key frames set
+	case 100:				
+		response(true, kf_count);
+		break;
+
+	// Command 101 signals the beginning of spline point retreival
+	case 101:
+	{
+		kf_sending_spline_pts = true;
+		byte row = (float)kf_spline_pnt_cur / 2;
+		byte col = kf_spline_pnt_cur % 2 ? 0 : 1;
+		float point_val = spline.getCurvePntVal(row, col);
+		response(true, point_val);
+		break;
+	}
+
+	// Command 102 returns the next half spline point locations
+	case 102:
+	{
+		int out_val = 1;
+		response(true, out_val);
+		break;
+	}
+
+	}// End switch case
 }
 
 

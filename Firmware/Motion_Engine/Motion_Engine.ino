@@ -34,6 +34,9 @@ See dynamicperception.com for more information
 #include <TimerOne.h>
 #include <EEPROM.h>
 #include <AltSoftSerial.h>
+#include <MemoryFree.h>
+#include <matrix_math.h>
+#include <spline_calc.h>
 
 // openmoco standard libraries
 #include <OMComHandler.h>
@@ -277,12 +280,15 @@ byte joystick_mode = false;
 
 ****************************************/
 
-
-/*** Key frames have not yet been implemented  ***/
-
-int key_frames = 0;
-int current_frame = 0;
-bool key_move = false;
+bool kf_getting_kf_pts = false;
+bool kf_sending_spline_pts = false;
+int kf_count = 0;
+int kf_half_pnts_received = 0;
+int kf_spline_half_pnts_sent = 0;
+int kf_spline_pnt_count = 0;
+int kf_spline_pnt_cur = 0;
+matrix kf_locations;
+Spline spline;
 
 
 /***************************************

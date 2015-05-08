@@ -146,7 +146,7 @@ byte motorSleep(byte p_motor) {
 */
 
 void startProgramCom() {
-	key_move = false;
+	
 	bool was_pause = pause_flag;
 	pause_flag = false;
 

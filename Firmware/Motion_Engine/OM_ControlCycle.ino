@@ -107,26 +107,6 @@ void cycleCamera() {
 			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 1");
 		return;
   }
-
-		//// If multiple key frames were set, load the parameters for the next position and start the program again
-		//if (key_move && current_frame < key_frames) {
-		//	for (byte i = 0; i < MOTOR_COUNT; i++) {
-
-		//		// Re-set each motor's parameters for the next key frame
-		//		motor[i].stopPos(motor[i].keyDest(current_frame));
-		//		motor[i].planTravelLength(motor[i].keyTime(current_frame));
-		//		motor[i].planAccelLength(motor[i].keyAccel(current_frame));
-		//		motor[i].planDecelLength(motor[i].keyDecel(current_frame));
-		//		motor[i].planLeadIn(motor[i].keyLead(current_frame));
-
-		//	}
-		//	current_frame++;
-		//	startProgram();
-		//}
-
-		//else if (key_move && current_frame >= key_frames)
-		//	current_frame = 0;
-  	   //}
   
   // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
