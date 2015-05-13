@@ -284,9 +284,8 @@ bool kf_getting_kf_pts = false;
 bool kf_sending_spline_pts = false;
 int kf_count = 0;
 int kf_half_pnts_received = 0;
-int kf_spline_half_pnts_sent = 0;
 int kf_spline_pnt_count = 0;
-int kf_spline_pnt_cur = 0;
+int kf_spline_half_pnt_cur = 0;
 matrix kf_locations;
 Spline spline;
 
@@ -461,8 +460,7 @@ void loop() {
 	NodeUSB.check();
 
 	// Only do these things every 100ms so we don't waste cycles during every loop
-	if ((millis() - df_time) > 100) {
-
+	if ((millis() - df_time) > 100) {		
 		// If eStop button has been held more than 3 sec, switch to DF mode
 		if (digitalRead(ESTOP_PIN) == HIGH)
 			estop_time = millis();

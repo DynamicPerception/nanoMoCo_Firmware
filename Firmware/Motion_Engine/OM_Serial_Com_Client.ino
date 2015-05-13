@@ -838,7 +838,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 200 returns the NMX's available memory in bytes
 	case 200:
 		response(true, freeMemory());
-		break;
+		break;	
 
 	//Command 254 sets the USB debug reporting state
 	case 254:
@@ -1619,7 +1619,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			  int in_val = Node.ntoi(input_serial_buffer);
 			  
 			   // If this is the start of a new transmission, reinitialize the holding matrix
-			   if (in_val != 0){
+			   if (in_val != 0){				   
 				   kf_getting_kf_pts = true;
 				   kf_count = in_val;
 				   kf_locations.init(kf_count, 2);
@@ -1649,8 +1649,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 				   }
 
 				   // Pass the key frame locations to the spline object
-				   spline.setInterpPts(kf_locations_1D, kf_count);
-				   				   
+				   spline.setInterpPts(kf_locations_1D, kf_count);				   				   
 				   response(true);
 				   break;
 			   }			   
@@ -1678,27 +1677,39 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	//*****************KEY FRAME READ COMMANDS********************
 
-	// Command 100 reads the number of key frames set
+	// Command 100 returns the number of key frames set
 	case 100:				
 		response(true, kf_count);
 		break;
 
-	// Command 101 signals the beginning of spline point retreival
+	// Command 101 returns the number of spline points to be calculated
 	case 101:
+		response(true, kf_spline_pnt_count);
+		break;
+
+	// Command 102 signals the beginning of spline point retreival
+	case 102:
 	{
 		kf_sending_spline_pts = true;
-		byte row = (float)kf_spline_pnt_cur / 2;
-		byte col = kf_spline_pnt_cur % 2 ? 0 : 1;
-		float point_val = spline.getCurvePntVal(row, col);
-		response(true, point_val);
+		kf_spline_half_pnt_cur = 0;
+		//spline.calcCurvePts(kf_spline_pnt_count);
+		response(true);
 		break;
 	}
 
-	// Command 102 returns the next half spline point locations
-	case 102:
+	// Command 103 returns the next half spline point locations
+	case 103:
+	{		
+		float out_val = spline.calcCurvePt(kf_spline_pnt_count, Node.ntoi(input_serial_buffer)) * 100;				
+		response(true, (long)out_val);
+		break;
+	}
+
+	// Command 104 returns the next half spline point locations
+	case 104:
 	{
-		int out_val = 1;
-		response(true, out_val);
+		float out_val = spline.getVel(kf_spline_pnt_count, Node.ntoi(input_serial_buffer)) * 100;
+		response(true, (long)out_val);
 		break;
 	}
 
@@ -1713,9 +1724,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 void response_check(uint8_t p_stat) {
 	if (usb_debug & DB_CONFIRM){
 		if (!p_stat)
-		USBSerial.println("Command response: FAILURE");
-		else
-		USBSerial.println("Command response OK!");
+			USBSerial.println("Command response: FAILURE");		
+		else{
+			USBSerial.println("Command response OK!");			
+		}
 	}
 }
 
@@ -1761,7 +1773,7 @@ void response(uint8_t p_stat, unsigned int p_resp){
 
 	switch(node){
 		case 3:
-			NodeUSB.response(p_stat, p_resp);
+			NodeUSB.response(p_stat, p_resp);			
 			break;
 		case 2:
 			NodeBlue.response(p_stat, p_resp);
@@ -1797,7 +1809,7 @@ void response(uint8_t p_stat, unsigned long p_resp){
 
 	switch(node){
 		case 3:
-			NodeUSB.response(p_stat, p_resp);
+			NodeUSB.response(p_stat, p_resp);		
 			break;
 		case 2:
 			NodeBlue.response(p_stat, p_resp);
