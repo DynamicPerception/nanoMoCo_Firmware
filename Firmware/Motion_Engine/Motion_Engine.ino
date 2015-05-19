@@ -301,9 +301,9 @@ byte usb_debug			= B00000000;	// Byte holding debug output flags
 const byte DB_COM_OUT	= B00000001;	// Debug flag -- toggles output of received serial commands
 const byte DB_STEPS		= B00000010;	// Debug flag -- toggles output of motor step information 
 const byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general motor information 
-const byte DB_GEN_SER	= B00010000;	// Debug flag -- toggles output of responses to certain serial commands
-const byte DB_FUNCT		= B00100000;	// Debug flag -- toggles output of debug messages within most functions
-const byte DB_CONFIRM	= B01000000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
+const byte DB_GEN_SER	= B00001000;	// Debug flag -- toggles output of responses to certain serial commands
+const byte DB_FUNCT		= B00010000;	// Debug flag -- toggles output of debug messages within most functions
+const byte DB_CONFIRM	= B00100000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
 
 
 /***************************************

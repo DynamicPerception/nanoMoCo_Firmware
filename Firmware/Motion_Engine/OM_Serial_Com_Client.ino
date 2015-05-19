@@ -230,7 +230,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 3:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13) {
+	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106) {
 		   if (usb_debug & DB_GEN_SER)
 			   USBSerial.println("Invalid motor command");
 		   response(false);
