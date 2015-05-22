@@ -968,37 +968,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 13:
 
 		// If joystick mode is active and the last speed setting was ~0, automatically start a simple continuous move in the correct direction
-		if (joystick_mode){
-
-			float old_speed = motor[subaddr - 1].desiredSpeed();
-			float new_speed = Node.ntof(input_serial_buffer);
-
-			// Don't allow the speed to be set higher than the maximum
-			if (abs(new_speed) > (float)mot_max_speed) {
-				if (new_speed < 0.0)
-					new_speed = (float)mot_max_speed * -1.0;
-				else
-					new_speed = mot_max_speed;
-			}
-
-			// Set speed
-			motor[subaddr - 1].contSpeed(new_speed);
-
-			// Start new move if starting from a stop or there is a direction change
-			if (abs(old_speed) < 1 && abs(new_speed) > 1 || ((old_speed / abs(old_speed)) != (new_speed / abs(new_speed)) && abs(new_speed) > 1)){
-				byte dir;
-				if (new_speed > 1)
-					dir = 1;
-				else
-					dir = 0;
-
-				motor[subaddr - 1].continuous(true);
-				motor[subaddr - 1].move(dir, 0);
-				startISR();
-
-				if (usb_debug & DB_GEN_SER)
-					USBSerial.println("Command Mot.13 - Auto-starting continuous move");
-			}
+		if (joystick_mode){			
+			float input_speed = Node.ntof(input_serial_buffer);
+			setJoystickSpeed(subaddr - 1, input_speed);
 		}
 
 		// Normal speed change handling
@@ -1010,8 +982,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 				input_speed = mot_max_speed;
 
 			motor[subaddr - 1].contSpeed(input_speed);
-		}
-		
+		}		
 
 		if (!joystick_mode)
 			response(true);
@@ -1612,106 +1583,129 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	switch (command){
 
-	// Command 10 signals start & key frame count/end of key frame point transmission. Send 0 to end transmission.
+	// Command 10 signals start & key frame count / end of key frame point transmission. Send 0 to end transmission.
 	case 10:
 	{
+		int in_val = Node.ntoi(input_serial_buffer);
 			  
-			  int in_val = Node.ntoi(input_serial_buffer);
-			  
-			   // If this is the start of a new transmission, reinitialize the holding matrix
-			   if (in_val != 0){				   
-				   kf_getting_kf_pts = true;
-				   kf_count = in_val;
-				   kf_locations.init(kf_count, 2);
-				   // Reset the variable for checking point receipt consistency
-				   kf_half_pnts_received = 0;
-				   response(true);
-				   break;
-			   }
-			   else{				   
-				   // Done getting key frame points
-				   kf_getting_kf_pts = false;				   
-				   
-				   // If the correct number of point locations was not received, indicate that by seting KF_count to zero
-				   if (kf_half_pnts_received != kf_count * 2){
-					   kf_count = 0;
-					   response(false);
-					   break;
-				   }					
-
-				   // Transfer the points to a new 1D array
-				   const int XY_SIZE = 2;
-				   float kf_locations_1D[7 * XY_SIZE];	// Maximum of 7 key frames
-				   for (byte i = 0; i < kf_count * XY_SIZE; i++){
-					   byte row = floor((float)i/2);
-					   byte col = i % 2 == 0 ? 0 : 1;
-					   kf_locations_1D[i] = kf_locations.getValue(row, col);
-				   }
-
-				   // Pass the key frame locations to the spline object
-				   spline.setInterpPts(kf_locations_1D, kf_count);				   				   
-				   response(true);
-				   break;
-			   }			   
-			   
+		// If this is the start of a new transmission, set the count and the receive flag
+		if (in_val > 0){				   
+			KeyFrames::setKFCount(in_val);
+			KeyFrames::receiveState(true);
+			response(true);
+			break;
+		}
+		// Otherwise end the recieve state
+		else{				   
+			KeyFrames::receiveState(false);			
+			response(true);
+			break;
+		}			   			   
 	}
 
-	// Command 11 sets the next key frame point half-value (need two of these for full XY coordinate)
+	// Command 11 sets the current axis
 	case 11:
-	{
-			   byte row = floor((float)kf_half_pnts_received / 2.0);
-			   byte col = kf_half_pnts_received % 2 == 0 ? 0 : 1;
-			   kf_locations.setValue(row, col, Node.ntof(input_serial_buffer));
-			   kf_half_pnts_received++;
-			   response(true);
-			   break;
+	{			   
+		int in_val = Node.ntoi(input_serial_buffer);
+
+		// A valid axis must be selected
+		if (in_val >= 0 && in_val <= MOTOR_COUNT){
+			KeyFrames::axis(in_val);
+			kf[KeyFrames::axis()].resetFN();
+			kf[KeyFrames::axis()].resetDN();
+		}
+		response(true);
+		break;
 	}
 
-	// Command 12 sets the number of spline points to calculate
+	// Command 12 sets the next key frame abscissa
 	case 12:
 	{		
-		kf_spline_pnt_count = Node.ntoi(input_serial_buffer);
+		float in_val = Node.ntof(input_serial_buffer);
+		KeyFrames::setXN(in_val);		
 		response(true);
 		break;
 	}	
+
+	// Command 13 sets the next key frame motor position
+	case 13:
+	{
+		float in_val = Node.ntof(input_serial_buffer);
+		kf[KeyFrames::axis()].setFN(in_val);
+		response(true);
+		break;
+	}
+
+	// Command 14 sets the next key frame motor velocity
+	case 14:
+	{
+		float in_val = Node.ntof(input_serial_buffer);
+		kf[KeyFrames::axis()].setDN(in_val);
+		response(true);
+		break;
+	}
+
+	// Command 15 sets the motor velocity update rate in ms that is used at run-time
+	case 15:
+	{
+		unsigned int in_val = Node.ntoui(input_serial_buffer);
+		KeyFrames::updateRate(in_val);
+		response(true);
+		break;
+	}
+
+	// Command 20 runs a keyframe program
+	case 20:
+	{	   
+	   kf_program_running = true;
+	   response(true);
+	}
 
 	//*****************KEY FRAME READ COMMANDS********************
 
 	// Command 100 returns the number of key frames set
 	case 100:				
-		response(true, kf_count);
+		response(true, KeyFrames::countKF());
 		break;
 
-	// Command 101 returns the number of spline points to be calculated
+	// Command 101 returns motor velocity update rate in ms
 	case 101:
-		response(true, kf_spline_pnt_count);
+		response(true, KeyFrames::updateRate());
 		break;
 
-	// Command 102 signals the beginning of spline point retreival
+	// Command 102 returns the current axis' position for a given x
 	case 102:
 	{
-		kf_sending_spline_pts = true;
-		kf_spline_half_pnt_cur = 0;
-		//spline.calcCurvePts(kf_spline_pnt_count);
-		response(true);
+		float in_val = Node.ntof(input_serial_buffer);
+		response(true, (unsigned long)(kf[KeyFrames::axis()].pos(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
 
-	// Command 103 returns the next half spline point locations
+	// Command 103 returns the current axis' velocity for a given x
 	case 103:
-	{		
-		float out_val = spline.calcCurvePt(kf_spline_pnt_count, Node.ntoi(input_serial_buffer)) * 100;				
-		response(true, (long)out_val);
+	{
+		float in_val = Node.ntof(input_serial_buffer);
+		response(true, (unsigned long) (kf[KeyFrames::axis()].vel(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
 
-	// Command 104 returns the next half spline point locations
+	// Command 104 returns the current axis' acceleration for a given x
 	case 104:
 	{
-		float out_val = spline.getVel(kf_spline_pnt_count, Node.ntoi(input_serial_buffer)) * 100;
-		response(true, (long)out_val);
+		float in_val = Node.ntof(input_serial_buffer);
+		response(true, (unsigned long) (kf[KeyFrames::axis()].accel(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
+
+	// Command 105 returns true if the current spline will not exceed the maximum motor speed for the current axis
+	case 105:
+		response(true, kf[KeyFrames::axis()].validateVel());
+		break;
+
+	// Command 105 returns true if the current spline will not exceed the maximum motor speed for the current axis
+	case 106:
+		response(true, kf[KeyFrames::axis()].validateAccel());
+		break;
 
 	}// End switch case
 }

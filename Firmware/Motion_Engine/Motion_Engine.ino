@@ -30,11 +30,15 @@ See dynamicperception.com for more information
 
 ****************************************/
 
+
+
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
 #include <AltSoftSerial.h>
 #include <MemoryFree.h>
+#include "hermite_spline.h"
+#include "key_frames.h"
 #include <matrix_math.h>
 #include <spline_calc.h>
 
@@ -280,15 +284,7 @@ byte joystick_mode = false;
 
 ****************************************/
 
-bool kf_getting_kf_pts = false;
-bool kf_sending_spline_pts = false;
-int kf_count = 0;
-int kf_half_pnts_received = 0;
-int kf_spline_pnt_count = 0;
-int kf_spline_half_pnt_cur = 0;
-matrix kf_locations;
-Spline spline;
-
+KeyFrames kf[MOTOR_COUNT] = { KeyFrames(), KeyFrames(), KeyFrames() };
 
 /***************************************
 
@@ -335,6 +331,8 @@ const byte ST_EXP   = 4;	// ST_EXP   - clear to expose camera (or not...)
 const byte ST_WAIT  = 5;	// ST_WAIT  - in camera delay
 const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
 
+bool kf_program_running = false;
+
 
 /* 
 
@@ -346,7 +344,7 @@ const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
 
 
 void setup() {
-
+	
 	// Start USB serial communications
 	USBSerial.begin(19200);
 	delay(100);
@@ -367,6 +365,10 @@ void setup() {
 	// initalize state engine
 	setupControlCycle();
 	Engine.state(ST_BLOCK);
+
+	// setup KeyFrames vars
+	KeyFrames::setMaxVel(4000);
+	KeyFrames::setMaxAccel(20000);
  
 	// default to master timing node
 	ComMgr.master(true);
@@ -380,7 +382,7 @@ void setup() {
 	Camera.focusTime(CAM_DEFAULT_FOCUS);
 	Camera.setHandler(camCallBack);
 
-	// setup serial connection  OM_SER_BPS is defined in OMMoCoBus library
+	// setup serial connection OM_SER_BPS is defined in OMMoCoBus library
 	Serial.begin(OM_SER_BPS);
 
 	// setup MoCoBus Node object
@@ -533,6 +535,44 @@ void loop() {
 		// If the start delay is done then check current engine state and handle appropriately
 		if(run_time >= start_delay)
 			Engine.checkCycle();
+   }
+
+   if (kf_program_running){
+	   
+   	   static unsigned long start_time = 0;
+	   static float			run_time = 0;
+	   static unsigned long last_time = 0;
+
+	   static bool just_started = true;
+	   float speed = 0;
+	   
+	   // Update run_time
+	   run_time = millis() - start_time;
+
+	   // Start the motor running
+	   if (just_started){
+		   
+		   just_started = false;
+
+		   joystickSet(true);
+		   speed = kf[0].vel(0);
+		   setJoystickSpeed(0, speed);
+		   last_time = millis();
+		   start_time = 0;
+	   }	   
+	   // If the update time has elapsed, update the motor speed
+	   else if (millis() - last_time > KeyFrames::updateRate()){
+		   speed = kf[0].vel(run_time / MILLIS_PER_SECOND);
+		   setJoystickSpeed(0, speed);
+		   last_time = millis();
+	   }   
+
+	   // Check to see if the program is done
+	   if (run_time / MILLIS_PER_SECOND > KeyFrames::getXN(KeyFrames::countKF() - 1)){
+		   setJoystickSpeed(0, 0);
+		   joystickSet(false);
+		   kf_program_running = false;
+	   }
    }
 
 }

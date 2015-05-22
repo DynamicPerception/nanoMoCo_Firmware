@@ -502,8 +502,38 @@ byte pingPongMode() {
 	return ping_pong_mode;
 }
 
+void setJoystickSpeed(int p_motor, float p_speed){
 
+	float old_speed = motor[p_motor].desiredSpeed();
+	float new_speed = p_speed;
 
+	// Don't allow the speed to be set higher than the maximum
+	if (abs(new_speed) > (float)mot_max_speed) {
+		if (new_speed < 0.0)
+			new_speed = (float)mot_max_speed * -1.0;
+		else
+			new_speed = mot_max_speed;
+	}
+
+	// Set speed
+	motor[p_motor].contSpeed(new_speed);
+
+	// Start new move if starting from a stop or there is a direction change
+	if (abs(old_speed) < 1 && abs(new_speed) > 1 || ((old_speed / abs(old_speed)) != (new_speed / abs(new_speed)) && abs(new_speed) > 1)){
+		byte dir;
+		if (new_speed > 1)
+			dir = 1;
+		else
+			dir = 0;
+
+		motor[p_motor].continuous(true);
+		motor[p_motor].move(dir, 0);
+		startISR();
+
+		if (usb_debug & DB_GEN_SER)
+			USBSerial.println("Command Mot.13 - Auto-starting continuous move");
+	}
+}
       
 
 
