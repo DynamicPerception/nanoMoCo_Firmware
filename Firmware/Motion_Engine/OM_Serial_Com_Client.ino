@@ -891,6 +891,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 4:
 		// stop motor now
 		motor[subaddr - 1].stop();
+		kf_program_running = false;
+		debugOff();
 		response(true);
 		break;
 
@@ -1590,6 +1592,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			  
 		// If this is the start of a new transmission, set the count and the receive flag
 		if (in_val > 0){				   
+			KeyFrames::setAxisArray(kf, MOTOR_COUNT);
 			KeyFrames::setKFCount(in_val);
 			KeyFrames::receiveState(true);
 			response(true);
@@ -1621,27 +1624,33 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 12 sets the next key frame abscissa
 	case 12:
 	{		
+		static int i = 0;
 		float in_val = Node.ntof(input_serial_buffer);
 		KeyFrames::setXN(in_val);		
-		response(true);
+		response(true, (long) (KeyFrames::getXN(i) * 100));
+		i++;
 		break;
 	}	
 
 	// Command 13 sets the next key frame motor position
 	case 13:
 	{
+		static int i = 0;
 		float in_val = Node.ntof(input_serial_buffer);
 		kf[KeyFrames::axis()].setFN(in_val);
-		response(true);
+		response(true, (long) (kf[KeyFrames::axis()].getFN(i) * 100));
+		i++;
 		break;
 	}
 
 	// Command 14 sets the next key frame motor velocity
 	case 14:
 	{
+		static int i = 0;
 		float in_val = Node.ntof(input_serial_buffer);
 		kf[KeyFrames::axis()].setDN(in_val);
-		response(true);
+		response(true, (long)(kf[KeyFrames::axis()].getDN(i) * 100));
+		i++;
 		break;
 	}
 
@@ -1657,7 +1666,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 20 runs a keyframe program
 	case 20:
 	{	   
-	   kf_program_running = true;
+	   startKFProgram();	   
 	   response(true);
 	}
 
@@ -1677,7 +1686,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 102:
 	{
 		float in_val = Node.ntof(input_serial_buffer);
-		response(true, (unsigned long)(kf[KeyFrames::axis()].pos(in_val) * FLOAT_TO_FIXED));
+		response(true, (long)(kf[KeyFrames::axis()].pos(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
 
@@ -1685,7 +1694,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 103:
 	{
 		float in_val = Node.ntof(input_serial_buffer);
-		response(true, (unsigned long) (kf[KeyFrames::axis()].vel(in_val) * FLOAT_TO_FIXED));
+		response(true, (long) (kf[KeyFrames::axis()].vel(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
 
@@ -1693,7 +1702,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 104:
 	{
 		float in_val = Node.ntof(input_serial_buffer);
-		response(true, (unsigned long) (kf[KeyFrames::axis()].accel(in_val) * FLOAT_TO_FIXED));
+		response(true, (long) (kf[KeyFrames::axis()].accel(in_val) * FLOAT_TO_FIXED));
 		break;
 	}
 

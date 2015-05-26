@@ -285,6 +285,9 @@ byte joystick_mode = false;
 ****************************************/
 
 KeyFrames kf[MOTOR_COUNT] = { KeyFrames(), KeyFrames(), KeyFrames() };
+unsigned long kf_start_time;
+unsigned long kf_last_update;
+unsigned long kf_run_time;
 
 /***************************************
 
@@ -368,7 +371,7 @@ void setup() {
 
 	// setup KeyFrames vars
 	KeyFrames::setMaxVel(4000);
-	KeyFrames::setMaxAccel(20000);
+	KeyFrames::setMaxAccel(20000);	
  
 	// default to master timing node
 	ComMgr.master(true);
@@ -538,37 +541,19 @@ void loop() {
    }
 
    if (kf_program_running){
-	   
-   	   static unsigned long start_time = 0;
-	   static float			run_time = 0;
-	   static unsigned long last_time = 0;
-
-	   static bool just_started = true;
-	   float speed = 0;
-	   
+   
 	   // Update run_time
-	   run_time = millis() - start_time;
+	   kf_run_time = millis() - kf_start_time;
 
-	   // Start the motor running
-	   if (just_started){
-		   
-		   just_started = false;
-
-		   joystickSet(true);
-		   speed = kf[0].vel(0);
-		   setJoystickSpeed(0, speed);
-		   last_time = millis();
-		   start_time = 0;
-	   }	   
 	   // If the update time has elapsed, update the motor speed
-	   else if (millis() - last_time > KeyFrames::updateRate()){
-		   speed = kf[0].vel(run_time / MILLIS_PER_SECOND);
+	   if (millis() - kf_last_update > KeyFrames::updateRate()){
+		   float speed = kf[0].vel((float)kf_run_time / MILLIS_PER_SECOND);
 		   setJoystickSpeed(0, speed);
-		   last_time = millis();
+		   kf_last_update = millis();
 	   }   
 
 	   // Check to see if the program is done
-	   if (run_time / MILLIS_PER_SECOND > KeyFrames::getXN(KeyFrames::countKF() - 1)){
+	   if ((float)kf_run_time / MILLIS_PER_SECOND > KeyFrames::getXN(KeyFrames::countKF() - 1)){
 		   setJoystickSpeed(0, 0);
 		   joystickSet(false);
 		   kf_program_running = false;
@@ -584,6 +569,19 @@ void loop() {
 =========================================
 
 */
+
+void startKFProgram(){
+	kf_program_running = true;
+
+	joystickSet(true);	
+	
+	kf_run_time = 0;
+	kf_start_time = millis();
+	kf_last_update = millis();
+
+	setJoystickSpeed(0, kf[0].vel(0));
+
+}
 
 
 void pauseProgram() {
