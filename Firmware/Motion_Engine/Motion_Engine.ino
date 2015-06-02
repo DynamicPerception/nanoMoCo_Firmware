@@ -670,6 +670,7 @@ void eStop() {
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
 			if (enable_count >= THRESHOLD && !external_intervalometer) {
 				limitSwitchAttach(0);
+				altConnect(0, ALT_EXTINT);
 				altConnect(1, ALT_EXTINT);
 				altSetup();
 				external_intervalometer = true;
@@ -679,6 +680,7 @@ void eStop() {
 				debugOn();
 			}
 			else if (enable_count >= THRESHOLD && external_intervalometer) {
+				altConnect(0, ALT_OFF);
 				altConnect(1, ALT_OFF);
 				altSetup();
 				external_intervalometer = false;
