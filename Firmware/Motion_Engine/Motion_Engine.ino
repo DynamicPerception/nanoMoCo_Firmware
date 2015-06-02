@@ -547,13 +547,17 @@ void loop() {
 
 	   // If the update time has elapsed, update the motor speed
 	   if (millis() - kf_last_update > KeyFrames::updateRate()){
-		   float speed = kf[0].vel((float)kf_run_time / MILLIS_PER_SECOND);
-		   setJoystickSpeed(0, speed);
+		   for (byte i = 0; i < MOTOR_COUNT; i++){
+			   float speed = kf[i].vel((float)kf_run_time / MILLIS_PER_SECOND);
+			   setJoystickSpeed(i, speed);
+		   }		   
 		   kf_last_update = millis();
 	   }   
 
 	   // Check to see if the program is done
 	   if ((float)kf_run_time / MILLIS_PER_SECOND > KeyFrames::getXN(KeyFrames::countKF() - 1)){
+		   for (byte i = 0; i < MOTOR_COUNT; i++)   
+			   setJoystickSpeed(i, 0);		   
 		   setJoystickSpeed(0, 0);
 		   joystickSet(false);
 		   kf_program_running = false;
@@ -579,7 +583,9 @@ void startKFProgram(){
 	kf_start_time = millis();
 	kf_last_update = millis();
 
-	setJoystickSpeed(0, kf[0].vel(0));
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		setJoystickSpeed(i, kf[i].vel(0));
+	}
 
 }
 
