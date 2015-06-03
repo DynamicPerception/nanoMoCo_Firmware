@@ -1069,8 +1069,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//If Graffik mode is enabled, setting the lead-in will not reset the lead-out
 	case 19:
 		motor[subaddr - 1].planLeadIn(Node.ntoul(input_serial_buffer));
-		//USBSerial.print("Lead-in:");
-		//USBSerial.println(motor[subaddr - 1].planLeadIn());
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Lead-in:");
+			USBSerial.println(motor[subaddr - 1].planLeadIn());
+		}
 		if (!graffik_mode)
 			motor[subaddr - 1].planLeadOut(0);
 		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
