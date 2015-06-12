@@ -161,7 +161,7 @@ void cycleCamera() {
       // the callback that will trigger exposing the camera immediately
 	if (usb_debug & DB_FUNCT){
 		USBSerial.print("cycleCamera() - Camera busy: ");
-		USBSerial.print(Camera.busy());
+		USBSerial.println(Camera.busy());
 	}
     if( ! Camera.busy() ) {
 		if (usb_debug & DB_FUNCT)
@@ -248,7 +248,7 @@ void cycleClearToMove() {
        // do not move if a motor delay is programmed...
 	   for(int i = 0; i < MOTOR_COUNT; i++){
 		   
-		   if( (motor[i].enable() &&  motor[i].planLeadIn() > 0 )){
+		   if( (motor[i].enable())){
 			   if ((minPlanLead != 0 && motor[i].planLeadIn() < minPlanLead) || (i == 0))
 					minPlanLead = motor[i].planLeadIn();
 		   }  

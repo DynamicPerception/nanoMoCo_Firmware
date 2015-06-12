@@ -110,7 +110,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 37;				// Serial API version
+const int SERIAL_VERSION			= 40;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -774,8 +774,10 @@ unsigned long totalProgramTime() {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				if (usb_debug & DB_FUNCT){
-					USBSerial.print("totalProgramTime() - Interval: ");
+				if (usb_debug & DB_FUNCT){				
+					USBSerial.print("totalProgramTime() - Motor: ");
+					USBSerial.print(i);
+					USBSerial.print(" Interval: ");
 					USBSerial.print(Camera.interval);
 					USBSerial.print("  Lead in: ");
 					USBSerial.print(motor[i].planLeadIn());
