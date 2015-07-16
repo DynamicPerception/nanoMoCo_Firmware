@@ -32,13 +32,14 @@ See dynamicperception.com for more information
 
 
 
+
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
 #include <AltSoftSerial.h>
 #include <MemoryFree.h>
-#include "hermite_spline.h"
-#include "key_frames.h"
+#include <hermite_spline.h>
+#include <key_frames.h>
 #include <matrix_math.h>
 #include <spline_calc.h>
 
