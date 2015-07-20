@@ -764,9 +764,9 @@ uint8_t programPercent() {
 	if (motor[0].planType() == SMS)
 		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
 
-	// Otherwise determin the percent completion based on run-time
+	// Otherwise determin the percent completion based on run-time (don't include the start delay)
 	else
-		percent_new = round((float)run_time / (float)longest_move * 100.0);
+		percent_new = round((float)(run_time - start_delay) / (float)longest_move * 100.0);
 
 	// If the newly calculated percent complete is 0 and the last percent complete was non-zero, then the program has finished and the program should report 100% completion
 	// Don't execute this behavior in Graffik mode
