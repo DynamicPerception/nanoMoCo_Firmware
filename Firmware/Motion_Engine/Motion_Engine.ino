@@ -192,6 +192,7 @@ const byte CAM_DEFAULT_FOCUS	= 0;
 unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
+boolean		  keep_camera_alive		= false;
 
 
 /***************************************
@@ -246,16 +247,17 @@ const int FLOAT_TO_FIXED = 100;				// Multiply any floats to be transmitted in a
 
 
 // program timer counters
-unsigned long run_time		= 0;				// Amount of time since the program has started (ms)
-unsigned long last_run_time = 0;				// Stores the run time, even after the program has ended
-unsigned long start_time	= 0;				// Current time when program starts
-uint8_t running				= false;			// Program run status
-volatile byte force_stop	= false;	
-uint8_t ping_pong_mode		= false;			// ping pong mode variable
-unsigned long max_time		= 0;				// maximum run time
-unsigned long start_delay	= 0;				// Time delay for program starting
-bool pause_flag				= false;			// pause flag for later call of pauseProgram() 
-bool program_complete		= false;			// program completion flag
+unsigned long	run_time			= 0;				// Amount of time since the program has started (ms)
+unsigned long	last_run_time		= 0;				// Stores the run time, even after the program has ended
+unsigned long	start_time			= 0;				// Current time when program starts
+uint8_t			running				= false;			// Program run status
+volatile byte	force_stop			= false;	
+uint8_t			ping_pong_mode		= false;			// ping pong mode variable
+unsigned long	max_time			= 0;				// maximum run time
+unsigned long	start_delay			= 0;				// Time delay for program starting
+bool			pause_flag			= false;			// pause flag for later call of pauseProgram() 
+bool			program_complete	= false;			// program completion flag
+unsigned long	program_delay		= 0;				// Amount of time to wait after receiving a start command before starting a program
 
 void stopProgram(uint8_t force_clear = true);	// Predefine this function to declare the default argument
 
@@ -547,16 +549,24 @@ void loop() {
 	   kf_run_time = millis() - kf_start_time;
 
 	   // If the update time has elapsed, update the motor speed
-	   if (millis() - kf_last_update > KeyFrames::updateRate()){
+	   if (millis() - kf_last_update > KeyFrames::updateRate()){		   
+		   //USBSerial.print("Time: ");
+		   //USBSerial.print(kf_run_time);
 		   for (byte i = 0; i < MOTOR_COUNT; i++){
-			   float speed = kf[i].vel((float)kf_run_time / MILLIS_PER_SECOND);
+			   float speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND;
 			   setJoystickSpeed(i, speed);
+			   //USBSerial.print(" Speed ");
+			   //USBSerial.print(i);
+			   //USBSerial.print(": ");
+			   //USBSerial.print(speed);
 		   }		   
+		   //USBSerial.println("");
 		   kf_last_update = millis();
 	   }   
 
 	   // Check to see if the program is done
-	   if ((float)kf_run_time / MILLIS_PER_SECOND > KeyFrames::getXN(KeyFrames::countKF() - 1)){
+	   if ((float)kf_run_time > KeyFrames::getXN(KeyFrames::countKF() - 1)){
+		   //USBSerial.println("Program done");
 		   for (byte i = 0; i < MOTOR_COUNT; i++)   
 			   setJoystickSpeed(i, 0);		   
 		   setJoystickSpeed(0, 0);
@@ -576,6 +586,10 @@ void loop() {
 */
 
 void startKFProgram(){
+	//USBSerial.print("Program length: ");
+	//USBSerial.print(KeyFrames::getXN(KeyFrames::countKF() - 1));
+	//USBSerial.println(" ms");
+
 	kf_program_running = true;
 
 	joystickSet(true);	
@@ -584,10 +598,10 @@ void startKFProgram(){
 	kf_start_time = millis();
 	kf_last_update = millis();
 
-	for (byte i = 0; i < MOTOR_COUNT; i++){
-		setJoystickSpeed(i, kf[i].vel(0));
+	for (byte i = 0; i < MOTOR_COUNT; i++){		
+		USBSerial.println(kf[i].vel(0));
+		setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
 	}
-
 }
 
 
@@ -800,6 +814,8 @@ unsigned long totalProgramTime() {
 			// Overwrite longest_time if the last checked motor is longer
 			if (motor_time > longest_time)
 				longest_time = motor_time;
+			// Add the program delay
+			longest_time += start_delay;
 		}
 	}
 

@@ -230,7 +230,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 3:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106) {
+	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
 		   if (usb_debug & DB_GEN_SER)
 			   USBSerial.println("Invalid motor command");
 		   response(false);
@@ -505,7 +505,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	
 	//Command 21 set start time delay (input is in seconds)
 	case 21:
-		start_delay = (Node.ntoul(input_serial_buffer))*1000;//converts the input to milliseconds
+		start_delay = Node.ntoul(input_serial_buffer);
 		response(true);
 		break;
 
@@ -587,13 +587,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	// Command 29 swaps all motors' start and stop positions
+	//Command 29 swaps all motors' start and stop positions
 	case 29:
 		reverseStartStop();
 		response(true);
 		break;			
 
-	// Command 50 sets Graffik Mode on or off
+	//Command 30 sets the amount of time to delay after receiving a start command before starting a program
+
+
+	//Command 50 sets Graffik Mode on or off
 	case 50:
 		graffikMode(input_serial_buffer[0]);
 		response(true);
@@ -736,7 +739,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 117 reads start time delay (seconds)
 	case 117:
-		response(true, start_delay/1000);
+		response(true, start_delay);
 		break;
 		
 	//Command 118 reads motors' continuous mode setting
@@ -927,11 +930,11 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
   
     //Command 9 set motor's home limit
-    case 9:
-      motor[subaddr-1].homeSet();
-	  eepromWrite();
-      response(true);
-      break;	
+	case 9:
+		motor[subaddr - 1].homeSet();		
+		eepromWrite();
+		response(true);
+	    break;	
 
 	//Command 10 set motor's end limit
 	case 10:
@@ -945,13 +948,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 11 send motor to home limit
 	case 11:
-		//// Move at the maximum motor speed
-		//motor[subaddr - 1].ms(4);
-		//motor[subaddr - 1].contSpeed(mot_max_speed);
+		// Move at the maximum motor speed
+		motor[subaddr - 1].ms(4);
+		motor[subaddr - 1].contSpeed(mot_max_speed);
 
-		//// send a motor home
-		//motor[subaddr - 1].home();
-		//startISR();
+		// send a motor home
+		motor[subaddr - 1].home();
+		startISR();
 		response(true);
 		break;
 
@@ -1488,6 +1491,12 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		cameraTest(input_serial_buffer[0]);
 		response(true);
 		break;
+
+	//Command 12 sets camera keep-alive state
+	case 12:
+		keep_camera_alive = input_serial_buffer[0];
+		response(true);
+		break;		
     
     
     //*****************CAMERA READ COMMANDS********************
@@ -1549,6 +1558,11 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 110 reports whether the camera is in test mode
 	case 110:
 		response(true, cameraTest());
+		break;
+
+	//Command 111 reports the keep-alive state
+	case 111:
+		response(true, keep_camera_alive);
 		break;
       
             
@@ -1623,7 +1637,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		break;
 	}
 
-	// Command 12 sets the next key frame abscissa
+	// Command 12 sets the next key frame abscissa (frames / milliseconds)
 	case 12:
 	{		
 		static int i = 0;
@@ -1634,7 +1648,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		break;
 	}	
 
-	// Command 13 sets the next key frame motor position
+	// Command 13 sets the next key frame motor position (steps)
 	case 13:
 	{
 		static int i = 0;
@@ -1645,7 +1659,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		break;
 	}
 
-	// Command 14 sets the next key frame motor velocity
+	// Command 14 sets the next key frame motor velocity (steps/frame or steps/millisecond)
 	case 14:
 	{
 		static int i = 0;
@@ -1656,7 +1670,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		break;
 	}
 
-	// Command 15 sets the motor velocity update rate in ms that is used at run-time
+	// Command 15 sets the motor velocity update rate in ms that is used at run-time 
 	case 15:
 	{
 		unsigned int in_val = Node.ntoui(input_serial_buffer);
@@ -1713,7 +1727,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		response(true, kf[KeyFrames::axis()].validateVel());
 		break;
 
-	// Command 105 returns true if the current spline will not exceed the maximum motor speed for the current axis
+	// Command 106 returns true if the current spline will not exceed the maximum motor speed for the current axis
 	case 106:
 		response(true, kf[KeyFrames::axis()].validateAccel());
 		break;
