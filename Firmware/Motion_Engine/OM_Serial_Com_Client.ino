@@ -215,7 +215,7 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 0:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122) {
+	   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {
 		   if (usb_debug & DB_GEN_SER)
 			   USBSerial.println("Invalid general command");
 		   response(false);
@@ -1610,16 +1610,14 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		if (in_val > 0){				   
 			KeyFrames::setAxisArray(kf, MOTOR_COUNT);
 			KeyFrames::setKFCount(in_val);
-			KeyFrames::receiveState(true);
-			response(true);
-			break;
+			KeyFrames::receiveState(true);			
 		}
 		// Otherwise end the recieve state
 		else{				   
-			KeyFrames::receiveState(false);			
-			response(true);
-			break;
+			KeyFrames::receiveState(false);						
 		}			   			   
+		response(true, in_val);
+		break;
 	}
 
 	// Command 11 sets the current axis
@@ -1633,40 +1631,56 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			kf[KeyFrames::axis()].resetFN();
 			kf[KeyFrames::axis()].resetDN();
 		}
-		response(true);
+		response(true, in_val);
 		break;
 	}
 
 	// Command 12 sets the next key frame abscissa (frames / milliseconds)
 	case 12:
 	{		
-		static int i = 0;
+		// Parse the incoming value
 		float in_val = Node.ntof(input_serial_buffer);
+		int frame = KeyFrames::countXN();
+		
+		// Set the received value
 		KeyFrames::setXN(in_val);		
-		response(true, (long) (KeyFrames::getXN(i) * 100));
-		i++;
+
+		// Echo the assigned value
+		response(true, (long)(KeyFrames::getXN(frame) * 100));		
 		break;
 	}	
 
 	// Command 13 sets the next key frame motor position (steps)
 	case 13:
 	{
-		static int i = 0;
-		float in_val = Node.ntof(input_serial_buffer);
-		kf[KeyFrames::axis()].setFN(in_val);
-		response(true, (long) (kf[KeyFrames::axis()].getFN(i) * 100));
-		i++;
+		// Parse the incoming value
+		float in_val = Node.ntof(input_serial_buffer);		
+
+		int axis = KeyFrames::axis();
+		int frame = kf[axis].countFN();
+
+		// Set the received value
+		kf[axis].setFN(in_val);
+
+		// Echo the assigned value
+		response(true, (long)(kf[axis].getFN(frame) * 100));
 		break;
 	}
 
 	// Command 14 sets the next key frame motor velocity (steps/frame or steps/millisecond)
 	case 14:
 	{
-		static int i = 0;
+		// Parse the incoming value
 		float in_val = Node.ntof(input_serial_buffer);
+		
+		int axis = KeyFrames::axis();
+		int frame = kf[axis].countDN();
+
+		// Set the received value
 		kf[KeyFrames::axis()].setDN(in_val);
-		response(true, (long)(kf[KeyFrames::axis()].getDN(i) * 100));
-		i++;
+
+		// Echo the assigned value
+		response(true, (long)(kf[axis].getDN(frame) * 100));		
 		break;
 	}
 
