@@ -1601,36 +1601,36 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	switch (command){
 
-	// Command 10 signals start & key frame count / end of key frame point transmission. Send 0 to end transmission.
+	// Command 10 sets the current axis
 	case 10:
+	{
+			   int axis = Node.ntoi(input_serial_buffer);
+
+			   // A valid axis must be selected
+			   if (axis >= 0 && axis <= MOTOR_COUNT){
+				   // Ensure that the axis array is set
+				   KeyFrames::setAxisArray(kf, MOTOR_COUNT);
+
+				   // Set the current axis
+				   KeyFrames::axis(axis);		   
+
+				   kf[axis].resetXN();
+				   kf[axis].resetFN();
+				   kf[axis].resetDN();
+			   }
+			   response(true, axis);
+			   break;
+	}
+
+	// Command 11 signals start & key frame count / end of key frame point transmission. Send 0 to end transmission.
+	case 11:
 	{
 		int in_val = Node.ntoi(input_serial_buffer);
 			  
 		// If this is the start of a new transmission, set the count and the receive flag
-		if (in_val > 0){				   
-			KeyFrames::setAxisArray(kf, MOTOR_COUNT);
-			KeyFrames::setKFCount(in_val);
-			KeyFrames::receiveState(true);			
-		}
-		// Otherwise end the recieve state
-		else{				   
-			KeyFrames::receiveState(false);						
-		}			   			   
-		response(true, in_val);
-		break;
-	}
-
-	// Command 11 sets the current axis
-	case 11:
-	{			   
-		int in_val = Node.ntoi(input_serial_buffer);
-
-		// A valid axis must be selected
-		if (in_val >= 0 && in_val <= MOTOR_COUNT){
-			KeyFrames::axis(in_val);
-			kf[KeyFrames::axis()].resetFN();
-			kf[KeyFrames::axis()].resetDN();
-		}
+		if (in_val > 0){				   			
+			kf[KeyFrames::axis()].setKFCount(in_val);			
+		}		   			   
 		response(true, in_val);
 		break;
 	}
@@ -1640,13 +1640,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{		
 		// Parse the incoming value
 		float in_val = Node.ntof(input_serial_buffer);
-		int frame = KeyFrames::countXN();
+
+		int axis = KeyFrames::axis();
+		int frame = kf[axis].countXN();		
 		
 		// Set the received value
-		KeyFrames::setXN(in_val);		
+		kf[axis].setXN(in_val);		
 
 		// Echo the assigned value
-		response(true, (long)(KeyFrames::getXN(frame) * 100));		
+		response(true, (long)(kf[axis].getXN(frame) * 100));
 		break;
 	}	
 
@@ -1677,7 +1679,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		int frame = kf[axis].countDN();
 
 		// Set the received value
-		kf[KeyFrames::axis()].setDN(in_val);
+		kf[axis].setDN(in_val);
 
 		// Echo the assigned value
 		response(true, (long)(kf[axis].getDN(frame) * 100));		
@@ -1704,7 +1706,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 100 returns the number of key frames set
 	case 100:				
-		response(true, KeyFrames::countKF());
+		response(true, kf[KeyFrames::axis()].countKF());
 		break;
 
 	// Command 101 returns motor velocity update rate in ms
