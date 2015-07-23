@@ -455,6 +455,9 @@ void setup() {
 
 	// Attach interrupt to watch for e-stop button press
 	attachInterrupt(1, eStop, FALLING); 
+
+	// Ensure that the axis array is set
+	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
 }
 
 
@@ -546,41 +549,9 @@ void loop() {
    }
 
    if (kf_program_running){
-   
-	   // Update run_time
-	   kf_run_time = millis() - kf_start_time;	   
 
-	   // If the update time has elapsed, update the motor speed
-	   if (millis() - kf_last_update > KeyFrames::updateRate()){		   
-		   for (byte i = 0; i < MOTOR_COUNT; i++){
-			   
-			   // Determine the maximum run time for this axis
-			   float thisAxisMaxTime = kf[i].getXN(kf[i].countKF() - 1);
-			   if (motor[0].planType() == SMS)
-				   thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval;
-
-			   // Set the approriate speed
-			   float speed;
-			   if (kf_run_time > thisAxisMaxTime)
-				   speed = 0;
-			   else		   
-				   speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
-			   setJoystickSpeed(i, speed);
-		   }		   
-		   kf_last_update = millis();
-	   }   
-
-	   // Check to see if the program is done
-	   if (kf_run_time > kf_max_time){
-		   // Make sure all motors are stopped
-		   for (byte i = 0; i < MOTOR_COUNT; i++){			   
-			   setJoystickSpeed(i, 0);
-		   }
-		   // Disable joystick mode
-		   joystickSet(false);
-		   // Turn off the key frame program flag
-		   kf_program_running = false;
-	   }
+	   updateKFProgram();
+	   
    }
 
 }
@@ -592,32 +563,6 @@ void loop() {
 =========================================
 
 */
-
-void startKFProgram(){
-	
-	// Turn on the key frame program flag
-	kf_program_running = true;
-
-	// Turn on joystick mode
-	joystickSet(true);	
-		
-	// Determine the max running time
-	kf_max_time = KeyFrames::getMaxLastXN();
-	if (motor[0].planType() == SMS){
-		// Convert from "frames" to real milliseconds, based upon the camera interval
-		kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
-	}
-	
-	// Initialize the run timers
-	kf_run_time = 0;
-	kf_start_time = millis();
-	kf_last_update = millis();
-
-	// Set the initial motor speeds
-	for (byte i = 0; i < MOTOR_COUNT; i++){				
-		setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
-	}
-}
 
 
 void pauseProgram() {
