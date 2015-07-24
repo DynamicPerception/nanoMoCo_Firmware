@@ -60,12 +60,21 @@ void sendToStart(uint8_t p_motor) {
 	else
 		motor[p_motor].programBackCheck(false);
 
-
 	// Move at the maximum motor speed
 	motor[p_motor].ms(4);
 	motor[p_motor].contSpeed(mot_max_speed);
 
 	// Start the move
 	motor[p_motor].moveToStart();
+	startISR();
+}
+
+void sendToStop(uint8_t p_motor){
+
+	// Move at the maximum motor speed
+	motor[p_motor].ms(4);
+	motor[p_motor].contSpeed(mot_max_speed);
+
+	motor[p_motor].moveToStop();
 	startISR();
 }

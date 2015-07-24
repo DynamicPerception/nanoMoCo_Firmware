@@ -1109,12 +1109,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	
 	//Commnad 24 send motor to program stop point
 	case 24:
-		// Move at the maximum motor speed
-		motor[subaddr - 1].ms(4);
-		motor[subaddr - 1].contSpeed(mot_max_speed);
-
-		motor[subaddr - 1].moveToStop();
-		startISR();
+		sendToStop(subaddr - 1);		
 		response(true);
 		break;
 
@@ -1151,91 +1146,11 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 
-	//Command 30 sets the motor's start position to its current position
+	//Command 30 sets the motor's stop position to its current position
 	case 30:
 		motor[subaddr - 1].stopPos(motor[subaddr - 1].currentPos());
 		response(true);
 		break;
-
-	//Command 40 sets the motor's key frame lead-in
-	case 40:
-	{
-			   uint8_t frame = input_serial_buffer[0];
-			   input_serial_buffer++;
-			   motor[subaddr - 1].keyLead(frame, Node.ntoul(input_serial_buffer));
-			   response(true);
-
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("Command Mot.40 - Motor ");
-				   USBSerial.print(subaddr - 1);
-				   USBSerial.print(" lead-in set to ");
-				   USBSerial.print(motor[subaddr - 1].keyLead(frame));
-				   USBSerial.print(" for frame ");
-				   USBSerial.println(frame);
-			   }
-			   
-			   break;
-	}
-
-	//Command 41 sets the motor's key frame acceleration
-	case 41:
-	{
-			   uint8_t frame = input_serial_buffer[0];
-			   input_serial_buffer++;
-			   motor[subaddr - 1].keyAccel(frame, Node.ntoul(input_serial_buffer));
-			   response(true);
-
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("Command Mot.41 - Motor ");
-				   USBSerial.print(subaddr - 1);
-				   USBSerial.print(" accel set to ");
-				   USBSerial.print(motor[subaddr - 1].keyAccel(frame));
-				   USBSerial.print(" for frame ");
-				   USBSerial.println(frame);
-			   }
-
-			   break;
-	}
-
-	//Command 42 sets the motor's key frame deceleration
-	case 42:
-	{
-			   uint8_t frame = input_serial_buffer[0];
-			   input_serial_buffer++;
-			   motor[subaddr - 1].keyDecel(frame, Node.ntoul(input_serial_buffer));
-			   response(true);
-
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("Command Mot.42 - Motor ");
-				   USBSerial.print(subaddr - 1);
-				   USBSerial.print(" decel set to ");
-				   USBSerial.print(motor[subaddr - 1].keyDecel(frame));
-				   USBSerial.print(" for frame ");
-				   USBSerial.println(frame);
-			   }
-
-			   break;
-	}
-
-	//Command 43 sets the motor's key frame arrival time
-	case 43:
-	{
-			   uint8_t frame = input_serial_buffer[0];
-			   input_serial_buffer++;
-			   motor[subaddr - 1].keyTime(frame, Node.ntoui(input_serial_buffer));
-			   response(true);
-
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("Command Mot.43 - Motor ");
-				   USBSerial.print(subaddr - 1);
-				   USBSerial.print(" time set to ");
-				   USBSerial.print(motor[subaddr - 1].keyTime(frame));
-				   USBSerial.print(" for frame ");
-				   USBSerial.println(frame);
-			   }
-
-			   break;
-	}
 
 	// Command 50
 	case 50: 
