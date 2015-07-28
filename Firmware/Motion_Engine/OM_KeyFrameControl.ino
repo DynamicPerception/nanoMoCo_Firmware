@@ -60,87 +60,139 @@ void printKeyFrameData(){
 
 void startKFProgram(){
 
-	USBSerial.print("Starting KF program in mode: ");
-	USBSerial.println(motor[0].planType());
+	// If resuming
+	if (kf_program_paused){
+		// Add the time of the last pause to the total pause time counter
+		kf_pause_time += kf_this_pause;
+	}
+	// If starting a new program
+	else{
+		// Reset the total pause time counter
+		kf_pause_time = 0;
 
-	// Turn on the key frame program flag
+		// Make sure the pause flag is off
+		kf_program_paused = false;
+
+		// Turn on joystick mode
+		joystickSet(true);
+
+		// Determine the max running time
+		kf_max_time = 0;
+		for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
+			int lastFrame = kf[i].getKFCount() - 1;
+			USBSerial.print("Frame count: ");
+			USBSerial.println(lastFrame + 1);
+			long this_time = kf[i].getXN(lastFrame);
+			USBSerial.print("this_time: ");
+			USBSerial.println(this_time);
+
+			if (this_time > kf_max_time)
+				kf_max_time = this_time;
+		}
+
+		if (motor[0].planType() == SMS){
+			// Convert from "frames" to real milliseconds, based upon the camera interval
+			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
+		}
+
+		// Initialize the run timers
+		kf_run_time = 0;
+		kf_start_time = millis();
+		kf_last_update = millis();
+
+		// Set the initial motor speeds
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			// Don't touch motors that don't have any key frames
+			if (kf[i].getKFCount() > 0)
+				setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
+		}
+	}
+
+	// Turn on the key frame program flag and turn the paused flag off
 	kf_program_running = true;
+	kf_program_paused = false;
+}
 
-	// Turn on joystick mode
-	joystickSet(true);
+void pauseKFProgram(){
 
-	// Determine the max running time
-	kf_max_time = 0;
-	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
-		int lastFrame = kf[i].getKFCount() - 1;
-		USBSerial.print("Frame count: ");
-		USBSerial.println(lastFrame + 1);
-		long this_time = kf[i].getXN(lastFrame);
-		USBSerial.print("this_time: ");
-		USBSerial.println(this_time);
-
-		if (this_time > kf_max_time)
-			kf_max_time = this_time;
-	}
-
-	if (motor[0].planType() == SMS){
-		// Convert from "frames" to real milliseconds, based upon the camera interval
-		kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
-	}
-
-	USBSerial.print("Max run time: ");
-	USBSerial.println(kf_max_time);
-
-
-	// Initialize the run timers
-	kf_run_time = 0;
-	kf_start_time = millis();
-	kf_last_update = millis();
-
-	// Set the initial motor speeds
+	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){
-		// Don't touch motors that don't have any key frames
-		if (kf[i].getKFCount() > 0)
-			setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
+		setJoystickSpeed(i, 0);
 	}
+
+	// Set the pause flag
+	kf_program_paused = true;
+
+	// Reset the current pause duration counter
+	kf_this_pause = 0;
+
+	// Log the start time of the pause
+	kf_pause_start = millis();	
+}
+
+void stopKFProgram(){
+
+	// Make sure all motors are stopped
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		setJoystickSpeed(i, 0);
+	}
+
+	// Disable joystick mode
+	joystickSet(false);
+
+	// Turn off the key frame program flag
+	kf_program_running = false;
+	kf_program_paused = false;
 }
 
 void updateKFProgram(){
 
-	// Update run_time
-	kf_run_time = millis() - kf_start_time;
-
-	// If the update time has elapsed, update the motor speed
-	if (millis() - kf_last_update > KeyFrames::updateRate()){
-		for (byte i = 0; i < MOTOR_COUNT; i++){
-
-			// Determine the maximum run time for this axis
-			float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
-			if (motor[0].planType() == SMS)
-				thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval;
-
-			// Set the approriate speed, but don't touch motors that don't have any key frames
-			if (kf[i].getKFCount() > 0){
-				float speed;
-				if (kf_run_time > thisAxisMaxTime)
-					speed = 0;
-				else
-					speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
-				setJoystickSpeed(i, speed);
-			}
-		}
-		kf_last_update = millis();
+	// If the program is paused, just keep track of the pause time
+	if (kf_program_paused){		
+		kf_this_pause = millis() - kf_pause_start;
+		USBSerial.print("Pause length: ");
+		USBSerial.println(kf_this_pause);
 	}
 
-	// Check to see if the program is done
-	if (kf_run_time > kf_max_time){
-		// Make sure all motors are stopped
-		for (byte i = 0; i < MOTOR_COUNT; i++){
-			setJoystickSpeed(i, 0);
+	// Update run_time, don't include time spent paused
+	else{
+		
+		kf_run_time = millis() - kf_start_time - kf_pause_time;
+		USBSerial.print("Run time: ");
+		USBSerial.println(kf_run_time);
+
+		// If the update time has elapsed, update the motor speed
+		if (millis() - kf_last_update > KeyFrames::updateRate()){
+			for (byte i = 0; i < MOTOR_COUNT; i++){
+
+				// Determine the maximum run time for this axis
+				float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
+				if (motor[0].planType() == SMS)
+					thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval;
+
+				// Set the approriate speed, but don't touch motors that don't have any key frames
+				if (kf[i].getKFCount() > 0){
+					float speed;
+					if (kf_run_time > thisAxisMaxTime)
+						speed = 0;
+					else
+						speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
+					setJoystickSpeed(i, speed);
+				}
+			}
+			kf_last_update = millis();
 		}
-		// Disable joystick mode
-		joystickSet(false);
-		// Turn off the key frame program flag
-		kf_program_running = false;
+
+		// Check to see if the program is done
+		if (kf_run_time > kf_max_time){
+			// Make sure all motors are stopped
+			for (byte i = 0; i < MOTOR_COUNT; i++){
+				setJoystickSpeed(i, 0);
+			}
+			// Disable joystick mode
+			joystickSet(false);
+			// Turn off the key frame program flag
+			kf_program_running = false;
+		}
 	}
 }

@@ -1609,12 +1609,27 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		break;
 	}
 
-	// Command 20 runs a keyframe program
+	// Command 20 runs/resumes a keyframe program
 	case 20:
 	{	   
 	   startKFProgram();	   
 	   response(true);
+	   break;
 	}
+
+	// Command 21 pauses a keyframe program
+	case 21:
+		pauseKFProgram();
+		response(true);
+		break;
+
+	// Command 22 pauses a keyframe program
+	case 22:
+		stopKFProgram();
+		response(true);
+		break;
+
+
 
 	//*****************KEY FRAME READ COMMANDS********************
 

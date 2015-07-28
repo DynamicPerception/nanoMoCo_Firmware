@@ -292,7 +292,12 @@ KeyFrames kf[MOTOR_COUNT] = { KeyFrames(), KeyFrames(), KeyFrames() };
 unsigned long kf_start_time;
 unsigned long kf_last_update;
 unsigned long kf_run_time;
+unsigned long kf_pause_start;
+unsigned long kf_this_pause;
+unsigned long kf_pause_time;
 unsigned long kf_max_time;
+bool kf_program_running = false;
+bool kf_program_paused = false;
 
 /***************************************
 
@@ -338,8 +343,6 @@ const byte ST_RUN   = 3;	// ST_RUN   - motor is currently running
 const byte ST_EXP   = 4;	// ST_EXP   - clear to expose camera (or not...)
 const byte ST_WAIT  = 5;	// ST_WAIT  - in camera delay
 const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
-
-bool kf_program_running = false;
 
 
 /* 
