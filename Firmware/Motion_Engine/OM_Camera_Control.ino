@@ -183,7 +183,7 @@ Automatically sets the max shots value based upon the lead-in, travel, and lead-
 void cameraAutoMaxShots() {
 
 	// This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
-	if (motor[0].planType() != SMS)
+	if (Motors::planType() != SMS)
 		return;
 
 	unsigned int longest = 0;

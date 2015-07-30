@@ -201,6 +201,8 @@ boolean		  keep_camera_alive		= false;
 
 ****************************************/
 
+// Set type def to simplify syntax of accessing static vars and functions from motor class
+typedef OMMotorFunctions Motors;
 
 // Deafult motor settings
 const unsigned int MOT_DEFAULT_MAX_STEP		= 5000;			// Default maximum controller step rate output
@@ -256,9 +258,12 @@ volatile byte	force_stop			= false;
 uint8_t			ping_pong_mode		= false;			// ping pong mode variable
 unsigned long	max_time			= 0;				// maximum run time
 unsigned long	start_delay			= 0;				// Time delay for program starting
+bool			delay_flag			= 0;				// If true, the program run time has not exceeded the start delay time
 bool			pause_flag			= false;			// pause flag for later call of pauseProgram() 
+bool			still_shooting_flag = false;			// If true, the program moves have completed, but the camera is still shooting
 bool			program_complete	= false;			// program completion flag
-unsigned long	program_delay		= 0;				// Amount of time to wait after receiving a start command before starting a program
+
+
 
 void stopProgram(uint8_t force_clear = true);	// Predefine this function to declare the default argument
 
@@ -501,26 +506,28 @@ void loop() {
 		df_time = millis();
 	}	
 
+	// Print debug information if necessary
 	if ((usb_debug & DB_STEPS) && (millis() - debug_time) > 500) {
 		motorDebug();
 		debug_time = millis();
 	}
 
-	
-	
-	//Stop the motors if they're running and the watchdog timeout (time since last received command) has been exceeded
-	if ((motor[0].running() || motor[1].running() || motor[2].running()) && watchdog){
-		if(millis() - commandTime > WATCHDOG_MAX_TIME) {
-			stopAllMotors();
+		
+	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
+	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			if (motor[i].running()){
+				stopAllMotors();
+				break;
+			}
 		}
-	}   
+	}	
    
 	// Update motor splines
 	for(int i = 0; i < MOTOR_COUNT; i++){
 		if(motor[i].running())
 			motor[i].updateSpline();
-	}
-	  
+	}	  
 	  
 	// if our program is currently running...      
    if( running ) {
@@ -547,14 +554,15 @@ void loop() {
 			Engine.state(ST_CLEAR);
      
 		// If the start delay is done then check current engine state and handle appropriately
-		if(run_time >= start_delay)
+		if (run_time >= start_delay){
 			Engine.checkCycle();
+			delay_flag = false;
+		}
+		else if (run_time < start_delay)
+			delay_flag = true;
    }
-
-   if (kf_program_running){
-
-	   updateKFProgram();
-	   
+   else if (kf_program_running){
+	   updateKFProgram();	   
    }
 
 }
@@ -717,14 +725,14 @@ uint8_t programPercent() {
 	uint8_t percent_new;
 
 	// If in SMS mode and the camera max shots is less than the longest motor move, use that value instead
-	if (motor[0].planType() == SMS && Camera.maxShots < longest_move)
+	if (Motors::planType() == SMS && Camera.maxShots < longest_move)
 		longest_move = Camera.maxShots;
 
 	// Determine the program percent completion by dividing the current shots by the max shots.
 	// Multiply by 100 to give whole number percent.
 
 	// Determine the percent completion for SMS based on shots
-	if (motor[0].planType() == SMS)
+	if (Motors::planType() == SMS)
 		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
 
 	// Otherwise determin the percent completion based on run-time (don't include the start delay)
@@ -946,7 +954,7 @@ void motorDebug() {
 	USBSerial.print(" enable: ");
 	USBSerial.print(motor[0].enable());
 	USBSerial.print(" Type: ");
-	USBSerial.println(motor[0].planType());
+	USBSerial.println(Motors::planType());
 	USBSerial.print(" shots: ");
 	USBSerial.print(camera_fired);
 	USBSerial.print(" leadIn: ");
@@ -965,7 +973,7 @@ void motorDebug() {
 	USBSerial.print(" endPos: ");
 	USBSerial.print(motor[1].endPos());
 	USBSerial.print(" Type: ");
-	USBSerial.println(motor[1].planType());
+	USBSerial.println(Motors::planType());
 	USBSerial.print(" leadIn: ");
 	USBSerial.println(motor[1].planLeadIn());
 

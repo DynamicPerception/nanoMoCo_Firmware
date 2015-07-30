@@ -32,10 +32,8 @@ See dynamicperception.com for more information
 */
 
 
-
-
-unsigned long  camera_tm         = 0;
-byte altBlock = 0;
+unsigned long	camera_tm	= 0;
+byte			altBlock	= 0;
 
 
 void setupControlCycle() {
@@ -60,7 +58,20 @@ void cycleCamera() {
 			USBSerial.println("cycleCamera() - Pausing program");
 		pauseProgram();
 	}
-	
+
+
+	// Determine whether the critera for denoting a completed SMS or continuous program have been met
+	bool sms_done = false;
+	bool continuous_done = false;
+	if (Motors::planType() == SMS)
+		sms_done = Camera.maxShots > 0 && camera_fired > Camera.maxShots;		
+	else if (Motors::planType() != SMS){
+		continuous_done = true;
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			if (!motor[i].programDone())
+				continuous_done = false;
+		}
+	}
 
 	/*
 	* Stop program if max shots exceeded or if the continuous TL/video program as reached its destination.
@@ -68,13 +79,13 @@ void cycleCamera() {
 	* If the keep_camera_alive variable is true, then the program will not stop (i.e. the camera will continue shooting) until the program is manually stopped by
 	* pressing the e-stop button.
 	*/
-  if(!keep_camera_alive && ((Camera.maxShots > 0  && camera_fired > Camera.maxShots) || (motor[0].planType() != SMS && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()))) {
+	if (!keep_camera_alive && (sms_done || continuous_done)) {
 
 	  bool ready_to_stop = true;
 
 	  // If this is a video move there might be a lead-out to wait for, so if the run time is less than the total calculated time, don't stop the program yet
 	  // totalProgramTime() and last_run_time are unsigned, so they must be recast as signed values to avoid rolling the result if last_runt_time is longer
-	  if (motor[0].planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
+	  if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
 		  
 		  ready_to_stop = false;
 
@@ -98,11 +109,11 @@ void cycleCamera() {
 			program_complete = true;
 
 			// If not running a ping-pong move, activate the camera trigger to stop the video recording
-			if (!ping_pong_mode && motor[0].planType() == CONT_VID)
+			if (!ping_pong_mode && Motors::planType() == CONT_VID)
 				Camera.expose();
 
 			// If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
-			else if (ping_pong_mode && motor[0].planType() == CONT_VID) {
+			else if (ping_pong_mode && Motors::planType() == CONT_VID) {
 				reverseStartStop();
 				startProgram();
 			}
@@ -111,7 +122,12 @@ void cycleCamera() {
 		if (usb_debug & DB_FUNCT)
 			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 1");
 		return;
-  }
+	}
+	// If either the SMS or continuous move is complete and the camera is in "keep alive" mode
+	// indicate that the camera is still shooting
+	else if (keep_camera_alive && (sms_done || continuous_done)) {
+		still_shooting_flag = true;
+	}
   
   // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
@@ -261,7 +277,7 @@ void cycleClearToMove() {
 	   }
 	   
 	   //do not move until the minimum plan lead in has passed, if planType() == CONT_VID then the plan lead in is in ms
-	   if ((minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType() != CONT_VID) || (motor[0].planType() == CONT_VID && run_time <= minPlanLead)))) {
+	   if ((minPlanLead > 0 && ((camera_fired <= minPlanLead && Motors::planType() != CONT_VID) || (Motors::planType() == CONT_VID && run_time <= minPlanLead)))) {
 		   	Engine.state(ST_CLEAR);
 		   	return;
 	   	}
@@ -289,10 +305,12 @@ void cycleCheckMotor() {
          // still running
 
      // do not block on continuous motion of any sort
-	 for (int i = 0; i < MOTOR_COUNT; i++){
-      if( motor[i].planMoveType  == SMS && motor[i].running() == true )
-        return;
-	 }
+	if (OMMotorFunctions::planType() == SMS){
+		for (int i = 0; i < MOTOR_COUNT; i++){
+			if (motor[i].running() == true)
+				return;
+		}
+	}
 
     // no longer running, ok to fire camera
 

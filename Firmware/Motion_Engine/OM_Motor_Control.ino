@@ -200,7 +200,7 @@ void startProgramCom() {
 		}
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
-		if (motor[1].planType() == SMS) {
+		if (Motors::planType() == SMS) {
 			
 			// Determine the max time in seconds allowed for moving the motors
 			float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
@@ -218,7 +218,7 @@ void startProgramCom() {
 		}
 
 		// If we're starting a video move, fire the camera trigger pin to start the video camera
-		if (motor[0].planType() == CONT_VID) {
+		if (Motors::planType() == CONT_VID) {
 			Camera.expose();
 			unsigned long time = millis();
 			while (millis() - time < (MILLIS_PER_SECOND * 1.5))
@@ -255,7 +255,7 @@ void startProgramCom() {
 		}
 
 		//if it was paused and not SMS then recalculate move from pause time
-		if (was_pause && motor[0].planType() != SMS){
+		if (was_pause && Motors::planType() != SMS){
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				if (motor[i].enable())
 					motor[i].resumeMove();

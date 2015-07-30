@@ -328,7 +328,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		if (running) {
 			pause_flag = true;
 			// If running in a mode other than SMS, pause the program immediately
-			if (motor[0].planType() != SMS)
+			if (Motors::planType() != SMS)
 				pauseProgram();
 		}
 		response(true);
@@ -511,12 +511,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 22 sets motors' program move mode
 	case 22:
-		motor[0].planType(input_serial_buffer[0]);
-		motor[1].planType(input_serial_buffer[0]);
-		motor[2].planType(input_serial_buffer[0]);
+		Motors::planType(input_serial_buffer[0]);		
 
 		// For modes other than SMS, max shots should be set to 0 (unlimited), since program stopping will be controlled by run time
-		if (motor[0].planType() != SMS)
+		if (Motors::planType() != SMS)
 			Camera.maxShots = 0;
 		response(true);
 		break;
@@ -621,7 +619,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 				uint8_t status;
 				// program run status
-				if (running)
+				if (still_shooting_flag)
+					status = 4;
+				else if (delay_flag)
+					status = 3;
+				else if (running && !still_shooting_flag && !delay_flag)
 					status = 2;
 				else if (pause_flag)
 					status = 1;
@@ -746,9 +748,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 118:
 		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Command Gen.118 - Plan type: ");
-			USBSerial.println(motor[0].planType());
+			USBSerial.println(Motors::planType());
 		}
-		response(true, motor[0].planType());
+		response(true, Motors::planType());
 		break;
 
 	//Command 119 reads whether the controller has been powercycled since last query

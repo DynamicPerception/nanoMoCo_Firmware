@@ -90,7 +90,7 @@ void startKFProgram(){
 				kf_max_time = this_time;
 		}
 
-		if (motor[0].planType() == SMS){
+		if (Motors::planType() == SMS){
 			// Convert from "frames" to real milliseconds, based upon the camera interval
 			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
 		}
@@ -167,7 +167,7 @@ void updateKFProgram(){
 
 				// Determine the maximum run time for this axis
 				float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
-				if (motor[0].planType() == SMS)
+				if (Motors::planType() == SMS)
 					thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval;
 
 				// Set the approriate speed, but don't touch motors that don't have any key frames
