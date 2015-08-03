@@ -554,8 +554,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				USBSerial.print(i);
 				USBSerial.print(" start: ");
 				USBSerial.println(motor[i].startPos());
-			}
-			OMEEPROM::write(EE_START_0 + (i)* EE_MOTOR_MEMORY_SPACE, tempPos);
+			}			
 		}
 		response(true);
 		break;
@@ -572,8 +571,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				USBSerial.print(i);
 				USBSerial.print(" stop: ");
 				USBSerial.println(motor[i].stopPos());
-			}
-			OMEEPROM::write(EE_STOP_0 + (i)* EE_MOTOR_MEMORY_SPACE, tempPos);
+			}			
 		}
 		response(true);
 		break;
@@ -1038,8 +1036,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 16:
 	{
 		long tempPos = Node.ntol(input_serial_buffer);
-		motor[subaddr - 1].startPos(tempPos);
-		OMEEPROM::write(EE_START_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		motor[subaddr - 1].startPos(tempPos);		
 		response(true);
 		break;
 	}
@@ -1048,8 +1045,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 17:
 	{
 		long tempPos = Node.ntol(input_serial_buffer);
-		motor[subaddr - 1].stopPos(tempPos);
-		OMEEPROM::write(EE_STOP_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		motor[subaddr - 1].stopPos(tempPos);		
 		response(true);
 		break;
 	}
