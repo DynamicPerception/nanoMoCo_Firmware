@@ -111,7 +111,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 41;				// Serial API version
+const int SERIAL_VERSION			= 42;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -318,6 +318,7 @@ const byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general mot
 const byte DB_GEN_SER	= B00001000;	// Debug flag -- toggles output of responses to certain serial commands
 const byte DB_FUNCT		= B00010000;	// Debug flag -- toggles output of debug messages within most functions
 const byte DB_CONFIRM	= B00100000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
+boolean debug_LED = false;
 
 
 /***************************************
@@ -536,6 +537,11 @@ void loop() {
 
 		// update program run time
 		unsigned long cur_time = millis();  
+		static unsigned long last_blink;
+		const int BLINK_DELAY = 500;
+		if (run_time == 0){
+			last_blink = cur_time;
+		}
 		run_time += cur_time - start_time;
 		start_time = cur_time;
 
@@ -557,11 +563,22 @@ void loop() {
      
 		// If the start delay is done then check current engine state and handle appropriately
 		if (run_time >= start_delay){
+			// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
+			if (external_intervalometer)
+				debugOn();
+			else
+				debugOff();
 			Engine.checkCycle();
 			delay_flag = false;
 		}
-		else if (run_time < start_delay)
+		// Otherwise, set the delay flag true and toggle the debug LED if necessary
+		else if (run_time < start_delay){
 			delay_flag = true;
+			if (cur_time - last_blink > BLINK_DELAY){
+				debugToggle();
+				last_blink = cur_time;
+			}
+		}
    }
    else if (kf_program_running){
 	   updateKFProgram();	   

@@ -77,14 +77,21 @@ Sets the debug LED on or off, respectively
 
 */
 
-void debugOn() {
-  
+void debugOn() {  
   digitalWrite(DEBUG_PIN, HIGH);
+  debug_LED = true;
 }
 
-void debugOff() {
-  
+void debugOff() {  
   digitalWrite(DEBUG_PIN, LOW);
+  debug_LED = false;
+}
+
+void debugToggle(){
+	if(debug_LED)
+		debugOff();
+	else
+		debugOn();
 }
 
 void selfDiagnostic() {
