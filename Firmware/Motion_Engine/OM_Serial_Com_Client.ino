@@ -936,7 +936,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 	    break;	
 
-	//Command 10 set motor's end limit
+	//Command 10 set motor's end limit here
 	case 10:
 	{
 		long tempPos = motor[subaddr - 1].currentPos();
@@ -1149,6 +1149,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		motor[subaddr - 1].stopPos(motor[subaddr - 1].currentPos());
 		response(true);
 		break;
+
+	//Command 31 sends the motor to the specified position
+	case 31:
+	{
+				long pos = Node.ntoul(input_serial_buffer);
+				sendTo(subaddr - 1, pos);
+				response(true);
+				break;
+	}
 
 	// Command 50
 	case 50: 
