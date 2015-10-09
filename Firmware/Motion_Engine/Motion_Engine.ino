@@ -111,7 +111,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 44;				// Serial API version
+const int SERIAL_VERSION			= 43;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -666,11 +666,6 @@ void eStop() {
 
 		else if (running && camera_test_mode)
 			stopProgram();
-
-		else if (kf_program_running){
-			kf_program_running = false;
-			stopAllMotors();
-		}
 
 		else if (!motor[0].running() && !motor[1].running() && !motor[2].running()) {
 			// If the button was pressed recently enough, increase the enable count, otherwise reset it to 0.
