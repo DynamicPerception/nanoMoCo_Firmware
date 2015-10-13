@@ -1362,7 +1362,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       response(true);
       break;
 
-    //Command 4 set camera's exposure time  
+    //Command 4 set camera's trigger time  
     case 4:
       Camera.triggerTime( Node.ntoul(input_serial_buffer) );
       response(true);
@@ -1433,7 +1433,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       response( true, (byte) Camera.busy() );
       break;
     
-    //Command 102 gets the camera's exposure time
+    //Command 102 gets the camera's trigger time
     case 102:
       response(true, Camera.triggerTime());   
       break;

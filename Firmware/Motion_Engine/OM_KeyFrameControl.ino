@@ -67,6 +67,7 @@ void startKFProgram(){
 	}
 	// If starting a new program
 	else{
+
 		// Reset the total pause time counter
 		kf_pause_time = 0;
 
@@ -94,6 +95,18 @@ void startKFProgram(){
 			// Convert from "frames" to real milliseconds, based upon the camera interval
 			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
 		}
+
+		// Set the start and stop positions from first and last key points
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			int start = kf[i].getFN(0);
+			motor[i].startPos(start);
+
+			int stop = kf[i].getFN(kf[i].getKFCount() - 1);
+			motor[i].stopPos(stop);
+		}
+
+		// Take up any motor backlash
+		takeUpBacklash();
 
 		// Initialize the run timers
 		kf_run_time = 0;
@@ -154,12 +167,19 @@ void updateKFProgram(){
 		USBSerial.println(kf_this_pause);
 	}
 
+	if (Motors::planType() == SMS){
+
+	}
 	// Update run_time, don't include time spent paused
 	else{
 		
 		kf_run_time = millis() - kf_start_time - kf_pause_time;
 		USBSerial.print("Run time: ");
 		USBSerial.println(kf_run_time);
+
+		if (Motors::planType() == CONT_TL){
+
+		}
 
 		// If the update time has elapsed, update the motor speed
 		if (millis() - kf_last_update > KeyFrames::updateRate()){

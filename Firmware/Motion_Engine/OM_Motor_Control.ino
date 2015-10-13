@@ -139,6 +139,58 @@ byte motorSleep(byte p_motor) {
 
 
 /*
+	void takeUpBackLash()
+
+	This function checks which motors have backlash and take it up.
+	This is determined by comparing their last direction to the direction
+	they will need to move to get to their program stop position.
+
+*/
+void takeUpBacklash(){
+
+	uint8_t wait_required = false;
+
+	// Check each motor to see if it needs backlash compensation
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
+
+			// Indicate that a brief pause is necessary after starting the motors
+			wait_required = true;
+
+			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
+			motor[i].ms(4);
+			motor[i].contSpeed(mot_max_speed);
+
+			// Determine the direction of the programmed move
+			uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
+
+			// Move the motor 1 step in that direction to force the backlash takeup
+			motor[i].move(dir, 1);
+			startISR();
+		}
+	}
+
+	if (wait_required) {
+		unsigned long time = millis();
+		while (millis() - time < MILLIS_PER_SECOND){
+			// Wait a second for backlash takeup to finish
+		}
+	}
+
+	// Re-set all the motors to their proper microstep settings
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		msAutoSet(i);
+
+		// Print debug info if proper flag is set
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print("Microsteps: ");
+			USBSerial.println(motor[i].ms());
+		}
+	}
+}
+
+
+/*
 	void startProgramCom()
 
 	Runs all pre-program checks after a start program command is received from a master device. 
@@ -158,46 +210,8 @@ void startProgramCom() {
 
 		// Reset the program completion flag
 		program_complete = false;
-
-		uint8_t wait_required = false;
-
-		// Check each motor to see if it needs backlash compensation
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
-
-				// Indicate that a brief pause is necessary after starting the motors
-				wait_required = true;
-
-				// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-				motor[i].ms(4);
-				motor[i].contSpeed(mot_max_speed);
-
-				// Determine the direction of the programmed move
-				uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
-
-				// Move the motor 1 step in that direction to force the backlash takeup
-				motor[i].move(dir, 1);
-				startISR();
-			}
-		}
-
-		if (wait_required) {
-			unsigned long time = millis();
-			while (millis() - time < MILLIS_PER_SECOND){
-				// Wait a second for backlash takeup to finish
-			}
-		}
-
-		// Re-set all the motors to their proper microstep settings
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			msAutoSet(i);
-
-			// Print debug info if proper flag is set
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Microsteps: ");
-				USBSerial.println(motor[i].ms());
-			}
-		}
+		
+		takeUpBacklash();		
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
 		if (Motors::planType() == SMS) {
