@@ -96,15 +96,6 @@ void startKFProgram(){
 			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
 		}
 
-		// Set the start and stop positions from first and last key points
-		for (byte i = 0; i < MOTOR_COUNT; i++){
-			int start = kf[i].getFN(0);
-			motor[i].startPos(start);
-
-			int stop = kf[i].getFN(kf[i].getKFCount() - 1);
-			motor[i].stopPos(stop);
-		}
-
 		// Take up any motor backlash
 		takeUpBacklash();
 

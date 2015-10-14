@@ -1543,13 +1543,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 11 sets key frame count
 	case 11:
 	{
-		int in_val = Node.ntoi(input_serial_buffer);
+		int in_val = Node.ntoi(input_serial_buffer);		
 			  
 		// If this is the start of a new transmission, set the count and the receive flag
-		if (in_val >= 0){				   			
+		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
 			kf[axis].setKFCount(in_val);								
-		}		   			   
+		}		   			  
 		response(true, in_val);
 		break;
 	}
@@ -1612,6 +1612,22 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{
 		unsigned int in_val = Node.ntoui(input_serial_buffer);
 		KeyFrames::updateRate(in_val);
+		response(true);
+		break;
+	}
+
+	// Command 16 sets the start/stop points for the current axis. End all KF transmissions with this command
+	case 16:
+	{
+		int axis = KeyFrames::getAxis();
+				
+		// Set the start and stop positions from first and last key points			
+		int start = kf[axis].getFN(0);
+		motor[axis].startPos(start);
+
+		int stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
+		motor[axis].stopPos(stop);
+		
 		response(true);
 		break;
 	}
