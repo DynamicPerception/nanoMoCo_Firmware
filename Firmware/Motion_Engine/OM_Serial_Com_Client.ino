@@ -214,12 +214,14 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
  switch(subaddr) {   
    case 0:
 
-	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {
-		   if (usb_debug & DB_GEN_SER)
-			   USBSerial.println("Invalid general command");
-		   response(false);
-		   return;   
+	   // Check for joystick mode and return on non-valid commands if true, but not when in Graffik mode
+	   if (!graffikMode()){
+		   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {
+			   if (usb_debug & DB_GEN_SER)
+				   USBSerial.println("Invalid general command");
+			   response(false);
+			   return;
+		   }
 	   }
 
          // program control
@@ -230,12 +232,14 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
    case 3:
 
 	   // Check for joystick mode and return on non-valid commands if true
-	   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
-		   if (usb_debug & DB_GEN_SER)
-			   USBSerial.println("Invalid motor command");
-		   response(false);
-		   return;
-		   
+	   if (!graffikMode()){
+		   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
+			   if (usb_debug & DB_GEN_SER)
+				   USBSerial.println("Invalid motor command");
+			   response(false);
+			   return;
+
+		   }
 	   }
 
          //serial motor commands
@@ -594,14 +598,19 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 50 sets Graffik Mode on or off
 	case 50:
+	{
 		graffikMode(input_serial_buffer[0]);
 		response(true);
 		break;
+	}
 
+	//Command 50 sets App Mode on or off
 	case 51:
+	{
 		graffikMode(false);
 		appMode(input_serial_buffer[0]);
 		break;
+	}
 
     
     //*****************MAIN READ COMMANDS********************
@@ -1154,6 +1163,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 31:
 	{
 				long pos = Node.ntoul(input_serial_buffer);
+				USBSerial.print("Sending  motor ");
+				USBSerial.print(subaddr - 1);
+				USBSerial.print(" to pos: ");
+				USBSerial.println(pos);
 				sendTo(subaddr - 1, pos);
 				response(true);
 				break;
@@ -1241,6 +1254,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 102 reads the microstep setting of the motor
 	case 102:
+		USBSerial.print("CURRENT MICROSTEPS: ");
+		USBSerial.println(motor[subaddr - 1].ms());
 		response(true, motor[subaddr - 1].ms());
 		break;
 

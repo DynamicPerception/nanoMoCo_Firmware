@@ -80,8 +80,9 @@ void sendToStop(uint8_t p_motor){
 }
 
 void sendTo(uint8_t p_motor, long p_pos){
+	USBSerial.println("sendTo()");
 	// Move at the maximum motor speed
-	motor[p_motor].ms(4);
+	//motor[p_motor].ms(4);
 	motor[p_motor].contSpeed(mot_max_speed);
 
 	motor[p_motor].moveTo(p_pos, true);
