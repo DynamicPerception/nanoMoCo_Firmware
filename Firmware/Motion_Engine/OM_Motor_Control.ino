@@ -158,7 +158,8 @@ void takeUpBacklash(){
 			wait_required = true;
 
 			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-			motor[i].ms(4);
+			if (!graffikMode())
+				motor[i].ms(4);
 			motor[i].contSpeed(mot_max_speed);
 
 			// Determine the direction of the programmed move
@@ -179,7 +180,8 @@ void takeUpBacklash(){
 
 	// Re-set all the motors to their proper microstep settings
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		msAutoSet(i);
+		if (!graffikMode())
+			msAutoSet(i);
 
 		// Print debug info if proper flag is set
 		if (usb_debug & DB_FUNCT){
@@ -517,6 +519,11 @@ byte pingPongMode() {
 }
 
 void setJoystickSpeed(int p_motor, float p_speed){
+
+	//USBSerial.print("Setting joystick speed, motor ");
+	//USBSerial.print(p_motor);
+	//USBSerial.print(", speed: ");
+	//USBSerial.println(p_speed);
 
 	float old_speed = motor[p_motor].desiredSpeed();
 	float new_speed = p_speed;

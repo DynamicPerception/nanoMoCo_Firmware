@@ -790,8 +790,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 123 reports the percent completion of the current program
 	case 123:
-		//USBSerial.print("Completion: ");
-		//USBSerial.println(programPercent());
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Completion: ");
+			USBSerial.println(programPercent());
+		}
 		response(true, programPercent());
 		break;
 
@@ -958,7 +960,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 11 send motor to home limit
 	case 11:
 		// Move at the maximum motor speed
-		motor[subaddr - 1].ms(4);
+		if (!graffikMode())
+			motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		// send a motor home
@@ -970,7 +973,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 12 send motor to end limit
 	case 12:
 		// Move at the maximum motor speed
-		motor[subaddr - 1].ms(4);
+		if (!graffikMode())
+			motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		motor[subaddr - 1].moveToEnd();
@@ -981,8 +985,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 13 set motor's continous speed 
     case 13:
 
-		// If joystick mode is active and the last speed setting was ~0, automatically start a simple continuous move in the correct direction
-		if (joystick_mode){			
+		// If joystick mode or Graffik mode is active and the last speed setting was ~0, automatically start a simple continuous move in the correct direction
+		if (joystick_mode || graffikMode()){			
 			float input_speed = Node.ntof(input_serial_buffer);
 			setJoystickSpeed(subaddr - 1, input_speed);
 		}
@@ -998,7 +1002,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			motor[subaddr - 1].contSpeed(input_speed);
 		}		
 
-		if (!joystick_mode)
+		// Don't send a response in joystick or Graffik modes
+		if (!joystick_mode && !graffikMode())
 			response(true);
 
 		break;
@@ -1163,10 +1168,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 31:
 	{
 				long pos = Node.ntoul(input_serial_buffer);
-				USBSerial.print("Sending  motor ");
-				USBSerial.print(subaddr - 1);
-				USBSerial.print(" to pos: ");
-				USBSerial.println(pos);
 				sendTo(subaddr - 1, pos);
 				response(true);
 				break;
@@ -1253,9 +1254,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		break;
 
 	//Command 102 reads the microstep setting of the motor
-	case 102:
-		USBSerial.print("CURRENT MICROSTEPS: ");
-		USBSerial.println(motor[subaddr - 1].ms());
+	case 102:		
 		response(true, motor[subaddr - 1].ms());
 		break;
 
@@ -1541,29 +1540,41 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 10 sets the current axis
 	case 10:
 	{
-			   int axis = Node.ntoi(input_serial_buffer);
+		int axis = Node.ntoi(input_serial_buffer);
 
-			   // A valid axis must be selected
-			   if (axis >= 0 && axis <= MOTOR_COUNT){		   
-				   // Set the current axis
-				   KeyFrames::setAxis(axis);		   
-				   kf[axis].resetXN();
-				   kf[axis].resetFN();
-				   kf[axis].resetDN();				   
-			   }
-			   response(true, axis);
-			   break;
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Selecting axis ");
+			USBSerial.println(axis);
+		}
+
+		// A valid axis must be selected
+		if (axis >= 0 && axis <= MOTOR_COUNT){		   
+			// Set the current axis
+			KeyFrames::setAxis(axis);		   
+			kf[axis].resetXN();
+			kf[axis].resetFN();
+			kf[axis].resetDN();				   
+		}
+		response(true, axis);
+		break;
 	}
 
 	// Command 11 sets key frame count
 	case 11:
 	{
 		int in_val = Node.ntoi(input_serial_buffer);		
-			  
+
 		// If this is the start of a new transmission, set the count and the receive flag
 		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
 			kf[axis].setKFCount(in_val);								
+			
+			if (usb_debug & DB_GEN_SER){
+				USBSerial.print("Axis ");
+				USBSerial.print(axis);
+				USBSerial.print(" -- Setting key frame count: ");
+				USBSerial.println(kf[axis].getKFCount());
+			}
 		}		   			  
 		response(true, in_val);
 		break;
@@ -1582,6 +1593,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setXN(in_val);		
 		long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;
 
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Axis ");
+			USBSerial.print(axis);
+			USBSerial.print(" -- Setting absicssa ");
+			USBSerial.print(frame);
+			USBSerial.print(": ");
+			USBSerial.println(kf[axis].getXN(frame));
+		}
+
 		// Echo the assigned value
 		response(true, echo);
 		break;
@@ -1598,6 +1618,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// Set the received value
 		kf[axis].setFN(in_val);
 		long echo = kf[axis].getFN(frame) * FLOAT_TO_FIXED;
+
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Axis ");
+			USBSerial.print(axis);
+			USBSerial.print(" -- Setting position ");
+			USBSerial.print(frame);
+			USBSerial.print(": ");
+			USBSerial.println(kf[axis].getFN(frame));
+		}
 
 		// Echo the assigned value
 		response(true, echo);
@@ -1616,6 +1645,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// Set the received value
 		kf[axis].setDN(in_val);
 		long echo = kf[axis].getDN(frame) * FLOAT_TO_FIXED;
+
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Axis ");
+			USBSerial.print(axis);
+			USBSerial.print(" -- Setting velocity ");
+			USBSerial.print(frame);
+			USBSerial.print(": ");
+			USBSerial.println(kf[axis].getDN(frame));
+		}
 
 		// Echo the assigned value
 		response(true, echo);		
@@ -1642,6 +1680,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 		int stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
 		motor[axis].stopPos(stop);
+
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Axis ");
+			USBSerial.print(axis);
+			USBSerial.print(" -- Setting start/stop points -- start: ");
+			USBSerial.print(motor[axis].startPos());
+			USBSerial.print(" Stop: ");
+			USBSerial.println(motor[axis].stopPos());
+		}
 		
 		response(true);
 		break;
@@ -1693,7 +1740,14 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 102:
 	{
 		float in_val = Node.ntof(input_serial_buffer);
-		response(true, (long)(kf[KeyFrames::getAxis()].pos(in_val) * FLOAT_TO_FIXED));
+		long ret = (long)(kf[KeyFrames::getAxis()].pos(in_val) * FLOAT_TO_FIXED);
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("The position at time ");
+			USBSerial.print(in_val);
+			USBSerial.print(": ");
+			USBSerial.println(ret);
+		}
+		response(true, ret);
 		break;
 	}
 

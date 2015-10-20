@@ -59,14 +59,19 @@ void printKeyFrameData(){
 }
 
 void startKFProgram(){
-
+	
 	// If resuming
 	if (kf_program_paused){
+
+		USBSerial.println("Resuming KF program");
+
 		// Add the time of the last pause to the total pause time counter
 		kf_pause_time += kf_this_pause;
 	}
 	// If starting a new program
 	else{
+
+		USBSerial.println("Starting new KF program");
 
 		// Reset the total pause time counter
 		kf_pause_time = 0;
@@ -78,6 +83,7 @@ void startKFProgram(){
 		joystickSet(true);
 
 		// Determine the max running time
+		USBSerial.println("Finding max time...");
 		kf_max_time = 0;
 		for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
 			int lastFrame = kf[i].getKFCount() - 1;
@@ -97,14 +103,17 @@ void startKFProgram(){
 		}
 
 		// Take up any motor backlash
+		USBSerial.println("Taking up backlash...");
 		takeUpBacklash();
 
 		// Initialize the run timers
+		USBSerial.println("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
 		kf_last_update = millis();
 
 		// Set the initial motor speeds
+		USBSerial.println("Setting initial motor speeds...");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			// Don't touch motors that don't have any key frames
 			if (kf[i].getKFCount() > 0)
@@ -119,8 +128,12 @@ void startKFProgram(){
 
 void pauseKFProgram(){
 
+	USBSerial.print("PAUSING KF PROGRAM");
+
 	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){
+		USBSerial.print("Stopping motor ");
+		USBSerial.println(i);
 		setJoystickSpeed(i, 0);
 	}
 
@@ -135,6 +148,8 @@ void pauseKFProgram(){
 }
 
 void stopKFProgram(){
+
+	USBSerial.print("STOPPING KF PROGRAM");
 
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -154,8 +169,8 @@ void updateKFProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_program_paused){		
 		kf_this_pause = millis() - kf_pause_start;
-		USBSerial.print("Pause length: ");
-		USBSerial.println(kf_this_pause);
+		//USBSerial.print("Pause length: ");
+		//USBSerial.println(kf_this_pause);
 	}
 
 	if (Motors::planType() == SMS){
@@ -165,8 +180,8 @@ void updateKFProgram(){
 	else{
 		
 		kf_run_time = millis() - kf_start_time - kf_pause_time;
-		USBSerial.print("Run time: ");
-		USBSerial.println(kf_run_time);
+		//USBSerial.print("Run time: ");
+		//USBSerial.println(kf_run_time);
 
 		if (Motors::planType() == CONT_TL){
 
@@ -174,6 +189,7 @@ void updateKFProgram(){
 
 		// If the update time has elapsed, update the motor speed
 		if (millis() - kf_last_update > KeyFrames::updateRate()){
+			
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 
 				// Determine the maximum run time for this axis
@@ -196,6 +212,9 @@ void updateKFProgram(){
 
 		// Check to see if the program is done
 		if (kf_run_time > kf_max_time){
+
+			USBSerial.println("Program complete");
+
 			// Make sure all motors are stopped
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				setJoystickSpeed(i, 0);
