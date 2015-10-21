@@ -239,10 +239,10 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
 	  }
   
 	// pre--output clearance check
-	if(altBeforeDelay >= Camera.interval && !altBlock){  //Camera.interval is less than the altBeforeDelay, go as fast as possible
+	if(altBeforeDelay >= Camera.interval() && !altBlock){  //Camera.interval() is less than the altBeforeDelay, go as fast as possible
 		return true;
 	} 
-	else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
+	else if( (millis() - camera_tm) >= (Camera.interval() - altBeforeDelay)  && ! altBlock )
 		return true;
 
   

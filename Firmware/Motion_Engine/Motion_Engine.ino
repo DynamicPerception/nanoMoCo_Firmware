@@ -532,7 +532,7 @@ void loop() {
 			motor[i].updateSpline();
 	}	  
 	  
-	// if our program is currently running...      
+	// If a classic-style program is running   
    if( running ) {
 
 		// update program run time
@@ -580,6 +580,8 @@ void loop() {
 			}
 		}
    }
+
+   // If a key frame program is running
    else if (kf_program_running){
 	   updateKFProgram();	   
    }
@@ -784,12 +786,12 @@ unsigned long totalProgramTime() {
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
-				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
+				motor_time = Camera.interval() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
 				if (usb_debug & DB_FUNCT){				
 					USBSerial.print("totalProgramTime() - Motor: ");
 					USBSerial.print(i);
 					USBSerial.print(" Interval: ");
-					USBSerial.print(Camera.interval);
+					USBSerial.print(Camera.interval());
 					USBSerial.print("  Lead in: ");
 					USBSerial.print(motor[i].planLeadIn());
 					USBSerial.print("  Accel: ");

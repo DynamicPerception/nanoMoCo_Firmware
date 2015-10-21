@@ -1196,7 +1196,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			// rather than forcing them to run both commands.
 
 			// go ahead and make sure we fire immediately
-			camera_tm = millis() - Camera.interval;
+			camera_tm = millis() - Camera.interval();
 
 			motor[subaddr - 1].autoPause = true;
 			startProgram();
@@ -1227,7 +1227,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			// need to decrease run time counter
 			{
-				unsigned long delayTime = (Camera.interval > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.interval : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
+				unsigned long delayTime = (Camera.interval() > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.interval() : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
 
 				if (run_time >= delayTime)
 					run_time -= delayTime;
@@ -1418,7 +1418,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 10 set camera's interval  
     case 10:
-      Camera.interval = Node.ntoul(input_serial_buffer);
+      Camera.interval( Node.ntoul(input_serial_buffer) );
       response(true);
       break;
 
@@ -1479,7 +1479,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 108 gets the camera's interval time
     case 108:
-      response(true, Camera.interval);
+      response(true, Camera.interval());
       break;
 
 	//Command 109 gets the number of shots fired 
