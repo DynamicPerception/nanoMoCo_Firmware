@@ -49,8 +49,9 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-	/*if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Entering function");*/
+
+	if (usb_debug & DB_FUNCT)
+		USBSerial.println("cycleCamera() - Entering function");
 
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
 	if (pause_flag) {

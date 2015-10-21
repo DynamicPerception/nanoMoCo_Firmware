@@ -76,6 +76,9 @@ void startKFProgram(){
 		// Reset the total pause time counter
 		kf_pause_time = 0;
 
+		// Reset the camera shot time
+		kf_last_shot_tm = 0;
+
 		// Make sure the pause flag is off
 		kf_program_paused = false;
 
@@ -128,7 +131,8 @@ void startKFProgram(){
 
 void pauseKFProgram(){
 
-	USBSerial.print("PAUSING KF PROGRAM");
+	if (usb_debug & DB_FUNCT)
+		USBSerial.print("PAUSING KF PROGRAM");
 
 	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -149,7 +153,8 @@ void pauseKFProgram(){
 
 void stopKFProgram(){
 
-	USBSerial.print("STOPPING KF PROGRAM");
+	if (usb_debug & DB_FUNCT)
+		USBSerial.print("STOPPING KF PROGRAM");
 
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -169,60 +174,117 @@ void updateKFProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_program_paused){		
 		kf_this_pause = millis() - kf_pause_start;
-		//USBSerial.print("Pause length: ");
-		//USBSerial.println(kf_this_pause);
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print("Pause length: ");
+			USBSerial.println(kf_this_pause);
+		}
+		return;
 	}
 
-	if (Motors::planType() == SMS){
-
-	}
 	// Update run_time, don't include time spent paused
-	else{
-		
-		kf_run_time = millis() - kf_start_time - kf_pause_time;
-		//USBSerial.print("Run time: ");
-		//USBSerial.println(kf_run_time);
+	kf_run_time = millis() - kf_start_time - kf_pause_time;
 
-		if (Motors::planType() == CONT_TL){
-
-		}
-
-		// If the update time has elapsed, update the motor speed
-		if (millis() - kf_last_update > KeyFrames::updateRate()){
-			
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-
-				// Determine the maximum run time for this axis
-				float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
-				if (Motors::planType() == SMS)
-					thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval;
-
-				// Set the approriate speed, but don't touch motors that don't have any key frames
-				if (kf[i].getKFCount() > 0){
-					float speed;
-					if (kf_run_time > thisAxisMaxTime)
-						speed = 0;
-					else
-						speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
-					setJoystickSpeed(i, speed);
-				}
-			}
-			kf_last_update = millis();
-		}
-
-		// Check to see if the program is done
-		if (kf_run_time > kf_max_time){
-
-			USBSerial.println("Program complete");
-
-			// Make sure all motors are stopped
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				setJoystickSpeed(i, 0);
-			}
-			// Disable joystick mode
-			joystickSet(false);
-			// Turn off the key frame program flag
-			kf_program_running = false;
-		}
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print("Run time: ");
+		USBSerial.println(kf_run_time);
 	}
+
+	// SMS move update
+	if (Motors::planType() == SMS){
+		updateKfSMS();
+	}	
+	// Continuous move update
+	else{
+		updateKfContSpeed();		
+	}
+
+	// Check whether the camera needs to fire
+	kfCameraCheck();
+
+	// Check to see if the program is done
+	if (kf_run_time > kf_max_time){
+		stopKFProgram();
+	}
+}
+
+void updateKfContSpeed(){	
+
+	// If the update time has elapsed, update the motor speed
+	if (millis() - kf_last_update > KeyFrames::updateRate()){
+
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+
+			// Determine the maximum run time for this axis
+			float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
+			if (Motors::planType() == SMS)
+				thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.interval();
+
+			// Set the approriate speed, but don't touch motors that don't have any key frames
+			if (kf[i].getKFCount() > 0){
+				float speed;
+				if (kf_run_time > thisAxisMaxTime)
+					speed = 0;
+				else
+					speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
+				setJoystickSpeed(i, speed);
+			}
+		}
+		kf_last_update = millis();
+	}
+}
+
+void updateKfSMS(){
+
+}
+
+void kfCameraCheck(){	
+
+	boolean okToShoot;
+	int auxPreShotTime = 0;
+
+	if (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]){
+		auxPreShotTime = altBeforeDelay;
+	}
+
+	// pre--output clearance check
+	if (auxPreShotTime >= Camera.interval() && !altBlock){  //Camera.interval() is less than the altBeforeDelay, go as fast as possible
+		okToShoot = true;
+	}
+	else if ((kf_run_time - kf_last_shot_tm) >= (Camera.interval() - auxPreShotTime) && !altBlock)	// Time to fire aux / camera sequence
+		okToShoot = true;
+	else
+		okToShoot = false;
+
+	if (okToShoot){
+		// Fire the aux / camera sequence
+		USBSerial.println("About to fire camera");
+		kf_cycleCamera();
+	}
+}
+
+void kf_cycleCamera() {
+	
+	// if in external interval mode, don't do anything if a force shot isn't registered
+	if (altExtInt && !altForceShot) {
+		if (usb_debug & DB_FUNCT)
+			USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
+		return;
+	}
+
+	// trigger any outputs that need to go before the exposure
+	if ((ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true)) {
+		altBlock = ALT_OUT_BEFORE;
+		altOutStart(ALT_OUT_BEFORE);
+		if (usb_debug & DB_FUNCT)
+			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+		return;
+	}
+
+	altBlock = ALT_OFF;
+	altForceShot = false;
+	kf_last_shot_tm = kf_run_time;
+	//Camera.focus();			
+	USBSerial.print("Time at exposure: ");
+	USBSerial.println(kf_run_time);
+	Camera.expose();
 }

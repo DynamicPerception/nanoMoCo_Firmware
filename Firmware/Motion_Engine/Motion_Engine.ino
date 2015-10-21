@@ -170,8 +170,8 @@ unsigned int    altBeforeMs		= 1000;
 unsigned int     altAfterMs		= 1000;
 uint8_t        altForceShot		= false;
 uint8_t           altExtInt		= false;
-byte           altDirection		= FALLING;
-byte             altOutTrig		= HIGH;
+byte           altDirection		= FALLING;	// The detection edge for aux events
+byte             altOutTrig		= HIGH;		// The voltage the trigger pin should be held in an idle state (i.e. when set HIGH, grounding the port triggers an aux event)
 bool external_intervalometer	= false;	// Indicates whether the aux port has been set to external trigger mode via physical button press
 
 
@@ -300,6 +300,7 @@ unsigned long kf_run_time;
 unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
+unsigned long kf_last_shot_tm;
 unsigned long kf_max_time;
 bool kf_program_running = false;
 bool kf_program_paused = false;
