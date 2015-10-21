@@ -149,7 +149,7 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable || external_intervalometer ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval() || !Camera.enable || external_intervalometer ) {
 
 	  if (usb_debug & DB_FUNCT){
 		  USBSerial.print("cycleCamera() - Shots: ");

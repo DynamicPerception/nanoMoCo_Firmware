@@ -99,7 +99,7 @@ void startKFProgram(){
 
 		if (Motors::planType() == SMS){
 			// Convert from "frames" to real milliseconds, based upon the camera interval
-			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval;
+			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.interval();
 		}
 
 		// Take up any motor backlash
