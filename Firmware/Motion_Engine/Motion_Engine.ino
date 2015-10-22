@@ -192,7 +192,7 @@ const byte CAM_DEFAULT_FOCUS	= 0;
 unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
-boolean		  keep_camera_alive		= false;
+boolean		  keep_camera_alive	= false;
 
 
 /***************************************
@@ -787,12 +787,12 @@ unsigned long totalProgramTime() {
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
-				motor_time = Camera.interval() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
+				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
 				if (usb_debug & DB_FUNCT){				
 					USBSerial.print("totalProgramTime() - Motor: ");
 					USBSerial.print(i);
 					USBSerial.print(" Interval: ");
-					USBSerial.print(Camera.interval());
+					USBSerial.print(Camera.intervalTime());
 					USBSerial.print("  Lead in: ");
 					USBSerial.print(motor[i].planLeadIn());
 					USBSerial.print("  Accel: ");

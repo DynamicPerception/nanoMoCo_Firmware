@@ -150,7 +150,7 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval() || !Camera.enable || external_intervalometer ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.intervalTime() || !Camera.enable || external_intervalometer ) {
 
 	  if (usb_debug & DB_FUNCT){
 		  USBSerial.print("cycleCamera() - Shots: ");
@@ -240,10 +240,10 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
 	  }
   
 	// pre--output clearance check
-	if(altBeforeDelay >= Camera.interval() && !altBlock){  //Camera.interval() is less than the altBeforeDelay, go as fast as possible
+	if(altBeforeDelay >= Camera.intervalTime() && !altBlock){  //Camera.intervalTime() is less than the altBeforeDelay, go as fast as possible
 		return true;
 	} 
-	else if( (millis() - camera_tm) >= (Camera.interval() - altBeforeDelay)  && ! altBlock )
+	else if( (millis() - camera_tm) >= (Camera.intervalTime() - altBeforeDelay)  && ! altBlock )
 		return true;
 
   

@@ -219,7 +219,7 @@ void startProgramCom() {
 		if (Motors::planType() == SMS) {
 			
 			// Determine the max time in seconds allowed for moving the motors
-			float max_move_time = (Camera.interval() - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+			float max_move_time = (Camera.intervalTime() - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 			// If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
 			if (max_move_time > 0.5)
 				max_move_time = 0.5;
@@ -343,7 +343,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 		steps_per_move = motor[p_motor].getTopSpeed();																	// Maximum number of steps per move
 		max_time_per_move = (steps_per_move / comparison_speed) * MILLIS_PER_SECOND;									// Max time in milliseconds
 		unsigned long new_interval = max_time_per_move - (float)(Camera.delayTime() + Camera.triggerTime() + Camera.focusTime());	// Minimum camera interval
-		Camera.interval(new_interval);
+		Camera.intervalTime(new_interval);
 		
 		// Always run in eight steps for external intervalometer mode
 		if (p_autosteps)
@@ -356,7 +356,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	if (motor[p_motor].planType() == SMS) {
 
 		// Max time in seconds
-		float max_time_per_move = (float)(Camera.interval() - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+		float max_time_per_move = (float)(Camera.intervalTime() - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 
 
 		// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment

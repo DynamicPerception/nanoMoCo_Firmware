@@ -528,9 +528,14 @@ void serMain(byte command, byte* input_serial_buffer) {
 	// and motor commands 3 (enable motor), 4 (stop now), 6 (set microsteps), 13 (set continuous speed), 15 (execute simple move), and 
 	// This is to avoid incorrect commands due to corrupt communications causing runaway motors or controller lockup.
 	case 23:
-		joystickSet(input_serial_buffer[0]);
-		response(true);
-		break;
+	{
+			   byte mode = input_serial_buffer[0];			   
+			   joystickSet(mode);
+			   USBSerial.print("incoming request for joystick mode: ");
+			   USBSerial.println(mode);
+			   response(true);
+			   break;
+	}
 		
 	//Command 24 sets the motors' ping_pong_mode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
@@ -1196,7 +1201,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 			// rather than forcing them to run both commands.
 
 			// go ahead and make sure we fire immediately
-			camera_tm = millis() - Camera.interval();
+			camera_tm = millis() - Camera.intervalTime();
 
 			motor[subaddr - 1].autoPause = true;
 			startProgram();
@@ -1227,7 +1232,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			// need to decrease run time counter
 			{
-				unsigned long delayTime = (Camera.interval() > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.interval() : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
+				unsigned long delayTime = (Camera.intervalTime() > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.intervalTime() : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
 
 				if (run_time >= delayTime)
 					run_time -= delayTime;
@@ -1418,7 +1423,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 10 set camera's interval  
     case 10:
-      Camera.interval( Node.ntoul(input_serial_buffer) );
+      Camera.intervalTime( Node.ntoul(input_serial_buffer) );
       response(true);
       break;
 
@@ -1479,7 +1484,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 108 gets the camera's interval time
     case 108:
-      response(true, Camera.interval());
+      response(true, Camera.intervalTime());
       break;
 
 	//Command 109 gets the number of shots fired 
