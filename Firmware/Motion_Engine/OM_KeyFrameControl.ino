@@ -237,54 +237,142 @@ void updateKfSMS(){
 
 }
 
-void kfCameraCheck(){	
+void kfCameraCheck() {
 
-	boolean okToShoot;
+	static boolean auxFired = false;
+	static boolean auxDone = false;
+	static boolean focusFired = false;
+	static boolean focusDone = false;
+	static boolean shutterFired = false;
+	static boolean shutterDone = false;
+	static boolean forceShotInProgress = false;
 	int auxPreShotTime = 0;
 
-	if (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]){
-		auxPreShotTime = altBeforeDelay;
-	}
-
-	// pre--output clearance check
-	if (auxPreShotTime >= Camera.interval() && !altBlock){  //Camera.interval() is less than the altBeforeDelay, go as fast as possible
-		okToShoot = true;
-	}
-	else if ((kf_run_time - kf_last_shot_tm) >= (Camera.interval() - auxPreShotTime) && !altBlock)	// Time to fire aux / camera sequence
-		okToShoot = true;
-	else
-		okToShoot = false;
-
-	if (okToShoot){
-		// Fire the aux / camera sequence
-		USBSerial.println("About to fire camera");
-		kf_cycleCamera();
-	}
-}
-
-void kf_cycleCamera() {
-	
-	// if in external interval mode, don't do anything if a force shot isn't registered
-	if (altExtInt && !altForceShot) {
+	// If in external interval mode, don't do anything if a force shot isn't registered
+	if (altExtInt && !altForceShot && !forceShotInProgress) {
 		if (usb_debug & DB_FUNCT)
 			USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
 		return;
 	}
 
-	// trigger any outputs that need to go before the exposure
-	if ((ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true)) {
-		altBlock = ALT_OUT_BEFORE;
-		altOutStart(ALT_OUT_BEFORE);
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
-		return;
+	// If there's an aux event before the camera events, set the time needed for that
+	if (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]){
+		auxPreShotTime = altBeforeDelay;
+	}
+
+	boolean auxLongerThanInt = auxPreShotTime >= Camera.intervalTime();
+	boolean timeForNewShot = (kf_run_time - kf_last_shot_tm) >= (Camera.intervalTime() - auxPreShotTime);
+
+	// If it's time, start a new shot
+	if (((auxLongerThanInt || timeForNewShot) && !altBlock) || altForceShot){  //Camera.intervalTime() is less than the altBeforeDelay, go as fast as possible
+		
+		kf_last_shot_tm = kf_run_time;
+		
+		auxFired = false;
+		auxDone = false;
+		focusFired = false;
+		focusDone = false;
+		shutterFired = false;
+		shutterDone = false;	
+		
+		if (altForceShot){
+			forceShotInProgress = true;
+			altForceShot = false;
+		}
+	}	
+
+	// Trigger any outputs that need to go before the exposure
+	if ((ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) && !auxDone) {
+		if (!auxFired){
+			altBlock = ALT_OUT_BEFORE;
+			altOutStart(ALT_OUT_BEFORE);
+			if (usb_debug & DB_FUNCT)
+				USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+			auxFired = true;
+			return;
+		}
+		
+		// If not enough time for the aux function has elapsed, return
+		if (kf_run_time < kf_last_shot_tm + auxPreShotTime){
+			return;
+		}
+		auxDone = true;
 	}
 
 	altBlock = ALT_OFF;
 	altForceShot = false;
-	kf_last_shot_tm = kf_run_time;
-	//Camera.focus();			
-	USBSerial.print("Time at exposure: ");
-	USBSerial.println(kf_run_time);
-	Camera.expose();
+		
+	// Trigger the focus
+	if (!focusDone){
+		if (!focusFired){
+			USBSerial.print("Time at focus: ");
+			USBSerial.println(kf_run_time);
+			Camera.focus();
+			focusFired = true;
+			return;
+		}
+
+		// If not enough time for the focus has elapsed, return
+		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime()){
+			return;
+		}
+		focusDone = true;
+	}
+	
+	// Trigger the exposure
+	if (!shutterDone){
+		if (!shutterFired){
+			USBSerial.print("Time at exposure: ");
+			USBSerial.println(kf_run_time);		
+			Camera.expose();
+			shutterFired = true;
+		}
+
+		// If not enough time for the exposure has elapsed, return
+		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime() + Camera.triggerTime() + Camera.delayTime()){
+			return;
+		}		
+		shutterDone = true;
+		forceShotInProgress = false;
+	}
+
+}
+
+void kf_auxCycleStart(byte p_mode) {
+
+	//Pins for the I/O
+	const byte           AUX_RING = 24;				//PD0
+	const byte            AUX_TIP = 25;				//PD1
+
+	uint8_t altStarted = false;
+
+	unsigned int adelay = p_mode == ALT_OUT_BEFORE ? altBeforeMs : altAfterMs;
+
+	for (byte i = 0; i < 2; i++) {
+		if (p_mode == altInputs[i]) {
+
+			// note that alt 3 is on a different register..
+			if (i == 0)
+				digitalWrite(AUX_RING, altOutTrig);
+			else
+				digitalWrite(AUX_TIP, altOutTrig);
+
+			altStarted = true;
+		}
+	}
+
+	if (altStarted) {
+		MsTimer2::set(adelay, altOutStop);
+		MsTimer2::start();
+		Engine.state(ST_BLOCK);
+	}
+	else if (p_mode == ALT_OUT_BEFORE) {
+		//clear to shoot
+		Engine.state(ST_CLEAR);
+	}
+	else {
+		// clear to move
+		Engine.state(ST_MOVE);
+	}
+
 }
