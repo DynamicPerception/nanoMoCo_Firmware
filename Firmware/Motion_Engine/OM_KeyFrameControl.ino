@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+boolean kf_okForSmsMove;
+int kf_curSmsFrame;
+
 void printKeyFrameData(){
 
 	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
@@ -73,6 +76,10 @@ void startKFProgram(){
 
 		USBSerial.println("Starting new KF program");
 
+		// Reset the SMS vars
+		kf_okForSmsMove = false;
+		kf_curSmsFrame = 0;
+
 		// Reset the total pause time counter
 		kf_pause_time = 0;
 
@@ -102,7 +109,11 @@ void startKFProgram(){
 
 		if (Motors::planType() == SMS){
 			// Convert from "frames" to real milliseconds, based upon the camera interval
-			kf_max_time = ((float)max_time / MILLIS_PER_FRAME) * Camera.intervalTime();
+			kf_max_time = ((float)Camera.maxShots / MILLIS_PER_FRAME) * Camera.intervalTime();
+			USBSerial.print("Camera interval");
+			USBSerial.println(Camera.intervalTime());
+			USBSerial.print("Program run time in milliseconds: ");
+			USBSerial.println(kf_max_time);
 		}
 
 		// Take up any motor backlash
@@ -189,17 +200,19 @@ void updateKFProgram(){
 		USBSerial.println(kf_run_time);
 	}
 
-	// SMS move update
-	if (Motors::planType() == SMS){
-		updateKfSMS();
-	}	
-	// Continuous move update
-	else{
-		updateKfContSpeed();		
+	
+	// Continuous move update	
+	if (Motors::planType() != SMS){
+		updateKfContSpeed();
 	}
 
 	// Check whether the camera needs to fire
 	kfCameraCheck();
+
+	// SMS move update
+	if (Motors::planType() == SMS){
+		updateKfSMS();
+	}
 
 	// Check to see if the program is done
 	if (kf_run_time > kf_max_time){
@@ -233,8 +246,22 @@ void updateKfContSpeed(){
 	}
 }
 
-void updateKfSMS(){
+void updateKfSMS(){	
+	
+	// If we're not ready for a move (i.e. the camera is busy or we just finished one), don't do anything
+	if (!kf_okForSmsMove){
+		USBSerial.println("Updating SMS: not ready for move");
+		return;
+	}
 
+	// Send the motors to their next locations
+	USBSerial.println("Sending motors to new locations");
+	for (int i = 0; i < MOTOR_COUNT; i++){		
+		float nextPos = kf[i].pos(kf_curSmsFrame+1);
+		motor[i].moveTo(nextPos);
+	}	
+	kf_curSmsFrame++;
+	kf_okForSmsMove = false;
 }
 
 void kfCameraCheck() {
@@ -314,6 +341,7 @@ void kfCameraCheck() {
 
 		// If not enough time for the focus has elapsed, return
 		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime()){
+			USBSerial.println("Waiting for focus to finish");
 			return;
 		}
 		focusDone = true;
@@ -330,10 +358,15 @@ void kfCameraCheck() {
 
 		// If not enough time for the exposure has elapsed, return
 		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime() + Camera.triggerTime() + Camera.delayTime()){
+			USBSerial.println("Waiting for shutter to finish");
 			return;
 		}		
 		shutterDone = true;
 		forceShotInProgress = false;
+
+		// One the camera functions are complete, it's okay to make the next SMS move
+		USBSerial.println("Shutter done, ready for move");
+		kf_okForSmsMove = true;
 	}
 
 }
@@ -375,4 +408,56 @@ void kf_auxCycleStart(byte p_mode) {
 		Engine.state(ST_MOVE);
 	}
 
+}
+
+/*
+	This function compares the max SMS speeds for each
+	axis against the maximum possible speed for each axis.
+	If at least one of them exceeds the axis' max speed,
+	the function returns false.
+*/
+boolean kfValidateSMSProgram(){
+	for (byte i = 0; i < MOTOR_COUNT; i++){
+		float thisMaxSpeed = kfMaxSMSSpeed(i);
+
+		// Return false if one of the segments requires a speed higher than is possible
+		if (thisMaxSpeed > motor[i].maxSpeed()){
+			return false;
+		}
+	}
+	// If everything checks out, return true
+	return true;
+}
+
+/*
+	This function finds the maximum steps per second required 
+	for the requested axis' SMS key frame program. Only use if  
+	an SMS key frame program has already been set!
+*/
+float kfMaxSMSSpeed(int axis){
+		
+	float maxTime = kf[axis].getXN(kf[axis].getKFCount() - 1);
+	int kfCount = kf[axis].getKFCount();
+	float timeInc = maxTime / kfCount;
+	float maxSpeed = 0;
+
+	// For each key frame for that axis
+	for (byte i = 0; i < kfCount; i++){
+
+		// Find step difference for this segment
+		float startTime = timeInc * i;
+		float stopTime = timeInc * (i + 1);
+		float startStep = kf[axis].pos(startTime);
+		float stopStep = kf[axis].pos(stopTime);
+
+		float stepsPerSec = (stopStep - startStep) / timeInc;
+
+		if (stepsPerSec > maxSpeed)
+
+		// Return false if one of the segments requires a speed higher than is possible
+		if (stepsPerSec > maxSpeed){
+			maxSpeed = stepsPerSec;
+		}
+	}
+	return maxSpeed;
 }
