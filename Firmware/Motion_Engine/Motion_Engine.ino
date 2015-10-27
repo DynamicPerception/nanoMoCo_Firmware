@@ -301,7 +301,8 @@ unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
 unsigned long kf_last_shot_tm;
-unsigned long kf_max_time;
+unsigned long kf_max_move_time;
+unsigned long kf_max_cam_time;
 bool kf_program_running = false;
 bool kf_program_paused = false;
 

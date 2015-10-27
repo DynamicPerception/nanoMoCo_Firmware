@@ -26,6 +26,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 boolean kf_okForSmsMove;
 int kf_curSmsFrame;
+boolean kf_auxFired = false;
+boolean kf_auxDone = false;
+boolean kf_focusFired = false;
+boolean kf_focusDone = false;
+boolean kf_shutterFired = false;
+boolean kf_shutterDone = false;
+boolean kf_forceShotInProgress = false;
 
 void printKeyFrameData(){
 
@@ -62,7 +69,7 @@ void printKeyFrameData(){
 }
 
 void startKFProgram(){
-	
+		
 	// If resuming
 	if (kf_program_paused){
 
@@ -74,8 +81,10 @@ void startKFProgram(){
 	// If starting a new program
 	else{
 
-		USBSerial.println("Starting new KF program");
-
+		USBSerial.print("Starting new type ");
+		USBSerial.print(Motors::planType());
+		USBSerial.println(" KF program");
+		
 		// Reset the SMS vars
 		kf_okForSmsMove = false;
 		kf_curSmsFrame = 0;
@@ -83,56 +92,72 @@ void startKFProgram(){
 		// Reset the total pause time counter
 		kf_pause_time = 0;
 
-		// Reset the camera shot time
-		kf_last_shot_tm = 0;
-
 		// Make sure the pause flag is off
-		kf_program_paused = false;
+		kf_program_paused = false;		
 
-		// Turn on joystick mode
-		joystickSet(true);
-
-		// Determine the max running time
-		USBSerial.println("Finding max time...");
-		kf_max_time = 0;
-		for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
-			int lastFrame = kf[i].getKFCount() - 1;
-			USBSerial.print("Frame count: ");
-			USBSerial.println(lastFrame + 1);
-			long this_time = kf[i].getXN(lastFrame);
-			USBSerial.print("this_time: ");
-			USBSerial.println(this_time);
-
-			if (this_time > kf_max_time)
-				kf_max_time = this_time;
-		}
-
-		if (Motors::planType() == SMS){
-			// Convert from "frames" to real milliseconds, based upon the camera interval
-			kf_max_time = ((float)Camera.maxShots / MILLIS_PER_FRAME) * Camera.intervalTime();
-			USBSerial.print("Camera interval");
-			USBSerial.println(Camera.intervalTime());
-			USBSerial.print("Program run time in milliseconds: ");
-			USBSerial.println(kf_max_time);
-		}
+		// Reset the camera vars
+		kf_last_shot_tm = 0;
+		kf_max_move_time = 0;
+		kf_max_cam_time = 0;
+		kf_auxFired = false;
+		kf_auxDone = false;
+		kf_focusFired = false;
+		kf_focusDone = false;
+		kf_shutterFired = false;
+		kf_shutterDone = false;
+		kf_forceShotInProgress = false;
 
 		// Take up any motor backlash
 		USBSerial.println("Taking up backlash...");
-		takeUpBacklash();
+		takeUpBacklash();			
+
+		// SMS Moves
+		if (Motors::planType() == SMS){
+			// Convert from "frames" to real milliseconds, based upon the camera interval
+			kf_max_move_time = (float)Camera.maxShots * Camera.intervalTime();
+			kf_max_cam_time = kf_max_move_time + Camera.focusTime() + Camera.triggerTime();
+			USBSerial.print("Camera interval");
+			USBSerial.println(Camera.intervalTime());
+			USBSerial.print("Program move time in milliseconds: ");
+			USBSerial.println(kf_max_move_time);
+			USBSerial.print("Program cam time in milliseconds: ");
+			USBSerial.println(kf_max_cam_time);
+			// Make sure joystick mode is off, then set move speed for the motors
+			joystickSet(false);
+			motor[0].contSpeed(4000);			
+		}
+		// Cont TL and Vid moves
+		else{
+
+			// Determine the max running time
+			USBSerial.println("Finding max time...");
+			for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
+				int lastFrame = kf[i].getKFCount() - 1;
+				USBSerial.print("Frame count: ");
+				USBSerial.println(lastFrame + 1);
+				long this_time = kf[i].getXN(lastFrame);
+				USBSerial.print("this_time: ");
+				USBSerial.println(this_time);
+				if (this_time > kf_max_move_time)
+					kf_max_move_time = this_time;
+			}
+			// Turn on joystick mode
+			joystickSet(true);
+
+			// Set the initial motor speeds
+			USBSerial.println("Setting initial motor speeds...");
+			for (byte i = 0; i < MOTOR_COUNT; i++){
+				// Don't touch motors that don't have any key frames
+				if (kf[i].getKFCount() > 0)
+					setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
+			}
+		}
 
 		// Initialize the run timers
 		USBSerial.println("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
-		kf_last_update = millis();
-
-		// Set the initial motor speeds
-		USBSerial.println("Setting initial motor speeds...");
-		for (byte i = 0; i < MOTOR_COUNT; i++){
-			// Don't touch motors that don't have any key frames
-			if (kf[i].getKFCount() > 0)
-				setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
-		}
+		kf_last_update = millis();		
 	}
 
 	// Turn on the key frame program flag and turn the paused flag off
@@ -215,7 +240,7 @@ void updateKFProgram(){
 	}
 
 	// Check to see if the program is done
-	if (kf_run_time > kf_max_time){
+	if (kf_run_time > kf_max_cam_time){
 		stopKFProgram();
 	}
 }
@@ -249,34 +274,41 @@ void updateKfContSpeed(){
 void updateKfSMS(){	
 	
 	// If we're not ready for a move (i.e. the camera is busy or we just finished one), don't do anything
-	if (!kf_okForSmsMove){
-		USBSerial.println("Updating SMS: not ready for move");
+	if (!kf_okForSmsMove || kf_run_time > kf_max_move_time){
 		return;
 	}
 
 	// Send the motors to their next locations
 	USBSerial.println("Sending motors to new locations");
 	for (int i = 0; i < MOTOR_COUNT; i++){		
-		float nextPos = kf[i].pos(kf_curSmsFrame+1);
-		motor[i].moveTo(nextPos);
-	}	
+
+		// Make sure there is a point to actually query
+		if (kf[i].getKFCount() < 2 || kf_curSmsFrame + 1 >= kf[i].getXN(kf[i].getKFCount() - 1))
+			continue;
+
+		float nextPos = kf[i].pos((kf_curSmsFrame + 1)* MILLIS_PER_FRAME);
+		
+		USBSerial.print("About to send to location #: ");
+		USBSerial.println(kf_curSmsFrame + 1);		
+		USBSerial.print("Sending to ");
+		USBSerial.println(nextPos);
+		USBSerial.print("Continuous accel: ");
+		USBSerial.println(motor[i].contAccel());
+		USBSerial.println("");
+		sendTo(i, (long)nextPos);		
+		
+	}		
 	kf_curSmsFrame++;
 	kf_okForSmsMove = false;
 }
 
 void kfCameraCheck() {
 
-	static boolean auxFired = false;
-	static boolean auxDone = false;
-	static boolean focusFired = false;
-	static boolean focusDone = false;
-	static boolean shutterFired = false;
-	static boolean shutterDone = false;
-	static boolean forceShotInProgress = false;
+
 	int auxPreShotTime = 0;
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
-	if (altExtInt && !altForceShot && !forceShotInProgress) {
+	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {
 		if (usb_debug & DB_FUNCT)
 			USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
 		return;
@@ -295,27 +327,27 @@ void kfCameraCheck() {
 		
 		kf_last_shot_tm = kf_run_time;
 		
-		auxFired = false;
-		auxDone = false;
-		focusFired = false;
-		focusDone = false;
-		shutterFired = false;
-		shutterDone = false;	
+		kf_auxFired = false;
+		kf_auxDone = false;
+		kf_focusFired = false;
+		kf_focusDone = false;
+		kf_shutterFired = false;
+		kf_shutterDone = false;
 		
 		if (altForceShot){
-			forceShotInProgress = true;
+			kf_forceShotInProgress = true;
 			altForceShot = false;
 		}
 	}	
 
 	// Trigger any outputs that need to go before the exposure
-	if ((ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) && !auxDone) {
-		if (!auxFired){
+	if ((ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) && !kf_auxDone) {
+		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
 			if (usb_debug & DB_FUNCT)
 				USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
-			auxFired = true;
+			kf_auxFired = true;
 			return;
 		}
 		
@@ -323,46 +355,44 @@ void kfCameraCheck() {
 		if (kf_run_time < kf_last_shot_tm + auxPreShotTime){
 			return;
 		}
-		auxDone = true;
+		kf_auxDone = true;
 	}
 
 	altBlock = ALT_OFF;
 	altForceShot = false;
 		
 	// Trigger the focus
-	if (!focusDone){
-		if (!focusFired){
+	if (!kf_focusDone){
+		if (!kf_focusFired){
 			USBSerial.print("Time at focus: ");
 			USBSerial.println(kf_run_time);
 			Camera.focus();
-			focusFired = true;
+			kf_focusFired = true;
 			return;
 		}
 
 		// If not enough time for the focus has elapsed, return
-		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime()){
-			USBSerial.println("Waiting for focus to finish");
+		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime()){						
 			return;
 		}
-		focusDone = true;
+		kf_focusDone = true;
 	}
 	
 	// Trigger the exposure
-	if (!shutterDone){
-		if (!shutterFired){
+	if (!kf_shutterDone){
+		if (!kf_shutterFired){
 			USBSerial.print("Time at exposure: ");
 			USBSerial.println(kf_run_time);		
 			Camera.expose();
-			shutterFired = true;
+			kf_shutterFired = true;
 		}
 
 		// If not enough time for the exposure has elapsed, return
-		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime() + Camera.triggerTime() + Camera.delayTime()){
-			USBSerial.println("Waiting for shutter to finish");
+		if (kf_run_time < kf_last_shot_tm + auxPreShotTime + Camera.focusTime() + Camera.triggerTime() + Camera.delayTime()){						
 			return;
 		}		
-		shutterDone = true;
-		forceShotInProgress = false;
+		kf_shutterDone = true;
+		kf_forceShotInProgress = false;
 
 		// One the camera functions are complete, it's okay to make the next SMS move
 		USBSerial.println("Shutter done, ready for move");

@@ -84,9 +84,10 @@ void sendToStop(uint8_t p_motor){
 void sendTo(uint8_t p_motor, long p_pos){
 	
 	// Move at the maximum motor speed
-	if (!graffikMode())
+	if (!graffikMode()){
 		motor[p_motor].ms(4);
-	motor[p_motor].contSpeed(mot_max_speed);
+		motor[p_motor].contSpeed(mot_max_speed);
+	}
 
 	motor[p_motor].moveTo(p_pos, true);
 	startISR();
