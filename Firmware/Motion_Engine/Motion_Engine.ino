@@ -240,6 +240,7 @@ char byteFired = 0;				// Byte used to toggle the step pin for each motor within
 const float MILLIS_PER_SECOND	= 1000.0;			
 const float MILLIS_PER_FRAME	= 1000.0;			// When in SMS mode, a spline interpolation xn value of 1000 = 1 frame
 const int	FLOAT_TO_FIXED		= 100;				// Multiply any floats to be transmitted in a serial response by this constant. Float responses don't seem to work correctly
+const int	PERCENT_CONVERT		= 100;				// Multiplier to convert 0.0-1.0 range to percent
 
 
 /***************************************
@@ -301,10 +302,8 @@ unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
 unsigned long kf_last_shot_tm;
-unsigned long kf_max_move_time;
-unsigned long kf_max_cam_time;
-bool kf_program_running = false;
-bool kf_program_paused = false;
+bool kf_running = false;
+bool kf_paused = false;
 
 /***************************************
 
@@ -584,8 +583,8 @@ void loop() {
    }
 
    // If a key frame program is running
-   else if (kf_program_running){
-	   updateKFProgram();	   
+   else if (kf_running){
+	   kf_updateProgram();	   
    }
 
 }
@@ -671,8 +670,8 @@ void eStop() {
 		else if (running && camera_test_mode)
 			stopProgram();
 		
-		else if (kf_program_running){
-			kf_program_running = false;
+		else if (kf_running){
+			kf_running = false;
 			stopAllMotors();
 		}
 
