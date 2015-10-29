@@ -125,7 +125,6 @@ void kf_startProgram(){
 			USBSerial.println(kf_getMaxCamTime());
 			// Make sure joystick mode is off, then set move speed for the motors
 			joystickSet(false);
-			motor[0].contSpeed(4000);			
 		}
 		// Cont TL and Vid moves
 		else{
@@ -482,8 +481,6 @@ float kf_MaxSMSSpeed(int axis){
 
 long kf_getMaxMoveTime(){
 	
-	USBSerial.println("Getting max time...");
-
 	static long move_time = 0;
 	
 	// Only calculate a new value when not running so as to not waste cycles during a program
