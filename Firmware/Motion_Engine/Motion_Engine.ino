@@ -302,8 +302,8 @@ unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
 unsigned long kf_last_shot_tm;
-bool kf_running = false;
-bool kf_paused = false;
+boolean kf_running = false;
+boolean kf_paused = false;
 
 /***************************************
 

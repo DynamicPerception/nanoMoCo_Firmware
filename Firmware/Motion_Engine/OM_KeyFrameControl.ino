@@ -512,6 +512,7 @@ int kf_getRunState(){
 	const int STOPPED = 0;
 	const int RUNNING = 1;
 	const int PAUSED = 2;	
+
 	int ret;
 	if (!kf_running){
 		ret = STOPPED;
@@ -519,10 +520,14 @@ int kf_getRunState(){
 	else if (kf_running && !kf_paused){
 		ret = RUNNING;
 	}
-	else if (kf_running && kf_paused){
+	// This is weird: if I don't explicitly compare the kf_paused value in the else if below, I get the
+	// following build error: Motion_Engine.ino:12: error: expected unqualified-id before 'else'
+	// Strange...
+	else if (kf_running && kf_paused ==  true){ 
 		ret = PAUSED;
 	}
 
+	return ret;
 }
 
 
