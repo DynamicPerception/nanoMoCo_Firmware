@@ -910,7 +910,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 4:
 		// stop motor now
 		motor[subaddr - 1].stop();
-		kf_running = false;
+		kf_program_running = false;
 		debugOff();
 		response(true);
 		break;
@@ -1702,20 +1702,20 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 20 runs/resumes a keyframe program
 	case 20:
 	{	   
-		kf_startProgram();	   
+		startKFProgram();	   
 		response(true);
 		break;
 	}
 
 	// Command 21 pauses a keyframe program
 	case 21:
-		kf_pauseProgram();
+		pauseKFProgram();
 		response(true);
 		break;
 
 	// Command 22 stops a keyframe program
 	case 22:
-		kf_stopProgram();
+		stopKFProgram();
 		response(true);
 		break;
 
@@ -1727,7 +1727,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 99:
 	{
 		response(true);
-		kf_printKeyFrameData();
+		printKeyFrameData();
 		break;
 	}
 
@@ -1784,22 +1784,11 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 120 returns true if a key frame program is currently running
 	case 120:
-		response(true, kf_getRunState());
+		response(true, kf_program_running);
 		break;
-
 	// Command 121 returns the current key frame running time
 	case 121:
-		response(true, kf_getRunTime());
-		break;
-
-	// Command 122 returns the maximum key frame running time
-	case 122:
-		response(true, kf_getMaxTime());
-		break;
-
-	// Command 123 returns the program percent complete
-	case 123:
-		response(true, kf_getPercentDone());
+		response(true, kf_run_time);
 		break;
 
 	}// End switch case

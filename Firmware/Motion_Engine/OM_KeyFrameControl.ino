@@ -34,7 +34,7 @@ boolean kf_shutterFired = false;
 boolean kf_shutterDone = false;
 boolean kf_forceShotInProgress = false;
 
-void kf_printKeyFrameData(){
+void printKeyFrameData(){
 
 	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
 		// Indicate the current axis
@@ -68,10 +68,10 @@ void kf_printKeyFrameData(){
 
 }
 
-void kf_startProgram(){
+void startKFProgram(){
 		
 	// If resuming
-	if (kf_paused){
+	if (kf_program_paused){
 
 		USBSerial.println("Resuming KF program");
 
@@ -93,10 +93,12 @@ void kf_startProgram(){
 		kf_pause_time = 0;
 
 		// Make sure the pause flag is off
-		kf_paused = false;		
+		kf_program_paused = false;		
 
 		// Reset the camera vars
-		kf_last_shot_tm = 0;		
+		kf_last_shot_tm = 0;
+		kf_max_move_time = 0;
+		kf_max_cam_time = 0;
 		kf_auxFired = false;
 		kf_auxDone = false;
 		kf_focusFired = false;
@@ -104,31 +106,41 @@ void kf_startProgram(){
 		kf_shutterFired = false;
 		kf_shutterDone = false;
 		kf_forceShotInProgress = false;
-				
-		// Prep the movement and camera times
-		kf_getMaxMoveTime();
-		kf_getMaxCamTime();
 
 		// Take up any motor backlash
 		USBSerial.println("Taking up backlash...");
 		takeUpBacklash();			
-				
 
 		// SMS Moves
 		if (Motors::planType() == SMS){
-			// Convert from "frames" to real milliseconds, based upon the camera interval			
+			// Convert from "frames" to real milliseconds, based upon the camera interval
+			kf_max_move_time = (float)Camera.maxShots * Camera.intervalTime();
+			kf_max_cam_time = kf_max_move_time + Camera.focusTime() + Camera.triggerTime();
 			USBSerial.print("Camera interval");
 			USBSerial.println(Camera.intervalTime());
 			USBSerial.print("Program move time in milliseconds: ");
-			USBSerial.println(kf_getMaxMoveTime());
+			USBSerial.println(kf_max_move_time);
 			USBSerial.print("Program cam time in milliseconds: ");
-			USBSerial.println(kf_getMaxCamTime());
+			USBSerial.println(kf_max_cam_time);
 			// Make sure joystick mode is off, then set move speed for the motors
 			joystickSet(false);
 			motor[0].contSpeed(4000);			
 		}
 		// Cont TL and Vid moves
 		else{
+
+			// Determine the max running time
+			USBSerial.println("Finding max time...");
+			for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
+				int lastFrame = kf[i].getKFCount() - 1;
+				USBSerial.print("Frame count: ");
+				USBSerial.println(lastFrame + 1);
+				long this_time = kf[i].getXN(lastFrame);
+				USBSerial.print("this_time: ");
+				USBSerial.println(this_time);
+				if (this_time > kf_max_move_time)
+					kf_max_move_time = this_time;
+			}
 			// Turn on joystick mode
 			joystickSet(true);
 
@@ -149,11 +161,11 @@ void kf_startProgram(){
 	}
 
 	// Turn on the key frame program flag and turn the paused flag off
-	kf_running = true;
-	kf_paused = false;
+	kf_program_running = true;
+	kf_program_paused = false;
 }
 
-void kf_pauseProgram(){
+void pauseKFProgram(){
 
 	if (usb_debug & DB_FUNCT)
 		USBSerial.print("PAUSING KF PROGRAM");
@@ -166,7 +178,7 @@ void kf_pauseProgram(){
 	}
 
 	// Set the pause flag
-	kf_paused = true;
+	kf_program_paused = true;
 
 	// Reset the current pause duration counter
 	kf_this_pause = 0;
@@ -175,7 +187,7 @@ void kf_pauseProgram(){
 	kf_pause_start = millis();	
 }
 
-void kf_stopProgram(){
+void stopKFProgram(){
 
 	if (usb_debug & DB_FUNCT)
 		USBSerial.print("STOPPING KF PROGRAM");
@@ -189,14 +201,14 @@ void kf_stopProgram(){
 	joystickSet(false);
 
 	// Turn off the key frame program flag
-	kf_running = false;
-	kf_paused = false;
+	kf_program_running = false;
+	kf_program_paused = false;
 }
 
-void kf_updateProgram(){
+void updateKFProgram(){
 
 	// If the program is paused, just keep track of the pause time
-	if (kf_paused){
+	if (kf_program_paused){		
 		kf_this_pause = millis() - kf_pause_start;
 		if (usb_debug & DB_FUNCT){
 			USBSerial.print("Pause length: ");
@@ -216,24 +228,24 @@ void kf_updateProgram(){
 	
 	// Continuous move update	
 	if (Motors::planType() != SMS){
-		kf_updateContSpeed();
+		updateKfContSpeed();
 	}
 
 	// Check whether the camera needs to fire
-	kf_CameraCheck();
+	kfCameraCheck();
 
 	// SMS move update
 	if (Motors::planType() == SMS){
-		kf_updateSMS();
+		updateKfSMS();
 	}
 
 	// Check to see if the program is done
-	if (kf_run_time > kf_getMaxCamTime()){
-		kf_stopProgram();
+	if (kf_run_time > kf_max_cam_time){
+		stopKFProgram();
 	}
 }
 
-void kf_updateContSpeed(){
+void updateKfContSpeed(){	
 
 	// If the update time has elapsed, update the motor speed
 	if (millis() - kf_last_update > KeyFrames::updateRate()){
@@ -259,10 +271,10 @@ void kf_updateContSpeed(){
 	}
 }
 
-void kf_updateSMS(){
+void updateKfSMS(){	
 	
 	// If we're not ready for a move (i.e. the camera is busy or we just finished one), don't do anything
-	if (!kf_okForSmsMove || kf_run_time > kf_getMaxMoveTime()){
+	if (!kf_okForSmsMove || kf_run_time > kf_max_move_time){
 		return;
 	}
 
@@ -290,7 +302,7 @@ void kf_updateSMS(){
 	kf_okForSmsMove = false;
 }
 
-void kf_CameraCheck() {
+void kfCameraCheck() {
 
 
 	int auxPreShotTime = 0;
@@ -434,9 +446,9 @@ void kf_auxCycleStart(byte p_mode) {
 	If at least one of them exceeds the axis' max speed,
 	the function returns false.
 */
-boolean kf_ValidateSMSProgram(){
+boolean kfValidateSMSProgram(){
 	for (byte i = 0; i < MOTOR_COUNT; i++){
-		float thisMaxSpeed = kf_MaxSMSSpeed(i);
+		float thisMaxSpeed = kfMaxSMSSpeed(i);
 
 		// Return false if one of the segments requires a speed higher than is possible
 		if (thisMaxSpeed > motor[i].maxSpeed()){
@@ -452,7 +464,7 @@ boolean kf_ValidateSMSProgram(){
 	for the requested axis' SMS key frame program. Only use if  
 	an SMS key frame program has already been set!
 */
-float kf_MaxSMSSpeed(int axis){
+float kfMaxSMSSpeed(int axis){
 		
 	float maxTime = kf[axis].getXN(kf[axis].getKFCount() - 1);
 	int kfCount = kf[axis].getKFCount();
@@ -478,78 +490,4 @@ float kf_MaxSMSSpeed(int axis){
 		}
 	}
 	return maxSpeed;
-}
-
-long kf_getMaxMoveTime(){
-	
-	USBSerial.println("Getting max time...");
-
-	static long move_time = 0;
-	
-	// Only calculate a new value when not running so as to not waste cycles during a program
-	if (!kf_running){
-		// SMS mode
-		if (Motors::planType() == SMS){
-			move_time = Camera.maxShots * Camera.intervalTime();
-		}
-		// Cont. TL and Vid modes
-		else{			
-			for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
-				int lastFrame = kf[i].getKFCount() - 1;				
-				long this_time = kf[i].getXN(lastFrame);
-				if (this_time > kf_getMaxMoveTime())
-					move_time = this_time;
-			}
-		}
-	}
-
-	return move_time;
-}
-
-
-int kf_getRunState(){
-
-	const int STOPPED = 0;
-	const int RUNNING = 1;
-	const int PAUSED = 2;	
-	int ret;
-	if (!kf_running){
-		ret = STOPPED;
-	}
-	else if (kf_running && !kf_paused){
-		ret = RUNNING;
-	}
-	else if (kf_running && kf_paused){
-		ret = PAUSED;
-	}
-
-}
-
-
-long kf_getRunTime(){
-	return kf_run_time;
-}
-
-
-long kf_getMaxTime(){
-	if (Motors::planType() == CONT_VID)
-		return kf_getMaxMoveTime();
-	else
-		return kf_getMaxCamTime();
-}
-
-
-long kf_getMaxCamTime(){
-	long ret = kf_getMaxMoveTime() + Camera.focusTime() + Camera.triggerTime();
-	return ret;
-}
-
-
-int kf_getPercentDone(){
-	int ret;
-	
-	if (Motors::planType() == CONT_VID)
-		ret = ((float)kf_run_time / kf_getMaxMoveTime()) * PERCENT_CONVERT;
-	else
-		ret = ((float)kf_run_time / kf_getMaxCamTime()) * PERCENT_CONVERT;
 }
