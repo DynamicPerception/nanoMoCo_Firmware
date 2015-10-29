@@ -1736,7 +1736,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		response(true, kf[KeyFrames::getAxis()].getKFCount());
 		break;
 
-	// Command 101 returns motor velocity update rate in ms
+	// Command 101 returns motor velocity update interval in milliseconds
 	case 101:
 		response(true, KeyFrames::updateRate());
 		break;
@@ -1774,12 +1774,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 105 returns true if the current spline will not exceed the maximum motor speed for the current axis
 	case 105:
-		response(true, kf[KeyFrames::getAxis()].validateVel());
+		response(true, (uint8_t) kf[KeyFrames::getAxis()].validateVel());
 		break;
 
 	// Command 106 returns true if the current spline will not exceed the maximum motor speed for the current axis
 	case 106:
-		response(true, kf[KeyFrames::getAxis()].validateAccel());
+		response(true, (uint8_t) kf[KeyFrames::getAxis()].validateAccel());
 		break;
 
 	// Command 120 returns true if a key frame program is currently running
