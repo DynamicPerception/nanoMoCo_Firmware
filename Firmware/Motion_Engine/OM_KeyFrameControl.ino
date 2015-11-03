@@ -249,8 +249,13 @@ void kf_updateContSpeed(){
 				float speed;
 				if (kf_run_time > thisAxisMaxTime)
 					speed = 0;
-				else
-					speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
+				else{
+					// If the time is before the first key frame or after the last, it's a lead-in/out and speed should be 0
+					if (kf_run_time < kf[i].getXN(0) || kf_run_time > kf[i].getXN(kf[i].getKFCount() - 1))
+						speed = 0;
+					else
+						speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
+				}					
 				setJoystickSpeed(i, speed);
 			}
 		}
