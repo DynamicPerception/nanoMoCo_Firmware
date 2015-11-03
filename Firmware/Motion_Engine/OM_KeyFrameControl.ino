@@ -104,6 +104,7 @@ void kf_startProgram(){
 		kf_shutterFired = false;
 		kf_shutterDone = false;
 		kf_forceShotInProgress = false;
+		camera_fired = 0;
 				
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
@@ -150,6 +151,10 @@ void kf_startProgram(){
 	// Turn on the key frame program flag and turn the paused flag off
 	kf_running = true;
 	kf_paused = false;
+
+	// If it's a video move, trigger the camera once to start the recording
+	if (Motors::planType() == CONT_VID)
+		Camera.expose();
 }
 
 void kf_pauseProgram(){
@@ -190,6 +195,10 @@ void kf_stopProgram(){
 	// Turn off the key frame program flag
 	kf_running = false;
 	kf_paused = false;
+
+	// If it's a video move, trigger the camera once to stop the recording
+	if (Motors::planType() == CONT_VID)
+		Camera.expose();
 }
 
 void kf_updateProgram(){
@@ -225,8 +234,9 @@ void kf_updateProgram(){
 		kf_updateContSpeed();
 	}
 
-	// Check whether the camera needs to fire
-	kf_CameraCheck();
+	// Check whether the camera needs to fire (but not for video mode)
+	if (Motors::planType() != CONT_VID)
+		kf_CameraCheck();
 
 	// SMS move update
 	if (Motors::planType() == SMS){
