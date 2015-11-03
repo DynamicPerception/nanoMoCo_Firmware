@@ -136,8 +136,13 @@ void kf_startProgram(){
 			USBSerial.println("Setting initial motor speeds...");
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				// Don't touch motors that don't have any key frames
-				if (kf[i].getKFCount() > 0)
-					setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
+				if (kf[i].getKFCount() > 0){
+					// If the first key frame isn't at x == 0 (i.e. there is a lead-in), set velocity to 0
+					if (kf[i].getXN(0) == 0)
+						setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
+					else
+						setJoystickSpeed(i, 0);
+				}
 			}
 		}
 
@@ -259,7 +264,7 @@ void kf_updateContSpeed(){
 			// Determine the maximum run time for this axis
 			float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
 			if (Motors::planType() == SMS)
-				thisAxisMaxTime = thisAxisMaxTime / MILLIS_PER_FRAME * Camera.intervalTime();
+				thisAxisMaxTime = thisAxisMaxTime * Camera.intervalTime();
 
 			// Set the approriate speed, but don't touch motors that don't have any key frames
 			if (kf[i].getKFCount() > 0){
@@ -295,14 +300,12 @@ void kf_updateSMS(){
 		if (kf[i].getKFCount() < 2 || kf_curSmsFrame + 1 > kf[i].getXN(kf[i].getKFCount() - 1))
 			continue;
 
-		float nextPos = kf[i].pos((kf_curSmsFrame + 1)* MILLIS_PER_FRAME);
+		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
 		
 		USBSerial.print("About to send to location #: ");
 		USBSerial.println(kf_curSmsFrame + 1);		
 		USBSerial.print("Sending to ");
-		USBSerial.println(nextPos);
-		USBSerial.print("Continuous accel: ");
-		USBSerial.println(motor[i].contAccel());
+		USBSerial.println(nextPos);		
 		USBSerial.println("");
 		sendTo(i, (long)nextPos);		
 		
@@ -507,19 +510,18 @@ long kf_getMaxMoveTime(){
 	
 	// Only calculate a new value when not running so as to not waste cycles during a program
 	if (!kf_running){
-		// SMS mode
-		if (Motors::planType() == SMS){
-			move_time = Camera.maxShots * Camera.intervalTime();
+		// SMS and cont. TL mode 
+		if (Motors::planType() != CONT_VID){			
+			move_time = Camera.getMaxShots() * Camera.intervalTime();
+			USBSerial.print("Getting TL move time: ");			
 		}
-		// Cont. TL and Vid modes
+		// Continuous video mode
 		else{			
-			for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
-				int lastFrame = kf[i].getKFCount() - 1;				
-				long this_time = kf[i].getXN(lastFrame);
-				if (this_time > kf_getMaxMoveTime())
-					move_time = this_time;
-			}
+			move_time = KeyFrames::getContVidTime();			
+			USBSerial.print("Getting video move time: ");			
 		}
+		USBSerial.print(move_time);
+		USBSerial.println("ms");
 	}
 
 	return move_time;

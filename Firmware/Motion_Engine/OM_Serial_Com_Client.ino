@@ -518,8 +518,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 		Motors::planType(input_serial_buffer[0]);		
 
 		// For modes other than SMS, max shots should be set to 0 (unlimited), since program stopping will be controlled by run time
-		if (Motors::planType() != SMS)
-			Camera.maxShots = 0;
+		/*if (Motors::planType() != SMS)
+			Camera.setMaxShots(0);*/
 		response(true);
 		break;
 
@@ -547,7 +547,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 25 sends all motors to their start positions. 
 	case 25:
 		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("Sending motors home");
+			USBSerial.println("Sending motors to start positions");
 		sendAllToStart();
 		response(true);
 		break;
@@ -1394,14 +1394,17 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       break;
     
     //Command 6 set camera's max shots 
-    case 6:
-      Camera.maxShots = Node.ntoui(input_serial_buffer);
-	  if (usb_debug & DB_GEN_SER){
-		  USBSerial.print("Command Cam.06 - Max shots: ");
-		  USBSerial.println(Camera.maxShots);
-	  }
-      response(true);
-      break;
+	case 6:
+	{
+		unsigned long in_val = Node.ntoui(input_serial_buffer);
+		Camera.setMaxShots(in_val);
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.print("Command Cam.06 - Max shots: ");
+			USBSerial.println(Camera.getMaxShots());
+		}
+		response(true);
+		break;
+	}
 
     //Command 7 set camera's exposure delay
     case 7:
@@ -1464,7 +1467,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
       
     //Command 104 gets the camera's max shots
     case 104:
-      response( true, Camera.maxShots );
+      response( true, Camera.getMaxShots() );
       break;
       
     //Command 105 gets the camera's exposure delay
@@ -1696,6 +1699,26 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		}
 		
 		response(true);
+		break;
+	}
+
+	// Command 17 sets the continuous video move time
+	case 17:
+	{
+		// Parse the incoming value
+		float in_val = Node.ntoul(input_serial_buffer);
+		KeyFrames::setContVidTime(in_val);
+
+		unsigned long echo = KeyFrames::getContVidTime();
+
+		if (usb_debug & DB_GEN_SER){			
+			USBSerial.print("Setting continuous time: ");
+			USBSerial.print(echo);			
+			USBSerial.println("ms");
+		}
+
+		// Echo the assigned value
+		response(true, echo);
 		break;
 	}
 

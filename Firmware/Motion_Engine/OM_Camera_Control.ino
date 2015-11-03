@@ -135,10 +135,10 @@ void cameraTest(uint8_t p_start) {
 		}
 
 		// Remember the current max shots setting
-		old_max_shots = Camera.maxShots;
+		old_max_shots = Camera.getMaxShots();
 
 		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
-		Camera.maxShots = 10000;
+		Camera.setMaxShots(10000);
 
 		// Starting the program will make the camera fire, but the motors won't move
 		startProgram();
@@ -155,7 +155,7 @@ void cameraTest(uint8_t p_start) {
 		for (byte i = 0; i < MOTOR_COUNT; i++)
 			motor[i].enable(old_enable[i]);
 
-		Camera.maxShots = old_max_shots;
+		Camera.setMaxShots(old_max_shots);
 
 		// Reset the shot count to 0
 		camera_fired = 0;
@@ -196,7 +196,7 @@ void cameraAutoMaxShots() {
 			longest = current;
 	}
 
-	Camera.maxShots = longest;
+	Camera.setMaxShots(longest);
 }
 
 

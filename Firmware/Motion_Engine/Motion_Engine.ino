@@ -238,7 +238,6 @@ char byteFired = 0;				// Byte used to toggle the step pin for each motor within
 
 
 const float MILLIS_PER_SECOND	= 1000.0;			
-const float MILLIS_PER_FRAME	= 1000.0;			// When in SMS mode, a spline interpolation xn value of 1000 = 1 frame
 const int	FLOAT_TO_FIXED		= 100;				// Multiply any floats to be transmitted in a serial response by this constant. Float responses don't seem to work correctly
 const int	PERCENT_CONVERT		= 100;				// Multiplier to convert 0.0-1.0 range to percent
 
@@ -753,8 +752,8 @@ uint8_t programPercent() {
 	uint8_t percent_new;
 
 	// If in SMS mode and the camera max shots is less than the longest motor move, use that value instead
-	if (Motors::planType() == SMS && Camera.maxShots < longest_move)
-		longest_move = Camera.maxShots;
+	if (Motors::planType() == SMS && Camera.getMaxShots() < longest_move)
+		longest_move = Camera.getMaxShots();
 
 	// Determine the program percent completion by dividing the current shots by the max shots.
 	// Multiply by 100 to give whole number percent.

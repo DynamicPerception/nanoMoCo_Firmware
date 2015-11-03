@@ -65,7 +65,7 @@ void cycleCamera() {
 	bool sms_done = false;
 	bool continuous_done = false;
 	if (Motors::planType() == SMS)
-		sms_done = Camera.maxShots > 0 && camera_fired > Camera.maxShots;		
+		sms_done = Camera.getMaxShots() > 0 && camera_fired > Camera.getMaxShots();		
 	else if (Motors::planType() != SMS){
 		continuous_done = true;
 		for (byte i = 0; i < MOTOR_COUNT; i++){
