@@ -275,7 +275,7 @@ void kf_updateSMS(){
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
 		// Make sure there is a point to actually query
-		if (kf[i].getKFCount() < 2 || kf_curSmsFrame + 1 >= kf[i].getXN(kf[i].getKFCount() - 1))
+		if (kf[i].getKFCount() < 2 || kf_curSmsFrame + 1 > kf[i].getXN(kf[i].getKFCount() - 1))
 			continue;
 
 		float nextPos = kf[i].pos((kf_curSmsFrame + 1)* MILLIS_PER_FRAME);
