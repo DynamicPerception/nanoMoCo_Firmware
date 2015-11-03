@@ -212,6 +212,13 @@ void kf_updateProgram(){
 		USBSerial.println(kf_run_time);
 	}
 
+	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
+	int time_delay = 500;
+	int start_delay = micros();
+	while (micros() - start_delay < time_delay){
+	
+	}
+
 	
 	// Continuous move update	
 	if (Motors::planType() != SMS){
