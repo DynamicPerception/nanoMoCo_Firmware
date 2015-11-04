@@ -158,8 +158,8 @@ void takeUpBacklash(){
 			wait_required = true;
 
 			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-			if (!graffikMode())
-				motor[i].ms(4);
+			/*if (!graffikMode())
+				motor[i].ms(4);*/
 			motor[i].contSpeed(mot_max_speed);
 
 			// Determine the direction of the programmed move
@@ -180,8 +180,8 @@ void takeUpBacklash(){
 
 	// Re-set all the motors to their proper microstep settings
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		if (!graffikMode())
-			msAutoSet(i);
+		/*if (!graffikMode())
+			msAutoSet(i);*/
 
 		// Print debug info if proper flag is set
 		if (usb_debug & DB_FUNCT){
@@ -410,7 +410,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-
+	USBSerial.println("Trying to auto-set microsteps!!!!");
 	unsigned long time = millis();
 	byte microsteps;
 	

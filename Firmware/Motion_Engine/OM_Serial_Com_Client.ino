@@ -965,8 +965,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 11 send motor to home limit
 	case 11:
 		// Move at the maximum motor speed
-		if (!graffikMode())
-			motor[subaddr - 1].ms(4);
+		/*if (!graffikMode())
+			motor[subaddr - 1].ms(4);*/
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		// send a motor home
@@ -978,8 +978,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 12 send motor to end limit
 	case 12:
 		// Move at the maximum motor speed
-		if (!graffikMode())
-			motor[subaddr - 1].ms(4);
+		//if (!graffikMode())
+		//	motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		motor[subaddr - 1].moveToEnd();
@@ -1683,11 +1683,17 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		int axis = KeyFrames::getAxis();
 				
 		// Set the start and stop positions from first and last key points			
-		int start = kf[axis].getFN(0);
-		motor[axis].startPos(start);
+		if (kf[axis].getKFCount() > 1){
+			long start = kf[axis].getFN(0);
+			motor[axis].startPos(start);
 
-		int stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
-		motor[axis].stopPos(stop);
+			long stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
+			motor[axis].stopPos(stop);
+		}
+		else{
+			motor[axis].startPos(motor[axis].currentPos());
+			motor[axis].stopPos(motor[axis].currentPos());
+		}
 
 		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Axis ");
