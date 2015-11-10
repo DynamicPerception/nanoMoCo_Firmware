@@ -578,4 +578,6 @@ int kf_getPercentDone(){
 		ret = ((float)kf_run_time / kf_getMaxMoveTime()) * PERCENT_CONVERT;
 	else
 		ret = ((float)kf_run_time / kf_getMaxCamTime()) * PERCENT_CONVERT;
+
+	return ret;
 }
