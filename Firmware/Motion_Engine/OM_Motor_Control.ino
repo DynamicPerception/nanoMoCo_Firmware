@@ -247,28 +247,28 @@ void startProgramCom() {
 	// Don't start a new program if one is already running
 	if (!running) {
 
-		if (usb_debug & DB_FUNCT){
-			USBSerial.println("Motor distances:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
-			}
-			USBSerial.println("Motor start:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].startPos());
-			}
-			USBSerial.println("Motor stop:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos());
-			}
-			USBSerial.println("Motor current:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].currentPos());
-			}
-			USBSerial.println("Motor travel:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].planTravelLength());
-			}
+		
+		debugFunctln("Motor distances:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos() - motor[i].currentPos());
 		}
+		debugFunctln("Motor start:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].startPos());
+		}
+		debugFunctln("Motor stop:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos());
+		}
+		debugFunctln("Motor current:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].currentPos());
+		}
+		debugFunctln("Motor travel:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].planTravelLength());
+		}
+		
 
 		//if it was paused and not SMS then recalculate move from pause time
 		if (was_pause && Motors::planType() != SMS){
@@ -371,17 +371,15 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 		comparison_speed = motor[p_motor].getTopSpeed();
 	}
 
-	// USB print the debug value, if necessary
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Top speed requested: ");
-		USBSerial.println(comparison_speed);
-	}
+	// USB print the debug value, if necessary	
+	debugFunct("Top speed requested: ");
+	debugFunctln(comparison_speed);
 
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 	// If the requested speed is too high, send error value, don't change microstepping setting
 	if (comparison_speed >= MAX_CUTOFF ) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("Excessive speed requested");
+		
+		debugFunctln("Excessive speed requested");
 		return 0;
 	}
 	else {
@@ -410,7 +408,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-	USBSerial.println("Trying to auto-set microsteps!!!!");
+	debugFunctln("Trying to auto-set microsteps!!!!");
 	unsigned long time = millis();
 	byte microsteps;
 	
@@ -431,21 +429,19 @@ byte msAutoSet(uint8_t p_motor) {
 		// Save the microstep settings
 		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
-		// USB print the debug value, if necessary
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Requested Microsteps: ");
-			USBSerial.println(microsteps);
-			USBSerial.println("Microsteps successfully set");
-		}
+		// USB print the debug value, if necessary		
+		debugFunct("Requested Microsteps: ");
+		debugFunctln((int)microsteps);
+		debugFunctln("Microsteps successfully set");
+		
 		return microsteps;
 		
 	}	
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
-	else {
-		if (usb_debug & DB_FUNCT)
-				USBSerial.println("Motors are running, can't auto-set microsteps");
-			return false;
+	else {		
+		debugFunctln("Motors are running, can't auto-set microsteps");
+		return false;
 	}
 }
 
