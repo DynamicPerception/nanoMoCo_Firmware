@@ -71,20 +71,19 @@ void kf_printKeyFrameData(){
 void kf_startProgram(){
 		
 	// If resuming
-	if (kf_paused){
-
-		USBSerial.println("Resuming KF program");
+	if (kf_paused){		
+		debugFunctln("Resuming KF program");
 
 		// Add the time of the last pause to the total pause time counter
 		kf_pause_time += kf_this_pause;
 	}
 	// If starting a new program
 	else{
+				
+		debugFunct("Starting new type ");
+		debugFunct((int)Motors::planType());
+		debugFunctln(" KF program");		
 
-		USBSerial.print("Starting new type ");
-		USBSerial.print(Motors::planType());
-		USBSerial.println(" KF program");
-		
 		// Reset the SMS vars
 		kf_okForSmsMove = false;
 		kf_curSmsFrame = 0;
@@ -110,20 +109,22 @@ void kf_startProgram(){
 		kf_getMaxMoveTime();
 		kf_getMaxCamTime();
 
-		// Take up any motor backlash
-		USBSerial.println("Taking up backlash...");
+		// Take up any motor backlash		
+		debugFunctln("Taking up backlash...");
 		takeUpBacklash();			
 				
 
 		// SMS Moves
 		if (Motors::planType() == SMS){
 			// Convert from "frames" to real milliseconds, based upon the camera interval			
-			USBSerial.print("Camera interval");
-			USBSerial.println(Camera.intervalTime());
-			USBSerial.print("Program move time in milliseconds: ");
-			USBSerial.println(kf_getMaxMoveTime());
-			USBSerial.print("Program cam time in milliseconds: ");
-			USBSerial.println(kf_getMaxCamTime());
+			
+			debugFunct("Camera interval");
+			debugFunctln(Camera.intervalTime());
+			debugFunct("Program move time in milliseconds: ");
+			debugFunctln(kf_getMaxMoveTime());
+			debugFunct("Program cam time in milliseconds: ");
+			debugFunctln(kf_getMaxCamTime());
+			
 			// Make sure joystick mode is off, then set move speed for the motors
 			joystickSet(false);
 		}
@@ -132,8 +133,8 @@ void kf_startProgram(){
 			// Turn on joystick mode
 			joystickSet(true);
 
-			// Set the initial motor speeds
-			USBSerial.println("Setting initial motor speeds...");
+			// Set the initial motor speeds			
+			debugFunctln("Setting initial motor speeds...");
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				// Don't touch motors that don't have any key frames
 				if (kf[i].getKFCount() > 0){
@@ -146,8 +147,8 @@ void kf_startProgram(){
 			}
 		}
 
-		// Initialize the run timers
-		USBSerial.println("Initializing run timers...");
+		// Initialize the run timers		
+		debugFunctln("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
 		kf_last_update = millis();		
@@ -164,13 +165,13 @@ void kf_startProgram(){
 
 void kf_pauseProgram(){
 
-	if (usb_debug & DB_FUNCT)
-		USBSerial.print("PAUSING KF PROGRAM");
+	
+	debugFunctln("PAUSING KF PROGRAM");
 
 	// Stop all motors
-	for (byte i = 0; i < MOTOR_COUNT; i++){
-		USBSerial.print("Stopping motor ");
-		USBSerial.println(i);
+	for (int i = 0; i < MOTOR_COUNT; i++){
+		debugFunct("Stopping motor ");
+		debugFunctln(i);
 		setJoystickSpeed(i, 0);
 	}
 
@@ -186,8 +187,7 @@ void kf_pauseProgram(){
 
 void kf_stopProgram(){
 
-	if (usb_debug & DB_FUNCT)
-		USBSerial.print("STOPPING KF PROGRAM");
+	debugFunct("STOPPING KF PROGRAM");
 
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -211,10 +211,10 @@ void kf_updateProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
 		kf_this_pause = millis() - kf_pause_start;
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Pause length: ");
-			USBSerial.println(kf_this_pause);
-		}
+		
+		debugFunct("Pause length: ");
+		debugFunctln(kf_this_pause);
+		
 		return;
 	}
 
@@ -293,7 +293,8 @@ void kf_updateSMS(){
 	}
 
 	// Send the motors to their next locations
-	USBSerial.println("Sending motors to new locations");
+	
+	debugFunctln("Sending motors to new locations");
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
 		// Make sure there is a point to actually query
@@ -301,12 +302,13 @@ void kf_updateSMS(){
 			continue;
 
 		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
+				
+		debugFunct("About to send to location #: ");
+		debugFunctln(kf_curSmsFrame + 1);
+		debugFunct("Sending to ");
+		debugFunctln(nextPos);
+		debugFunctln("");
 		
-		USBSerial.print("About to send to location #: ");
-		USBSerial.println(kf_curSmsFrame + 1);		
-		USBSerial.print("Sending to ");
-		USBSerial.println(nextPos);		
-		USBSerial.println("");
 		sendTo(i, (long)nextPos);		
 		
 	}		
@@ -357,8 +359,7 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			if (usb_debug & DB_FUNCT)
-				USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+			debugFunctln("cycleCamera() - Bailing from camera cycle at point 2");
 			kf_auxFired = true;
 			return;
 		}
@@ -375,9 +376,9 @@ void kf_CameraCheck() {
 		
 	// Trigger the focus
 	if (!kf_focusDone){
-		if (!kf_focusFired){
-			USBSerial.print("Time at focus: ");
-			USBSerial.println(kf_run_time);
+		if (!kf_focusFired){			
+			debugFunct("Time at focus: ");
+			debugFunctln(kf_run_time);			
 			Camera.focus();
 			kf_focusFired = true;
 			return;
@@ -392,9 +393,9 @@ void kf_CameraCheck() {
 	
 	// Trigger the exposure
 	if (!kf_shutterDone){
-		if (!kf_shutterFired){
-			USBSerial.print("Time at exposure: ");
-			USBSerial.println(kf_run_time);		
+		if (!kf_shutterFired){			
+			debugFunct("Time at exposure: ");
+			debugFunctln(kf_run_time);			
 			Camera.expose();
 			kf_shutterFired = true;
 		}
@@ -406,8 +407,8 @@ void kf_CameraCheck() {
 		kf_shutterDone = true;
 		kf_forceShotInProgress = false;
 
-		// One the camera functions are complete, it's okay to make the next SMS move
-		USBSerial.println("Shutter done, ready for move");
+		// One the camera functions are complete, it's okay to make the next SMS move		
+		debugFunctln("Shutter done, ready for move");
 		kf_okForSmsMove = true;
 	}
 
@@ -513,15 +514,16 @@ long kf_getMaxMoveTime(){
 		// SMS and cont. TL mode 
 		if (Motors::planType() != CONT_VID){			
 			move_time = Camera.getMaxShots() * Camera.intervalTime();
-			USBSerial.print("Getting TL move time: ");			
+			debugFunct("Getting TL move time: ");
 		}
 		// Continuous video mode
 		else{			
-			move_time = KeyFrames::getContVidTime();			
-			USBSerial.print("Getting video move time: ");			
+			move_time = KeyFrames::getContVidTime();						
+			debugFunct("Getting video move time: ");
+			
 		}
-		USBSerial.print(move_time);
-		USBSerial.println("ms");
+		debugFunct(move_time);		
+		debugFunctln("ms");
 	}
 
 	return move_time;

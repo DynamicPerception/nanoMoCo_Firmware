@@ -1063,3 +1063,63 @@ void appMode(bool p_setting) {
 bool appMode() {
 	return app_mode;
 }
+
+void debugFunct(int val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(float val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(unsigned long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(String msg){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(msg);
+	}
+}
+
+void debugFunctln(int val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(float val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(unsigned long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(String msg){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(msg);
+	}
+}
