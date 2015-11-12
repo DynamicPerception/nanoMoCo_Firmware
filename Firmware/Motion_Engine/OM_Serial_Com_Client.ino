@@ -917,9 +917,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 5 set motor's backlash amount  
 	case 5:
-		motor[subaddr - 1].backlash(Node.ntoui(input_serial_buffer));
+	{
+		USBSerial.println("Backlash from serial");
+		unsigned int in_val = Node.ntoui(input_serial_buffer);		
+		motor[subaddr - 1].backlash(in_val);
 		response(true);
 		break;
+	}
     
 	//Command 6 set the microstep for the motor
 	case 6:
