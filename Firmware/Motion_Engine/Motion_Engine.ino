@@ -435,7 +435,7 @@ void setup() {
   
 	// defaults for motor
 	for( int i = 0; i < MOTOR_COUNT; i++){
-		motor[i].enable(false);
+		motor[i].enable(true);
 		motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 		motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
