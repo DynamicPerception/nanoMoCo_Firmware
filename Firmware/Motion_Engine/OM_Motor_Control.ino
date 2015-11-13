@@ -147,6 +147,10 @@ byte motorSleep(byte p_motor) {
 
 */
 void takeUpBacklash(){
+	takeUpBacklash(false);
+}
+
+void takeUpBacklash(boolean kf_move){
 	USBSerial.println("Taking up backlash");
 	uint8_t wait_required = false;
 	USBSerial.println("Break 1");
@@ -177,13 +181,18 @@ void takeUpBacklash(){
 		}
 	}
 
-	if (wait_required) {
-		unsigned long time = millis();
-		while (millis() - time < MILLIS_PER_SECOND){
-			// Wait a second for backlash takeup to finish
-		}
+	// Can't wait when it's a keyframe move. For some reason this causes the controller to lock	
+	unsigned long time = millis();
+	while (wait_required && !kf_move){
+		// Wait a second for backlash takeup to finish
+		USBSerial.print("Time elapsed: ");
+		USBSerial.println(millis() - time);
+		if (millis() - time > MILLIS_PER_SECOND){
+			USBSerial.println("Done waiting!");
+			break;
+		}	
 	}
-
+	USBSerial.println("Out of loop and moving on!");
 	// Re-set all the motors to their proper microstep settings
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		/*if (!graffikMode())

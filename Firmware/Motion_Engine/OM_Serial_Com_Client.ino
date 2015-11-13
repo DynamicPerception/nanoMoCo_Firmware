@@ -1734,7 +1734,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 20 runs/resumes a keyframe program
 	case 20:
-	{	   
+	{	  			
 		kf_startProgram();	   
 		response(true);
 		break;
@@ -1750,6 +1750,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 22:
 		kf_stopProgram();
 		response(true);
+		break;
+
+	// Command 23 causes the motor backlash to be taken up
+	case 23:
+		// Take up any motor backlash		
+		debugFunctln("Taking up backlash...");
+		takeUpBacklash();
 		break;
 
 

@@ -107,12 +107,7 @@ void kf_startProgram(){
 				
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
-		kf_getMaxCamTime();
-
-		// Take up any motor backlash		
-		debugFunctln("Taking up backlash...");
-		takeUpBacklash();			
-		USBSerial.println("Break 10");
+		kf_getMaxCamTime();				
 
 		// SMS Moves
 		if (Motors::planType() == SMS){
@@ -129,39 +124,30 @@ void kf_startProgram(){
 			joystickSet(false);
 		}
 		// Cont TL and Vid moves
-		else{
-			USBSerial.println("Break 11");
+		else{			
 			// Turn on joystick mode
-			joystickSet(true);
-			USBSerial.println("Break 12");
+			joystickSet(true);			
 			// Set the initial motor speeds			
-			debugFunctln("Setting initial motor speeds...");
-			USBSerial.println("Break 13");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println("Break 14");
+			debugFunctln("Setting initial motor speeds...");			
+			for (byte i = 0; i < MOTOR_COUNT; i++){				
 				// Don't touch motors that don't have any key frames
-				if (kf[i].getKFCount() > 0){
-					USBSerial.println("Break 15");
+				if (kf[i].getKFCount() > 0){					
 					// If the first key frame isn't at x == 0 (i.e. there is a lead-in), set velocity to 0
 					if (kf[i].getXN(0) == 0){
-						USBSerial.println("Break 1");
 						setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
 					}
 					else{
-						USBSerial.println("Break 16");
 						setJoystickSpeed(i, 0);
 					}
 				}
 			}
 		}
 
-		// Initialize the run timers		
-		USBSerial.println("Break 17");
+		// Initialize the run timers				
 		debugFunctln("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
 		kf_last_update = millis();		
-		USBSerial.println("Break 18");
 	}
 
 	// Turn on the key frame program flag and turn the paused flag off
@@ -217,7 +203,6 @@ void kf_stopProgram(){
 }
 
 void kf_updateProgram(){
-	USBSerial.println("Break 19");
 
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
@@ -231,11 +216,10 @@ void kf_updateProgram(){
 
 	// Update run_time, don't include time spent paused
 	kf_run_time = millis() - kf_start_time - kf_pause_time;
-
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Run time: ");
-		USBSerial.println(kf_run_time);
-	}
+		
+	debugFunct("Run time: ");
+	debugFunctln(kf_run_time);
+	
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
@@ -246,8 +230,7 @@ void kf_updateProgram(){
 
 	
 	// Continuous move update	
-	if (Motors::planType() != SMS){
-		USBSerial.println("About to update speed");
+	if (Motors::planType() != SMS){		
 		kf_updateContSpeed();
 	}
 
@@ -259,12 +242,9 @@ void kf_updateProgram(){
 	if (Motors::planType() == SMS){
 		kf_updateSMS();
 	}
-	USBSerial.println("Break 20");
+
 	// Check to see if the program is done
 	if (kf_run_time > kf_getMaxCamTime()){
-		USBSerial.println(kf_run_time);
-		USBSerial.println(kf_getMaxCamTime());
-		USBSerial.println("Program done!");
 		kf_stopProgram();
 	}
 }
@@ -273,19 +253,14 @@ void kf_updateContSpeed(){
 
 	// If the update time has elapsed, update the motor speed
 	if (millis() - kf_last_update > KeyFrames::updateRate()){
-		USBSerial.println("Break 21");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			USBSerial.println("Break 22");
 			// Determine the maximum run time for this axis
 			float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
-			USBSerial.println("Break 23");
 			if (Motors::planType() == SMS)
-				USBSerial.println("Break 24");
 				thisAxisMaxTime = thisAxisMaxTime * Camera.intervalTime();
 
 			// Set the approriate speed, but don't touch motors that don't have any key frames
 			if (kf[i].getKFCount() > 0){
-				USBSerial.println("Break 25");
 				float speed;
 				if (kf_run_time > thisAxisMaxTime)
 					speed = 0;
@@ -300,9 +275,6 @@ void kf_updateContSpeed(){
 			}
 		}
 		kf_last_update = millis();
-	}
-	else{
-		USBSerial.println("not time to update yet");
 	}
 }
 
