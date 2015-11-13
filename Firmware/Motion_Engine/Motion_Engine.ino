@@ -514,6 +514,13 @@ void loop() {
 		debug_time = millis();
 	}
 
+	// Print debug information if necessary
+	if ((millis() - debug_time) > 5000) {
+		//motorDebug();
+		debug_time = millis();
+		USBSerial.println("Controller still alive");
+	}
+
 		
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
