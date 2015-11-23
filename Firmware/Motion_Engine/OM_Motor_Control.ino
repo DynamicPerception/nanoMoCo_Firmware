@@ -139,6 +139,75 @@ byte motorSleep(byte p_motor) {
 
 
 /*
+	void takeUpBackLash()
+
+	This function checks which motors have backlash and take it up.
+	This is determined by comparing their last direction to the direction
+	they will need to move to get to their program stop position.
+
+*/
+void takeUpBacklash(){
+	takeUpBacklash(false);
+}
+
+void takeUpBacklash(boolean kf_move){
+	USBSerial.println("Taking up backlash");
+	uint8_t wait_required = false;
+	USBSerial.println("Break 1");
+	// Check each motor to see if it needs backlash compensation
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		USBSerial.println("Break 2");
+		if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
+			USBSerial.println("Break 3");
+			// Indicate that a brief pause is necessary after starting the motors
+			wait_required = true;
+			USBSerial.println("Break 4");
+
+			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
+			/*if (!graffikMode())
+				motor[i].ms(4);*/
+			USBSerial.println("Break 5");
+			motor[i].contSpeed(mot_max_speed);
+
+			USBSerial.println("Break 6");
+			// Determine the direction of the programmed move
+			uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
+			USBSerial.println("Break 7");
+			// Move the motor 1 step in that direction to force the backlash takeup
+			motor[i].move(dir, 1);
+			USBSerial.println("Break 8");
+			startISR();
+			USBSerial.println("Break 9");
+		}
+	}
+
+	// Can't wait when it's a keyframe move. For some reason this causes the controller to lock	
+	unsigned long time = millis();
+	while (wait_required && !kf_move){
+		// Wait a second for backlash takeup to finish
+		USBSerial.print("Time elapsed: ");
+		USBSerial.println(millis() - time);
+		if (millis() - time > MILLIS_PER_SECOND){
+			USBSerial.println("Done waiting!");
+			break;
+		}	
+	}
+	USBSerial.println("Out of loop and moving on!");
+	// Re-set all the motors to their proper microstep settings
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		/*if (!graffikMode())
+			msAutoSet(i);*/
+
+		// Print debug info if proper flag is set
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print("Microsteps: ");
+			USBSerial.println(motor[i].ms());
+		}
+	}
+}
+
+
+/*
 	void startProgramCom()
 
 	Runs all pre-program checks after a start program command is received from a master device. 
@@ -158,52 +227,14 @@ void startProgramCom() {
 
 		// Reset the program completion flag
 		program_complete = false;
-
-		uint8_t wait_required = false;
-
-		// Check each motor to see if it needs backlash compensation
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
-
-				// Indicate that a brief pause is necessary after starting the motors
-				wait_required = true;
-
-				// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-				motor[i].ms(4);
-				motor[i].contSpeed(mot_max_speed);
-
-				// Determine the direction of the programmed move
-				uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
-
-				// Move the motor 1 step in that direction to force the backlash takeup
-				motor[i].move(dir, 1);
-				startISR();
-			}
-		}
-
-		if (wait_required) {
-			unsigned long time = millis();
-			while (millis() - time < MILLIS_PER_SECOND){
-				// Wait a second for backlash takeup to finish
-			}
-		}
-
-		// Re-set all the motors to their proper microstep settings
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			msAutoSet(i);
-
-			// Print debug info if proper flag is set
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Microsteps: ");
-				USBSerial.println(motor[i].ms());
-			}
-		}
+		
+		takeUpBacklash();		
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
 		if (Motors::planType() == SMS) {
 			
 			// Determine the max time in seconds allowed for moving the motors
-			float max_move_time = (Camera.interval - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+			float max_move_time = (Camera.intervalTime() - Camera.triggerTime() - Camera.delayTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 			// If there's lots of time for moving, only use 1 second so we don't waste battery life getting to the destination
 			if (max_move_time > 0.5)
 				max_move_time = 0.5;
@@ -231,28 +262,28 @@ void startProgramCom() {
 	// Don't start a new program if one is already running
 	if (!running) {
 
-		if (usb_debug & DB_FUNCT){
-			USBSerial.println("Motor distances:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
-			}
-			USBSerial.println("Motor start:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].startPos());
-			}
-			USBSerial.println("Motor stop:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos());
-			}
-			USBSerial.println("Motor current:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].currentPos());
-			}
-			USBSerial.println("Motor travel:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].planTravelLength());
-			}
+		
+		debugFunctln("Motor distances:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos() - motor[i].currentPos());
 		}
+		debugFunctln("Motor start:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].startPos());
+		}
+		debugFunctln("Motor stop:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos());
+		}
+		debugFunctln("Motor current:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].currentPos());
+		}
+		debugFunctln("Motor travel:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].planTravelLength());
+		}
+		
 
 		//if it was paused and not SMS then recalculate move from pause time
 		if (was_pause && Motors::planType() != SMS){
@@ -326,7 +357,8 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 		comparison_speed = 8000.0;																						// All external intervalometer moves will run at top speed in 8th stepping mode
 		steps_per_move = motor[p_motor].getTopSpeed();																	// Maximum number of steps per move
 		max_time_per_move = (steps_per_move / comparison_speed) * MILLIS_PER_SECOND;									// Max time in milliseconds
-		Camera.interval = max_time_per_move - (float)(Camera.delayTime() + Camera.triggerTime() + Camera.focusTime());	// Minimum camera interval
+		unsigned long new_interval = max_time_per_move - (float)(Camera.delayTime() + Camera.triggerTime() + Camera.focusTime());	// Minimum camera interval
+		Camera.intervalTime(new_interval);
 		
 		// Always run in eight steps for external intervalometer mode
 		if (p_autosteps)
@@ -339,7 +371,7 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	if (motor[p_motor].planType() == SMS) {
 
 		// Max time in seconds
-		float max_time_per_move = (float)(Camera.interval - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
+		float max_time_per_move = (float)(Camera.intervalTime() - Camera.delayTime() - Camera.triggerTime() - Camera.focusTime()) / MILLIS_PER_SECOND;
 
 
 		// The "topSpeed" variable in SMS mode is actually the number of steps per move during the constant speed segment
@@ -354,17 +386,15 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 		comparison_speed = motor[p_motor].getTopSpeed();
 	}
 
-	// USB print the debug value, if necessary
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Top speed requested: ");
-		USBSerial.println(comparison_speed);
-	}
+	// USB print the debug value, if necessary	
+	debugFunct("Top speed requested: ");
+	debugFunctln(comparison_speed);
 
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 	// If the requested speed is too high, send error value, don't change microstepping setting
 	if (comparison_speed >= MAX_CUTOFF ) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("Excessive speed requested");
+		
+		debugFunctln("Excessive speed requested");
 		return 0;
 	}
 	else {
@@ -393,7 +423,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-
+	debugFunctln("Trying to auto-set microsteps!!!!");
 	unsigned long time = millis();
 	byte microsteps;
 	
@@ -414,21 +444,19 @@ byte msAutoSet(uint8_t p_motor) {
 		// Save the microstep settings
 		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
-		// USB print the debug value, if necessary
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Requested Microsteps: ");
-			USBSerial.println(microsteps);
-			USBSerial.println("Microsteps successfully set");
-		}
+		// USB print the debug value, if necessary		
+		debugFunct("Requested Microsteps: ");
+		debugFunctln((int)microsteps);
+		debugFunctln("Microsteps successfully set");
+		
 		return microsteps;
 		
 	}	
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
-	else {
-		if (usb_debug & DB_FUNCT)
-				USBSerial.println("Motors are running, can't auto-set microsteps");
-			return false;
+	else {		
+		debugFunctln("Motors are running, can't auto-set microsteps");
+		return false;
 	}
 }
 
@@ -503,6 +531,11 @@ byte pingPongMode() {
 }
 
 void setJoystickSpeed(int p_motor, float p_speed){
+
+	//USBSerial.print("Setting joystick speed, motor ");
+	//USBSerial.print(p_motor);
+	//USBSerial.print(", speed: ");
+	//USBSerial.println(p_speed);
 
 	float old_speed = motor[p_motor].desiredSpeed();
 	float new_speed = p_speed;

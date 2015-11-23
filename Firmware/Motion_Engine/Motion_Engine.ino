@@ -170,8 +170,8 @@ unsigned int    altBeforeMs		= 1000;
 unsigned int     altAfterMs		= 1000;
 uint8_t        altForceShot		= false;
 uint8_t           altExtInt		= false;
-byte           altDirection		= FALLING;
-byte             altOutTrig		= HIGH;
+byte           altDirection		= FALLING;	// The detection edge for aux events
+byte             altOutTrig		= HIGH;		// The voltage the trigger pin should be held in an idle state (i.e. when set HIGH, grounding the port triggers an aux event)
 bool external_intervalometer	= false;	// Indicates whether the aux port has been set to external trigger mode via physical button press
 
 
@@ -192,7 +192,7 @@ const byte CAM_DEFAULT_FOCUS	= 0;
 unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
-boolean		  keep_camera_alive		= false;
+boolean		  keep_camera_alive	= false;
 
 
 /***************************************
@@ -238,8 +238,8 @@ char byteFired = 0;				// Byte used to toggle the step pin for each motor within
 
 
 const float MILLIS_PER_SECOND	= 1000.0;			
-const float MILLIS_PER_FRAME	= 1000.0;			// When in SMS mode, a spline interpolation xn value of 1000 = 1 frame
 const int	FLOAT_TO_FIXED		= 100;				// Multiply any floats to be transmitted in a serial response by this constant. Float responses don't seem to work correctly
+const int	PERCENT_CONVERT		= 100;				// Multiplier to convert 0.0-1.0 range to percent
 
 
 /***************************************
@@ -300,9 +300,9 @@ unsigned long kf_run_time;
 unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
-unsigned long kf_max_time;
-bool kf_program_running = false;
-bool kf_program_paused = false;
+unsigned long kf_last_shot_tm;
+boolean kf_running = false;
+boolean kf_paused = false;
 
 /***************************************
 
@@ -368,9 +368,8 @@ void setup() {
   
 	// Start Bluetooth communications
 	altSerial.begin(9600);
-
-	if (usb_debug & DB_FUNCT)
-		USBSerial.println("setup() - Done setting things up!");
+		
+	debugFunctln("setup() - Done setting things up!");
   
 	// Set controller I/O pin modes
 	pinMode(DEBUG_PIN, OUTPUT);
@@ -436,7 +435,7 @@ void setup() {
   
 	// defaults for motor
 	for( int i = 0; i < MOTOR_COUNT; i++){
-		motor[i].enable(false);
+		motor[i].enable(true);
 		motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 		motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
@@ -490,8 +489,8 @@ void loop() {
 			estop_time = millis();
 		else if (!df_mode && millis() - estop_time > 3000) {
 			ledChase(2);
-			if (usb_debug & DB_FUNCT)
-				USBSerial.print("Entering DF mode");
+			
+			debugFunct("Entering DF mode");
 			// Change motors to 8th stepping before starting DF mode
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				motor[i].ms(8);
@@ -515,6 +514,13 @@ void loop() {
 		debug_time = millis();
 	}
 
+	// Print debug information if necessary
+	if ((millis() - debug_time) > 5000) {
+		//motorDebug();
+		debug_time = millis();
+		USBSerial.println("Controller still alive");
+	}
+
 		
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
@@ -532,7 +538,7 @@ void loop() {
 			motor[i].updateSpline();
 	}	  
 	  
-	// if our program is currently running...      
+	// If a classic-style program is running   
    if( running ) {
 
 		// update program run time
@@ -580,8 +586,10 @@ void loop() {
 			}
 		}
    }
-   else if (kf_program_running){
-	   updateKFProgram();	   
+
+   // If a key frame program is running
+   else if (kf_running){
+	   kf_updateProgram();	   
    }
 
 }
@@ -667,8 +675,8 @@ void eStop() {
 		else if (running && camera_test_mode)
 			stopProgram();
 		
-		else if (kf_program_running){
-			kf_program_running = false;
+		else if (kf_running){
+			kf_running = false;
 			stopAllMotors();
 		}
 
@@ -678,11 +686,10 @@ void eStop() {
 				enable_count++;
 			else
 				enable_count = 1;
-
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("eStop() - Switch count ");
-				USBSerial.println(enable_count);
-			}
+						
+			debugFunct("eStop() - Switch count ");
+			debugFunctln((int)enable_count);
+			
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
 			if (enable_count >= THRESHOLD && !external_intervalometer) {
@@ -750,8 +757,8 @@ uint8_t programPercent() {
 	uint8_t percent_new;
 
 	// If in SMS mode and the camera max shots is less than the longest motor move, use that value instead
-	if (Motors::planType() == SMS && Camera.maxShots < longest_move)
-		longest_move = Camera.maxShots;
+	if (Motors::planType() == SMS && Camera.getMaxShots() < longest_move)
+		longest_move = Camera.getMaxShots();
 
 	// Determine the program percent completion by dividing the current shots by the max shots.
 	// Multiply by 100 to give whole number percent.
@@ -784,25 +791,25 @@ unsigned long totalProgramTime() {
 		if (motor[i].enable()) {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
-				motor_time = Camera.interval * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				if (usb_debug & DB_FUNCT){				
-					USBSerial.print("totalProgramTime() - Motor: ");
-					USBSerial.print(i);
-					USBSerial.print(" Interval: ");
-					USBSerial.print(Camera.interval);
-					USBSerial.print("  Lead in: ");
-					USBSerial.print(motor[i].planLeadIn());
-					USBSerial.print("  Accel: ");
-					USBSerial.print(motor[i].planAccelLength());
-					USBSerial.print("  Travel: ");
-					USBSerial.print(motor[i].planTravelLength());
-					USBSerial.print("  Decel: ");
-					USBSerial.print(motor[i].planDecelLength());
-					USBSerial.print("  Lead out: ");
-					USBSerial.print(motor[i].planLeadOut());
-					USBSerial.print("  Motor time: ");
-					USBSerial.println(motor_time);
-				}
+				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
+				
+				debugFunct("totalProgramTime() - Motor: ");
+				debugFunct((int)i);
+				debugFunct(" Interval: ");
+				debugFunct(Camera.intervalTime());
+				debugFunct("  Lead in: ");
+				debugFunct(motor[i].planLeadIn());
+				debugFunct("  Accel: ");
+				debugFunct(motor[i].planAccelLength());
+				debugFunct("  Travel: ");
+				debugFunct(motor[i].planTravelLength());
+				debugFunct("  Decel: ");
+				debugFunct(motor[i].planDecelLength());
+				debugFunct("  Lead out: ");
+				debugFunct(motor[i].planLeadOut());
+				debugFunct("  Motor time: ");
+				debugFunctln(motor_time);
+				
 			}
 			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
 			else
@@ -929,7 +936,7 @@ uint8_t checkMotorAttach() {
 		motor[i].sleep(true);
 	}
 
-	for (byte i = 0; i < MOTOR_COUNT; i++) {
+	for (int i = 0; i < MOTOR_COUNT; i++) {
 		motor[i].sleep(false);
 		delay(100);
 		// Read the analog value from current sensing pin
@@ -943,12 +950,12 @@ uint8_t checkMotorAttach() {
 			attached |= (1 << i);
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
-		if (usb_debug & DB_FUNCT) {
-			USBSerial.print("Motor ");
-			USBSerial.print(i);
-			USBSerial.print(" current draw: ");
-			USBSerial.println(amps);
-		}
+		
+		debugFunct("Motor ");
+		debugFunct(i);
+		debugFunct(" current draw: ");
+		debugFunctln(amps);
+		
 	}
 
 	// Restore the saved sleep states
@@ -1061,3 +1068,76 @@ void appMode(bool p_setting) {
 bool appMode() {
 	return app_mode;
 }
+
+void debugFunct(byte val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(int val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(float val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(unsigned long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(val);
+	}
+}
+
+void debugFunct(String msg){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.print(msg);
+	}
+}
+
+void debugFunctln(byte val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(int val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(float val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(unsigned long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(long val){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(val);
+	}
+}
+
+void debugFunctln(String msg){
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println(msg);
+	}
+}
+

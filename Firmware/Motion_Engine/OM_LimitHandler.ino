@@ -206,13 +206,10 @@ void altConnect(byte p_which, byte p_mode) {
 				attachInterrupt(3, altISRTwo, altDirection);
 				break;
 		}
-	} else {
-    
-		// it's an output mode
-    
+	} else {    
+		// it's an output mode    
 		pinMode(pin, OUTPUT);
-		digitalWrite(pin, ! altOutTrig);
-    
+		digitalWrite(pin, ! altOutTrig);    
 	}
  
   

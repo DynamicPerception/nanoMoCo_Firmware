@@ -49,13 +49,12 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-	/*if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Entering function");*/
+
+	debugFunctln("cycleCamera() - Entering function");
 
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
 	if (pause_flag) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Pausing program");
+		debugFunctln("cycleCamera() - Pausing program");
 		pauseProgram();
 	}
 
@@ -64,7 +63,7 @@ void cycleCamera() {
 	bool sms_done = false;
 	bool continuous_done = false;
 	if (Motors::planType() == SMS)
-		sms_done = Camera.maxShots > 0 && camera_fired > Camera.maxShots;		
+		sms_done = Camera.getMaxShots() > 0 && camera_fired > Camera.getMaxShots();		
 	else if (Motors::planType() != SMS){
 		continuous_done = true;
 		for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -90,17 +89,16 @@ void cycleCamera() {
 		  ready_to_stop = false;
 
 		  // Debug output
-		  if (usb_debug & DB_FUNCT) {
-			  USBSerial.println("cycleCamera() - All motors done moving!");
-			  if ((totalProgramTime() - last_run_time) > 0) {
-				  USBSerial.println(totalProgramTime());
-				  USBSerial.println(last_run_time);
-				  USBSerial.print("cycleCamera() - There are ");
-				  USBSerial.print((long)totalProgramTime() - (long)last_run_time);
-				  USBSerial.println("ms of lead-out time remaining");
-			  }
-
+		  debugFunctln("cycleCamera() - All motors done moving!");
+		  if ((totalProgramTime() - last_run_time) > 0) {
+			  debugFunctln(totalProgramTime());
+			  debugFunctln(last_run_time);
+			  debugFunct("cycleCamera() - There are ");
+			  debugFunct((long)totalProgramTime() - (long)last_run_time);
+			  debugFunctln("ms of lead-out time remaining");
 		  }
+
+		
 	  }
 
 		// stop program running w/o clearing variables
@@ -149,7 +147,7 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable || external_intervalometer ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.intervalTime() || !Camera.enable || external_intervalometer ) {
 
 	  if (usb_debug & DB_FUNCT){
 		  USBSerial.print("cycleCamera() - Shots: ");
@@ -239,10 +237,10 @@ uint8_t cycleShotOK(uint8_t p_prealt) {
 	  }
   
 	// pre--output clearance check
-	if(altBeforeDelay >= Camera.interval && !altBlock){  //Camera.interval is less than the altBeforeDelay, go as fast as possible
+	if(altBeforeDelay >= Camera.intervalTime() && !altBlock){  //Camera.intervalTime() is less than the altBeforeDelay, go as fast as possible
 		return true;
 	} 
-	else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
+	else if( (millis() - camera_tm) >= (Camera.intervalTime() - altBeforeDelay)  && ! altBlock )
 		return true;
 
   

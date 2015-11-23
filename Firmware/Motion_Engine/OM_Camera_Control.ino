@@ -67,14 +67,12 @@ void camCallBack(byte code) {
   // function is called in an interrupt and can daisy-chain under certain configurations,
   // which can result in unexpected behavior
   
-  if( code == OM_CAM_FFIN ) {
-	  if (usb_debug & DB_FUNCT)
-		USBSerial.println("camCallBack() - Entering exposure state");
+  if( code == OM_CAM_FFIN ) {	  
+	  debugFunctln("camCallBack() - Entering exposure state");
 	  Engine.state(ST_EXP);
   }
-  else if( code == OM_CAM_EFIN ) {
-	if (usb_debug & DB_FUNCT)
-	  USBSerial.println("camCallBack() - Entering wait state");
+  else if( code == OM_CAM_EFIN ) {	
+	debugFunctln("camCallBack() - Entering wait state");
 	camera_fired++;
     Engine.state(ST_WAIT);
   }
@@ -135,10 +133,10 @@ void cameraTest(uint8_t p_start) {
 		}
 
 		// Remember the current max shots setting
-		old_max_shots = Camera.maxShots;
+		old_max_shots = Camera.getMaxShots();
 
 		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
-		Camera.maxShots = 10000;
+		Camera.setMaxShots(10000);
 
 		// Starting the program will make the camera fire, but the motors won't move
 		startProgram();
@@ -155,7 +153,7 @@ void cameraTest(uint8_t p_start) {
 		for (byte i = 0; i < MOTOR_COUNT; i++)
 			motor[i].enable(old_enable[i]);
 
-		Camera.maxShots = old_max_shots;
+		Camera.setMaxShots(old_max_shots);
 
 		// Reset the shot count to 0
 		camera_fired = 0;
@@ -196,7 +194,7 @@ void cameraAutoMaxShots() {
 			longest = current;
 	}
 
-	Camera.maxShots = longest;
+	Camera.setMaxShots(longest);
 }
 
 
