@@ -917,9 +917,13 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 5 set motor's backlash amount  
 	case 5:
-		motor[subaddr - 1].backlash(Node.ntoui(input_serial_buffer));
+	{
+		USBSerial.println("Backlash from serial");
+		unsigned int in_val = Node.ntoui(input_serial_buffer);		
+		motor[subaddr - 1].backlash(in_val);
 		response(true);
 		break;
+	}
     
 	//Command 6 set the microstep for the motor
 	case 6:
@@ -965,8 +969,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 11 send motor to home limit
 	case 11:
 		// Move at the maximum motor speed
-		if (!graffikMode())
-			motor[subaddr - 1].ms(4);
+		/*if (!graffikMode())
+			motor[subaddr - 1].ms(4);*/
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		// send a motor home
@@ -978,8 +982,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 12 send motor to end limit
 	case 12:
 		// Move at the maximum motor speed
-		if (!graffikMode())
-			motor[subaddr - 1].ms(4);
+		//if (!graffikMode())
+		//	motor[subaddr - 1].ms(4);
 		motor[subaddr - 1].contSpeed(mot_max_speed);
 
 		motor[subaddr - 1].moveToEnd();
@@ -1172,7 +1176,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 31 sends the motor to the specified position
 	case 31:
 	{
-		long pos = Node.ntoul(input_serial_buffer);
+		long pos = Node.ntol(input_serial_buffer);
 		sendTo(subaddr - 1, pos);
 		response(true);
 		break;
@@ -1683,11 +1687,17 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		int axis = KeyFrames::getAxis();
 				
 		// Set the start and stop positions from first and last key points			
-		int start = kf[axis].getFN(0);
-		motor[axis].startPos(start);
+		if (kf[axis].getKFCount() > 1){
+			long start = kf[axis].getFN(0);
+			motor[axis].startPos(start);
 
-		int stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
-		motor[axis].stopPos(stop);
+			long stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
+			motor[axis].stopPos(stop);
+		}
+		else{
+			motor[axis].startPos(motor[axis].currentPos());
+			motor[axis].stopPos(motor[axis].currentPos());
+		}
 
 		if (usb_debug & DB_GEN_SER){
 			USBSerial.print("Axis ");
@@ -1724,7 +1734,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 20 runs/resumes a keyframe program
 	case 20:
-	{	   
+	{	  			
 		kf_startProgram();	   
 		response(true);
 		break;
@@ -1740,6 +1750,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 22:
 		kf_stopProgram();
 		response(true);
+		break;
+
+	// Command 23 causes the motor backlash to be taken up
+	case 23:
+		// Take up any motor backlash		
+		debugFunctln("Taking up backlash...");
+		takeUpBacklash();
 		break;
 
 

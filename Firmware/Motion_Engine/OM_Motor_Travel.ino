@@ -60,9 +60,9 @@ void sendToStart(uint8_t p_motor) {
 	else
 		motor[p_motor].programBackCheck(false);
 
-	// Move at the maximum motor speed
-	if (!graffikMode())
-		motor[p_motor].ms(4);
+	//// Move at the maximum motor speed
+	//if (!graffikMode())
+	//	motor[p_motor].ms(4);
 	motor[p_motor].contSpeed(mot_max_speed);
 
 	// Start the move
@@ -72,9 +72,9 @@ void sendToStart(uint8_t p_motor) {
 
 void sendToStop(uint8_t p_motor){
 
-	// Move at the maximum motor speed
-	if (!graffikMode())
-		motor[p_motor].ms(4);
+	//// Move at the maximum motor speed
+	//if (!graffikMode())
+	//	motor[p_motor].ms(4);
 	motor[p_motor].contSpeed(mot_max_speed);
 
 	motor[p_motor].moveToStop();
@@ -83,10 +83,10 @@ void sendToStop(uint8_t p_motor){
 
 void sendTo(uint8_t p_motor, long p_pos){
 	
-	// When not in Graffik Mode (i.e. App mode), use the lowest microsteps
-	if (!graffikMode()){
-		motor[p_motor].ms(4);		
-	}
+	//// When not in Graffik Mode (i.e. App mode), use the lowest microsteps
+	//if (!graffikMode()){
+	//	motor[p_motor].ms(4);		
+	//}
 
 	// Move at the maximum motor speed
 	motor[p_motor].contSpeed(mot_max_speed);
