@@ -107,12 +107,7 @@ void kf_startProgram(){
 				
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
-		kf_getMaxCamTime();
-
-		// Take up any motor backlash		
-		debugFunctln("Taking up backlash...");
-		takeUpBacklash();			
-				
+		kf_getMaxCamTime();				
 
 		// SMS Moves
 		if (Motors::planType() == SMS){
@@ -129,25 +124,26 @@ void kf_startProgram(){
 			joystickSet(false);
 		}
 		// Cont TL and Vid moves
-		else{
+		else{			
 			// Turn on joystick mode
-			joystickSet(true);
-
+			joystickSet(true);			
 			// Set the initial motor speeds			
-			debugFunctln("Setting initial motor speeds...");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln("Setting initial motor speeds...");			
+			for (byte i = 0; i < MOTOR_COUNT; i++){				
 				// Don't touch motors that don't have any key frames
-				if (kf[i].getKFCount() > 0){
+				if (kf[i].getKFCount() > 0){					
 					// If the first key frame isn't at x == 0 (i.e. there is a lead-in), set velocity to 0
-					if (kf[i].getXN(0) == 0)
+					if (kf[i].getXN(0) == 0){
 						setJoystickSpeed(i, kf[i].vel(0) * MILLIS_PER_SECOND);
-					else
+					}
+					else{
 						setJoystickSpeed(i, 0);
+					}
 				}
 			}
 		}
 
-		// Initialize the run timers		
+		// Initialize the run timers				
 		debugFunctln("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
@@ -220,11 +216,10 @@ void kf_updateProgram(){
 
 	// Update run_time, don't include time spent paused
 	kf_run_time = millis() - kf_start_time - kf_pause_time;
-
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Run time: ");
-		USBSerial.println(kf_run_time);
-	}
+		
+	debugFunct("Run time: ");
+	debugFunctln(kf_run_time);
+	
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
@@ -235,7 +230,7 @@ void kf_updateProgram(){
 
 	
 	// Continuous move update	
-	if (Motors::planType() != SMS){
+	if (Motors::planType() != SMS){		
 		kf_updateContSpeed();
 	}
 
@@ -258,9 +253,7 @@ void kf_updateContSpeed(){
 
 	// If the update time has elapsed, update the motor speed
 	if (millis() - kf_last_update > KeyFrames::updateRate()){
-
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-
 			// Determine the maximum run time for this axis
 			float thisAxisMaxTime = kf[i].getXN(kf[i].getKFCount() - 1);
 			if (Motors::planType() == SMS)

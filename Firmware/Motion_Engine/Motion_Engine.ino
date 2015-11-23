@@ -435,7 +435,7 @@ void setup() {
   
 	// defaults for motor
 	for( int i = 0; i < MOTOR_COUNT; i++){
-		motor[i].enable(false);
+		motor[i].enable(true);
 		motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
 		motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
@@ -512,6 +512,13 @@ void loop() {
 	if ((usb_debug & DB_STEPS) && (millis() - debug_time) > 500) {
 		motorDebug();
 		debug_time = millis();
+	}
+
+	// Print debug information if necessary
+	if ((millis() - debug_time) > 5000) {
+		//motorDebug();
+		debug_time = millis();
+		USBSerial.println("Controller still alive");
 	}
 
 		
