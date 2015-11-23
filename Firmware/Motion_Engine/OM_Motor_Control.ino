@@ -193,17 +193,6 @@ void takeUpBacklash(boolean kf_move){
 		}	
 	}
 	USBSerial.println("Out of loop and moving on!");
-	// Re-set all the motors to their proper microstep settings
-	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		/*if (!graffikMode())
-			msAutoSet(i);*/
-
-		// Print debug info if proper flag is set
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Microsteps: ");
-			USBSerial.println(motor[i].ms());
-		}
-	}
 }
 
 
@@ -229,6 +218,18 @@ void startProgramCom() {
 		program_complete = false;
 		
 		takeUpBacklash();		
+
+		// Re-set all the motors to their proper microstep settings
+		for (byte i = 0; i < MOTOR_COUNT; i++) {
+			if (!graffikMode())
+				msAutoSet(i);
+
+			// Print debug info if proper flag is set
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("Microsteps: ");
+				USBSerial.println(motor[i].ms());
+			}
+		}
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible
 		if (Motors::planType() == SMS) {
