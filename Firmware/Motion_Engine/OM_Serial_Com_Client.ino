@@ -531,8 +531,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 			   byte mode = input_serial_buffer[0];			   
 			   joystickSet(mode);
-			   USBSerial.print("incoming request for joystick mode: ");
-			   USBSerial.println(mode);
+			   if (usb_debug & DB_GEN_SER){
+				   USBSerial.print("incoming request for joystick mode: ");
+				   USBSerial.println(mode);
+			   }
 			   response(true);
 			   break;
 	}
@@ -918,7 +920,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 5 set motor's backlash amount  
 	case 5:
 	{
-		USBSerial.println("Backlash from serial");
+		if (usb_debug & DB_GEN_SER){
+			USBSerial.println("Backlash from serial");
+		}
 		unsigned int in_val = Node.ntoui(input_serial_buffer);		
 		motor[subaddr - 1].backlash(in_val);
 		response(true);

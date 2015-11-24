@@ -89,7 +89,15 @@ void sendTo(uint8_t p_motor, long p_pos){
 	//}
 
 	// Move at the maximum motor speed
+	debugFunct("Sending motor ");
+	debugFunct(p_motor);
+	debugFunct(" to position ");
+	debugFunctln(p_pos);
 	motor[p_motor].contSpeed(mot_max_speed);
 	motor[p_motor].moveTo(p_pos, true);
+	debugFunct("Speed: ");
+	debugFunctln(motor[p_motor].contSpeed());
+	debugFunct("Continuous: ");
+	debugFunctln(motor[p_motor].continuous());
 	startISR();
 }

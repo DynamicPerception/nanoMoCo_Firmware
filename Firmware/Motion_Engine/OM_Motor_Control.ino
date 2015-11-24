@@ -151,33 +151,26 @@ void takeUpBacklash(){
 }
 
 void takeUpBacklash(boolean kf_move){
-	USBSerial.println("Taking up backlash");
 	uint8_t wait_required = false;
-	USBSerial.println("Break 1");
 	// Check each motor to see if it needs backlash compensation
-	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		USBSerial.println("Break 2");
-		if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {
-			USBSerial.println("Break 3");
+	for (byte i = 0; i < MOTOR_COUNT; i++) {		
+		if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {			
 			// Indicate that a brief pause is necessary after starting the motors
 			wait_required = true;
-			USBSerial.println("Break 4");
 
 			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
 			/*if (!graffikMode())
 				motor[i].ms(4);*/
-			USBSerial.println("Break 5");
+			
 			motor[i].contSpeed(mot_max_speed);
-
-			USBSerial.println("Break 6");
+						
 			// Determine the direction of the programmed move
 			uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
-			USBSerial.println("Break 7");
+			
 			// Move the motor 1 step in that direction to force the backlash takeup
-			motor[i].move(dir, 1);
-			USBSerial.println("Break 8");
+			motor[i].move(dir, 1);			
 			startISR();
-			USBSerial.println("Break 9");
+			
 		}
 	}
 
@@ -185,14 +178,14 @@ void takeUpBacklash(boolean kf_move){
 	unsigned long time = millis();
 	while (wait_required && !kf_move){
 		// Wait a second for backlash takeup to finish
-		USBSerial.print("Time elapsed: ");
-		USBSerial.println(millis() - time);
+		debugFunct("Time elapsed: ");
+		debugFunctln(millis() - time);
 		if (millis() - time > MILLIS_PER_SECOND){
-			USBSerial.println("Done waiting!");
+			debugFunctln("Done waiting!");
 			break;
 		}	
 	}
-	USBSerial.println("Out of loop and moving on!");
+	debugFunctln("Out of loop and moving on!");
 }
 
 
@@ -225,10 +218,9 @@ void startProgramCom() {
 				msAutoSet(i);
 
 			// Print debug info if proper flag is set
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Microsteps: ");
-				USBSerial.println(motor[i].ms());
-			}
+			debugFunct("Microsteps: ");
+			debugFunctln(motor[i].ms());
+			
 		}
 
 		// When starting an SMS move, if we're only making small moves, set each motor's speed no faster than necessary to produce the smoothest motion possible

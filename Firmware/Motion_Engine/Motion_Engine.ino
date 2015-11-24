@@ -515,10 +515,10 @@ void loop() {
 	}
 
 	// Print debug information if necessary
-	if ((millis() - debug_time) > 5000) {
+	if ((millis() - debug_time) > 2000) {
 		//motorDebug();
-		debug_time = millis();
-		USBSerial.println("Controller still alive");
+		debug_time = millis();		
+		//debugToggle();
 	}
 
 		

@@ -87,6 +87,7 @@ void debugOff() {
   debug_LED = false;
 }
 
+// Toggles the state of the debug LED
 void debugToggle(){
 	if(debug_LED)
 		debugOff();
