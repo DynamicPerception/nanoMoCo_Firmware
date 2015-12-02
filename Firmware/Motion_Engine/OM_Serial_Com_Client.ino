@@ -965,7 +965,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	{
 		long tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
-		OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		//OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 	}
@@ -1293,11 +1293,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 107 reads whether the motor is currently running
 	case 107:
-		response(true, motor[subaddr - 1].running());
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Mot.107 - Motor running? ");
-			USBSerial.println(motor[subaddr - 1].running());
-		}
+		response(true, motor[subaddr - 1].running());		
+		debugSer("Command Mot.107 - Motor running? ");
+		debugSerln(motor[subaddr - 1].running());		
 		break;
 
 	//Command 108 reads the continuous speed for the motor
@@ -1767,7 +1765,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	//*****************KEY FRAME READ COMMANDS********************
 
-	// Command 99 prints the contents of the key frame arrays
+	// Command 99 prints the contents of the key frame arrays to USBSerial
 	case 99:
 	{
 		response(true);
@@ -1776,9 +1774,16 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	}
 
 	// Command 100 returns the number of key frames set
-	case 100:				
-		response(true, kf[KeyFrames::getAxis()].getKFCount());
+	case 100:
+	{
+		int ret = kf[KeyFrames::getAxis()].getKFCount();
+		debugSer("5.100 -- KF count for axis ");
+		debugSer(KeyFrames::getAxis());
+		debugSer(": ");
+		debugSerln(ret);
+		response(true, ret);
 		break;
+	}
 
 	// Command 101 returns motor velocity update interval in milliseconds
 	case 101:
@@ -1818,33 +1823,93 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	// Command 105 returns true if the current spline will not exceed the maximum motor speed for the current axis
 	case 105:
-		response(true, (uint8_t) kf[KeyFrames::getAxis()].validateVel());
+	{
+		uint8_t ret = (uint8_t)kf[KeyFrames::getAxis()].validateAccel();
+		debugSer("5.105 -- Velocity valid for axis ");
+		debugSer(KeyFrames::getAxis());
+		debugSer(": ");
+		debugSerln(ret);
+		response(true, ret);
 		break;
+	}
 
 	// Command 106 returns true if the current spline will not exceed the maximum motor speed for the current axis
 	case 106:
-		response(true, (uint8_t) kf[KeyFrames::getAxis()].validateAccel());
+	{
+		uint8_t ret = (uint8_t)kf[KeyFrames::getAxis()].validateAccel();
+		debugSer("5.106 -- Acceleration valid for axis ");
+		debugSer(KeyFrames::getAxis());
+		debugSer(": ");
+		debugSerln(ret);
+		response(true, ret);
+		break;
+	}
+
+	// Command 107 returns the currently set key frame continuous video duration
+	case 107:
+		debugSer("5.107 -- Kf program cont. video duration: ");
+		debugSer(KeyFrames::getContVidTime());
+		debugSerln(" ms:");
+		response(true, KeyFrames::getContVidTime());
 		break;
 
-	// Command 120 returns true if a key frame program is currently running
+	// Command 120 returns run state of a key frame program: 0 = STOPPED, 1 = RUNNING, 2 = PAUSED
 	case 120:
+		debugSer("5.120 -- Kf program run state: ");
+		debugSerln(kf_getRunState());
 		response(true, kf_getRunState());
 		break;
 
-	// Command 121 returns the current key frame running time
+	// Command 121 returns the current key frame program running time
 	case 121:
+		debugSer("5.121 -- Kf program current run time: ");
+		debugSerln(kf_getRunTime());
 		response(true, kf_getRunTime());
 		break;
 
-	// Command 122 returns the maximum key frame running time
+	// Command 122 returns the maximum key frame program running time
 	case 122:
+		debugSer("5.122 -- Kf program max run time: ");
+		debugSerln(kf_getMaxTime());
 		response(true, kf_getMaxTime());
 		break;
 
-	// Command 123 returns the program percent complete
+	// Command 123 returns the key frame program percent complete
 	case 123:
+		debugSer("5.122 -- Kf program percent done: ");
+		debugSerln(kf_getPercentDone());
 		response(true, kf_getPercentDone());
 		break;
+
+	// Command 130 returns the time position of the requested key frame for the current axis
+	case 130:
+	{
+		int in_val = Node.ntoi(input_serial_buffer);
+		long ret = kf[KeyFrames::getAxis()].getXN(in_val);
+		debugSer("5.130 -- Time position of axis ");
+		debugSer(KeyFrames::getAxis());
+		debugSer(", KF ");
+		debugSer(in_val);
+		debugSer(": ");
+		debugSer(ret);
+		debugSerln(" ms");
+		response(true, ret);
+		break;
+	}
+	// Command 131 returns the step position of the requested key frame for the current axis
+	case 131:
+	{		
+		int in_val = Node.ntoi(input_serial_buffer);
+		long ret = kf[KeyFrames::getAxis()].getFN(in_val);
+		debugSer("5.131 -- Step position of axis ");
+		debugSer(KeyFrames::getAxis());
+		debugSer(", KF ");
+		debugSer(in_val);
+		debugSer(": ");		
+		debugSerln(ret);
+		response(true, ret);
+		break;
+	}
 
 	}// End switch case
 }
