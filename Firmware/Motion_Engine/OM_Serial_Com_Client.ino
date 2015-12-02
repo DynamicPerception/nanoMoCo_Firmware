@@ -956,7 +956,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 9 set motor's home limit
 	case 9:
 		motor[subaddr - 1].homeSet();		
-		eepromWrite();
+		//eepromWrite();
 		response(true);
 	    break;	
 
@@ -965,7 +965,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	{
 		long tempPos = motor[subaddr - 1].currentPos();
 		motor[subaddr - 1].endPos(tempPos);
-		OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		//OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
 		response(true);
 		break;
 	}

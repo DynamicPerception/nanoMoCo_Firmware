@@ -89,12 +89,12 @@ void eepromWrite() {
 	for (int i = 0; i < MOTOR_COUNT; i++){
 		
 		tempPos   = motor[i].currentPos();
-		tempEnd   = motor[i].endPos();		
+		//tempEnd   = motor[i].endPos();		
 		tempMS    = motor[i].ms();
 		tempSleep = motor[i].sleep();
 
 		write(EE_POS_0   + EE_MOTOR_MEMORY_SPACE * i, tempPos);
-		write(EE_END_0   + EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
+		//write(EE_END_0   + EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
 		write(EE_MS_0    + EE_MOTOR_MEMORY_SPACE * i, tempMS);
 		write(EE_SLEEP_0 + EE_MOTOR_MEMORY_SPACE * i, tempSleep);
 		
@@ -125,13 +125,13 @@ void eepromRestore() {
 	for (int i = 0; i < MOTOR_COUNT; i++){
 
 		read(EE_POS_0   + EE_MOTOR_MEMORY_SPACE * i, tempPos);
-		read(EE_END_0   + EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
+		//read(EE_END_0   + EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
 		read(EE_MS_0    + EE_MOTOR_MEMORY_SPACE * i, tempMS);
 		read(EE_SLEEP_0 + EE_MOTOR_MEMORY_SPACE * i, tempSleep);
 		
 		motor[i].ms(tempMS);
 		motor[i].currentPos(tempPos);
-		motor[i].endPos(tempEnd);		
+		//motor[i].endPos(tempEnd);		
 		motor[i].sleep(tempSleep);		
 			
 	}
