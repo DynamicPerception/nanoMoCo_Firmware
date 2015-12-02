@@ -1141,3 +1141,75 @@ void debugFunctln(String msg){
 	}
 }
 
+void debugSer(byte val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(val);
+	}
+}
+
+void debugSer(int val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(val);
+	}
+}
+
+void debugSer(float val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(val);
+	}
+}
+
+void debugSer(unsigned long val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(val);
+	}
+}
+
+void debugSer(long val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(val);
+	}
+}
+
+void debugSer(String msg){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.print(msg);
+	}
+}
+
+void debugSerln(byte val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(val);
+	}
+}
+
+void debugSerln(int val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(val);
+	}
+}
+
+void debugSerln(float val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(val);
+	}
+}
+
+void debugSerln(unsigned long val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(val);
+	}
+}
+
+void debugSerln(long val){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(val);
+	}
+}
+
+void debugSerln(String msg){
+	if (usb_debug & DB_GEN_SER){
+		USBSerial.println(msg);
+	}
+}
+
