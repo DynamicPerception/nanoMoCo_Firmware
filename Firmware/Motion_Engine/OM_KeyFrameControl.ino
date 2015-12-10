@@ -72,19 +72,12 @@ void kf_startProgram(){
 		
 	// If resuming
 	if (kf_paused){
-
-		USBSerial.println("Resuming KF program");
-
+			
 		// Add the time of the last pause to the total pause time counter
 		kf_pause_time += kf_this_pause;
 	}
 	// If starting a new program
 	else{
-
-		USBSerial.print("Starting new type ");
-		USBSerial.print(Motors::planType());
-		USBSerial.println(" KF program");
-		
 		// Reset the SMS vars
 		kf_okForSmsMove = false;
 		kf_curSmsFrame = 0;
@@ -110,20 +103,16 @@ void kf_startProgram(){
 		kf_getMaxMoveTime();
 		kf_getMaxCamTime();
 
-		// Take up any motor backlash
-		USBSerial.println("Taking up backlash...");
+		// Take up any motor backlash		
 		takeUpBacklash();			
 				
 
 		// SMS Moves
 		if (Motors::planType() == SMS){
-			// Convert from "frames" to real milliseconds, based upon the camera interval			
-			USBSerial.print("Camera interval");
-			USBSerial.println(Camera.intervalTime());
-			USBSerial.print("Program move time in milliseconds: ");
-			USBSerial.println(kf_getMaxMoveTime());
-			USBSerial.print("Program cam time in milliseconds: ");
-			USBSerial.println(kf_getMaxCamTime());
+			// Convert from "frames" to real milliseconds, based upon the camera interval						
+			Camera.intervalTime();			
+			kf_getMaxMoveTime();
+			kf_getMaxCamTime();
 			// Make sure joystick mode is off, then set move speed for the motors
 			joystickSet(false);
 		}
@@ -132,8 +121,7 @@ void kf_startProgram(){
 			// Turn on joystick mode
 			joystickSet(true);
 
-			// Set the initial motor speeds
-			USBSerial.println("Setting initial motor speeds...");
+			// Set the initial motor speeds			
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				// Don't touch motors that don't have any key frames
 				if (kf[i].getKFCount() > 0){
@@ -147,7 +135,6 @@ void kf_startProgram(){
 		}
 
 		// Initialize the run timers
-		USBSerial.println("Initializing run timers...");
 		kf_run_time = 0;
 		kf_start_time = millis();
 		kf_last_update = millis();		
