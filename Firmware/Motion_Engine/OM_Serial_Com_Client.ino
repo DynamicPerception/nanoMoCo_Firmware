@@ -1169,7 +1169,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 31 sends the motor to the specified position
 	case 31:
 	{
-		long pos = Node.ntoul(input_serial_buffer);
+		long pos = Node.ntol(input_serial_buffer);
 		sendTo(subaddr - 1, pos);
 		response(true);
 		break;
