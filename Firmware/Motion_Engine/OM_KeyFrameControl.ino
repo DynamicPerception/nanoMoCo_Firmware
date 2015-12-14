@@ -151,13 +151,16 @@ void kf_startProgram(){
 
 void kf_pauseProgram(){
 
-	if (usb_debug & DB_FUNCT)
+	if (usb_debug & DB_FUNCT){
 		USBSerial.print("PAUSING KF PROGRAM");
+	}
 
 	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){
-		USBSerial.print("Stopping motor ");
-		USBSerial.println(i);
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print("Stopping motor ");
+			USBSerial.println(i);
+		}
 		setJoystickSpeed(i, 0);
 	}
 
@@ -173,8 +176,9 @@ void kf_pauseProgram(){
 
 void kf_stopProgram(){
 
-	if (usb_debug & DB_FUNCT)
+	if (usb_debug & DB_FUNCT){
 		USBSerial.print("STOPPING KF PROGRAM");
+	}
 
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -280,7 +284,9 @@ void kf_updateSMS(){
 	}
 
 	// Send the motors to their next locations
-	USBSerial.println("Sending motors to new locations");
+	if (usb_debug & DB_FUNCT){
+		USBSerial.println("Sending motors to new locations");
+	}
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
 		// Make sure there is a point to actually query
@@ -288,12 +294,13 @@ void kf_updateSMS(){
 			continue;
 
 		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
-		
-		USBSerial.print("About to send to location #: ");
-		USBSerial.println(kf_curSmsFrame + 1);		
-		USBSerial.print("Sending to ");
-		USBSerial.println(nextPos);		
-		USBSerial.println("");
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print("About to send to location #: ");
+			USBSerial.println(kf_curSmsFrame + 1);
+			USBSerial.print("Sending to ");
+			USBSerial.println(nextPos);
+			USBSerial.println("");
+		}
 		sendTo(i, (long)nextPos);		
 		
 	}		
@@ -308,8 +315,9 @@ void kf_CameraCheck() {
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
 	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {
-		if (usb_debug & DB_FUNCT)
+		if (usb_debug & DB_FUNCT){
 			USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
+		}
 		return;
 	}
 
@@ -344,8 +352,9 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			if (usb_debug & DB_FUNCT)
+			if (usb_debug & DB_FUNCT){
 				USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+			}
 			kf_auxFired = true;
 			return;
 		}
@@ -363,8 +372,10 @@ void kf_CameraCheck() {
 	// Trigger the focus
 	if (!kf_focusDone){
 		if (!kf_focusFired){
-			USBSerial.print("Time at focus: ");
-			USBSerial.println(kf_run_time);
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("Time at focus: ");
+				USBSerial.println(kf_run_time);
+			}
 			Camera.focus();
 			kf_focusFired = true;
 			return;
@@ -380,8 +391,10 @@ void kf_CameraCheck() {
 	// Trigger the exposure
 	if (!kf_shutterDone){
 		if (!kf_shutterFired){
-			USBSerial.print("Time at exposure: ");
-			USBSerial.println(kf_run_time);		
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("Time at exposure: ");
+				USBSerial.println(kf_run_time);
+			}
 			Camera.expose();
 			kf_shutterFired = true;
 		}
@@ -394,7 +407,9 @@ void kf_CameraCheck() {
 		kf_forceShotInProgress = false;
 
 		// One the camera functions are complete, it's okay to make the next SMS move
-		USBSerial.println("Shutter done, ready for move");
+		if (usb_debug & DB_FUNCT){
+			USBSerial.println("Shutter done, ready for move");
+		}
 		kf_okForSmsMove = true;
 	}
 
@@ -500,15 +515,21 @@ long kf_getMaxMoveTime(){
 		// SMS and cont. TL mode 
 		if (Motors::planType() != CONT_VID){			
 			move_time = Camera.getMaxShots() * Camera.intervalTime();
-			USBSerial.print("Getting TL move time: ");			
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("Getting TL move time: ");
+			}
 		}
 		// Continuous video mode
 		else{			
 			move_time = KeyFrames::getContVidTime();			
-			USBSerial.print("Getting video move time: ");			
+			if (usb_debug & DB_FUNCT){
+				USBSerial.print("Getting video move time: ");
+			}
 		}
-		USBSerial.print(move_time);
-		USBSerial.println("ms");
+		if (usb_debug & DB_FUNCT){
+			USBSerial.print(move_time);
+			USBSerial.println("ms");
+		}
 	}
 
 	return move_time;
