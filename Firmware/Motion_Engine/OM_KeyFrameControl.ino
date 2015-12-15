@@ -151,12 +151,12 @@ void kf_startProgram(){
 
 void kf_pauseProgram(){
 
-	debugFunct("PAUSING KF PROGRAM");
+	debug.funct("PAUSING KF PROGRAM");
 
 	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){	
-		debugFunct("Stopping motor ");
-		debugFunctln(i);	
+		debug.funct("Stopping motor ");
+		debug.functln(i);	
 		setJoystickSpeed(i, 0);
 	}
 
@@ -172,7 +172,7 @@ void kf_pauseProgram(){
 
 void kf_stopProgram(){
 
-	debugFunct("STOPPING KF PROGRAM");
+	debug.funct("STOPPING KF PROGRAM");
 	
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -196,16 +196,16 @@ void kf_updateProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
 		kf_this_pause = millis() - kf_pause_start;
-		debugFunct("Pause length: ");
-		debugFunctln(kf_this_pause);		
+		debug.funct("Pause length: ");
+		debug.functln(kf_this_pause);		
 		return;
 	}
 
 	// Update run_time, don't include time spent paused
 	kf_run_time = millis() - kf_start_time - kf_pause_time;
 		
-	debugFunct("Run time: ");
-	debugFunctln(kf_run_time);	
+	debug.funct("Run time: ");
+	debug.functln(kf_run_time);	
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
@@ -273,7 +273,7 @@ void kf_updateSMS(){
 	}
 
 	// Send the motors to their next locations
-	debugFunctln("Sending motors to new locations");
+	debug.functln("Sending motors to new locations");
 	
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
@@ -283,11 +283,11 @@ void kf_updateSMS(){
 
 		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
 	
-		debugFunct("About to send to location #: ");
-		debugFunctln(kf_curSmsFrame + 1);
-		debugFunct("Sending to ");
-		debugFunctln(nextPos);
-		debugFunctln("");
+		debug.funct("About to send to location #: ");
+		debug.functln(kf_curSmsFrame + 1);
+		debug.funct("Sending to ");
+		debug.functln(nextPos);
+		debug.functln("");
 	
 		sendTo(i, (long)nextPos);				
 	}		
@@ -302,7 +302,7 @@ void kf_CameraCheck() {
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
 	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {		
-		debugFunctln("cycleCamera() - Skipping shot, waiting for external trigger");		
+		debug.functln("cycleCamera() - Skipping shot, waiting for external trigger");		
 		return;
 	}
 
@@ -337,7 +337,7 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			debugFunctln("cycleCamera() - Bailing from camera cycle at point 2");			
+			debug.functln("cycleCamera() - Bailing from camera cycle at point 2");			
 			kf_auxFired = true;
 			return;
 		}
@@ -355,8 +355,8 @@ void kf_CameraCheck() {
 	// Trigger the focus
 	if (!kf_focusDone){
 		if (!kf_focusFired){
-			debugFunct("Time at focus: ");
-			debugFunctln(kf_run_time);			
+			debug.funct("Time at focus: ");
+			debug.functln(kf_run_time);			
 			Camera.focus();
 			kf_focusFired = true;
 			return;
@@ -372,8 +372,8 @@ void kf_CameraCheck() {
 	// Trigger the exposure
 	if (!kf_shutterDone){
 		if (!kf_shutterFired){
-			debugFunct("Time at exposure: ");
-			debugFunctln(kf_run_time);
+			debug.funct("Time at exposure: ");
+			debug.functln(kf_run_time);
 			Camera.expose();
 			kf_shutterFired = true;
 		}
@@ -386,7 +386,7 @@ void kf_CameraCheck() {
 		kf_forceShotInProgress = false;
 
 		// One the camera functions are complete, it's okay to make the next SMS move		
-		debugFunctln("Shutter done, ready for move");		
+		debug.functln("Shutter done, ready for move");		
 		kf_okForSmsMove = true;
 	}
 
@@ -492,15 +492,15 @@ long kf_getMaxMoveTime(){
 		// SMS and cont. TL mode 
 		if (Motors::planType() != CONT_VID){			
 			move_time = Camera.getMaxShots() * Camera.intervalTime();
-			debugFunct("Getting TL move time: ");			
+			debug.funct("Getting TL move time: ");			
 		}
 		// Continuous video mode
 		else{			
 			move_time = KeyFrames::getContVidTime();			
-			debugFunct("Getting video move time: ");			
+			debug.funct("Getting video move time: ");			
 		}		
-		debugFunct(move_time);
-		debugFunctln("ms");		
+		debug.funct(move_time);
+		debug.functln("ms");		
 	}
 
 	return move_time;

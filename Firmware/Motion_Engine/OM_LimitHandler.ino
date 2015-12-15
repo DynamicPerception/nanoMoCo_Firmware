@@ -115,7 +115,7 @@ void altHandler(byte p_which) {
     }
     else if( altInputs[p_which] == ALT_EXTINT ) {
         
-		debugSerln("External trigger detected");
+		debug.serln("External trigger detected");
 		
 		// set camera ok to fire
         altForceShot = true;
