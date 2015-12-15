@@ -33,6 +33,7 @@ See dynamicperception.com for more information
 
 
 
+#include "Debug.h"
 #include <MsTimer2.h>
 #include <TimerOne.h>
 #include <EEPROM.h>
@@ -306,27 +307,18 @@ boolean kf_paused = false;
 
 /***************************************
 
-Debugging Constants and Associated Flags
+	Debugging Vars and Objects
 
 ****************************************/
 
-
-byte usb_debug			= B00000000;	// Byte holding debug output flags
-const byte DB_COM_OUT	= B00000001;	// Debug flag -- toggles output of received serial commands
-const byte DB_STEPS		= B00000010;	// Debug flag -- toggles output of motor step information 
-const byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general motor information 
-const byte DB_GEN_SER	= B00001000;	// Debug flag -- toggles output of responses to certain serial commands
-const byte DB_FUNCT		= B00010000;	// Debug flag -- toggles output of debug messages within most functions
-const byte DB_CONFIRM	= B00100000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
 boolean debug_LED = false;
-
+DebugClass debug = DebugClass();
 
 /***************************************
 
 	     Object Initialization
 
 ****************************************/
-
 
 AltSoftSerial altSerial;																			// altSerial library object
 OMMoCoNode   NodeBlue = OMMoCoNode(&altSerial, device_address, SERIAL_VERSION, (char*)SERIAL_TYPE);	// Bluetooth Node Object
@@ -368,8 +360,7 @@ void setup() {
   
 	// Start Bluetooth communications
 	altSerial.begin(9600);
-		
-	debugFunctln("setup() - Done setting things up!");
+	debug.functln("setup() - Done setting things up!");
   
 	// Set controller I/O pin modes
 	pinMode(DEBUG_PIN, OUTPUT);
@@ -489,8 +480,7 @@ void loop() {
 			estop_time = millis();
 		else if (!df_mode && millis() - estop_time > 3000) {
 			ledChase(2);
-			
-			debugFunct("Entering DF mode");
+			debug.funct("Entering DF mode");
 			// Change motors to 8th stepping before starting DF mode
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				motor[i].ms(8);
@@ -509,7 +499,7 @@ void loop() {
 	}	
 
 	// Print debug information if necessary
-	if ((usb_debug & DB_STEPS) && (millis() - debug_time) > 500) {
+	if ((millis() - debug_time) > 500) {
 		motorDebug();
 		debug_time = millis();
 	}
@@ -687,9 +677,8 @@ void eStop() {
 			else
 				enable_count = 1;
 						
-			debugFunct("eStop() - Switch count ");
-			debugFunctln((int)enable_count);
-			
+			debug.funct("eStop() - Switch count ");
+			debug.functln(enable_count);
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
 			if (enable_count >= THRESHOLD && !external_intervalometer) {
@@ -792,24 +781,22 @@ unsigned long totalProgramTime() {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				
-				debugFunct("totalProgramTime() - Motor: ");
-				debugFunct((int)i);
-				debugFunct(" Interval: ");
-				debugFunct(Camera.intervalTime());
-				debugFunct("  Lead in: ");
-				debugFunct(motor[i].planLeadIn());
-				debugFunct("  Accel: ");
-				debugFunct(motor[i].planAccelLength());
-				debugFunct("  Travel: ");
-				debugFunct(motor[i].planTravelLength());
-				debugFunct("  Decel: ");
-				debugFunct(motor[i].planDecelLength());
-				debugFunct("  Lead out: ");
-				debugFunct(motor[i].planLeadOut());
-				debugFunct("  Motor time: ");
-				debugFunctln(motor_time);
-				
+				debug.funct("totalProgramTime() - Motor: ");
+				debug.funct(i);
+				debug.funct(" Interval: ");
+				debug.funct(Camera.intervalTime());
+				debug.funct("  Lead in: ");
+				debug.funct(motor[i].planLeadIn());
+				debug.funct("  Accel: ");
+				debug.funct(motor[i].planAccelLength());
+				debug.funct("  Travel: ");
+				debug.funct(motor[i].planTravelLength());
+				debug.funct("  Decel: ");
+				debug.funct(motor[i].planDecelLength());
+				debug.funct("  Lead out: ");
+				debug.funct(motor[i].planLeadOut());
+				debug.funct("  Motor time: ");
+				debug.functln(motor_time);
 			}
 			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
 			else
@@ -951,11 +938,10 @@ uint8_t checkMotorAttach() {
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
 		
-		debugFunct("Motor ");
-		debugFunct(i);
-		debugFunct(" current draw: ");
-		debugFunctln(amps);
-		
+		debug.funct("Motor ");
+		debug.funct(i);
+		debug.funct(" current draw: ");
+		debug.functln(amps);
 	}
 
 	// Restore the saved sleep states
@@ -967,61 +953,71 @@ uint8_t checkMotorAttach() {
 	return(attached);
 }
 
+/*
+
+=========================================
+		   Debug Functions
+=========================================
+
+*/
+
 void motorDebug() {
 
-	USBSerial.print("Current Steps ");
-	USBSerial.print(motor[0].currentPos());
-	USBSerial.print(" continious Speed: ");
-	USBSerial.print(motor[0].contSpeed());
-	USBSerial.print(" backlash: ");
-	USBSerial.print(motor[0].backlash());
-	USBSerial.print(" startPos: ");
-	USBSerial.print(motor[0].startPos());
-	USBSerial.print(" stopPos: ");
-	USBSerial.print(motor[0].stopPos());
-	USBSerial.print(" endPos: ");
-	USBSerial.print(motor[0].endPos());
-	USBSerial.print(" running: ");
-	USBSerial.print(motor[0].running());
-	USBSerial.print(" enable: ");
-	USBSerial.print(motor[0].enable());
-	USBSerial.print(" Type: ");
-	USBSerial.println(Motors::planType());
-	USBSerial.print(" shots: ");
-	USBSerial.print(camera_fired);
-	USBSerial.print(" leadIn: ");
-	USBSerial.println(motor[0].planLeadIn());
+	if (debug.getState() & DebugClass::DB_STEPS){
+		debug.steps("Current Steps ");
+		debug.steps(motor[0].currentPos());
+		debug.steps(" continious Speed: ");
+		debug.steps(motor[0].contSpeed());
+		debug.steps(" backlash: ");
+		debug.steps(motor[0].backlash());
+		debug.steps(" startPos: ");
+		debug.steps(motor[0].startPos());
+		debug.steps(" stopPos: ");
+		debug.steps(motor[0].stopPos());
+		debug.steps(" endPos: ");
+		debug.steps(motor[0].endPos());
+		debug.steps(" running: ");
+		debug.steps(motor[0].running());
+		debug.steps(" enable: ");
+		debug.steps(motor[0].enable());
+		debug.steps(" Type: ");
+		debug.stepsln(Motors::planType());
+		debug.steps(" shots: ");
+		debug.steps(camera_fired);
+		debug.steps(" leadIn: ");
+		debug.stepsln(motor[0].planLeadIn());
 
-	USBSerial.print("Current Steps ");
-	USBSerial.print(motor[1].currentPos());
-	USBSerial.print(" continious Speed: ");
-	USBSerial.print(motor[1].contSpeed());
-	USBSerial.print(" backlash: ");
-	USBSerial.print(motor[1].backlash());
-	USBSerial.print(" startPos: ");
-	USBSerial.print(motor[1].startPos());
-	USBSerial.print(" stopPos: ");
-	USBSerial.print(motor[1].stopPos());
-	USBSerial.print(" endPos: ");
-	USBSerial.print(motor[1].endPos());
-	USBSerial.print(" Type: ");
-	USBSerial.println(Motors::planType());
-	USBSerial.print(" leadIn: ");
-	USBSerial.println(motor[1].planLeadIn());
+		debug.steps("Current Steps ");
+		debug.steps(motor[1].currentPos());
+		debug.steps(" continious Speed: ");
+		debug.steps(motor[1].contSpeed());
+		debug.steps(" backlash: ");
+		debug.steps(motor[1].backlash());
+		debug.steps(" startPos: ");
+		debug.steps(motor[1].startPos());
+		debug.steps(" stopPos: ");
+		debug.steps(motor[1].stopPos());
+		debug.steps(" endPos: ");
+		debug.steps(motor[1].endPos());
+		debug.steps(" Type: ");
+		debug.stepsln(Motors::planType());
+		debug.steps(" leadIn: ");
+		debug.stepsln(motor[1].planLeadIn());
 
-	USBSerial.print("Current Steps ");
-	USBSerial.print(motor[2].currentPos());
-	USBSerial.print(" continious Speed: ");
-	USBSerial.print(motor[2].contSpeed());
-	USBSerial.print(" backlash: ");
-	USBSerial.print(motor[2].backlash());
-	USBSerial.print(" startPos: ");
-	USBSerial.print(motor[2].startPos());
-	USBSerial.print(" stopPos: ");
-	USBSerial.print(motor[2].stopPos());
-	USBSerial.print(" endPos: ");
-	USBSerial.println(motor[2].endPos());
-	USBSerial.println("");
+		debug.steps("Current Steps ");
+		debug.steps(motor[2].currentPos());
+		debug.steps(" continious Speed: ");
+		debug.steps(motor[2].contSpeed());
+		debug.steps(" backlash: ");
+		debug.steps(motor[2].backlash());
+		debug.steps(" startPos: ");
+		debug.steps(motor[2].startPos());
+		debug.steps(" stopPos: ");
+		debug.steps(motor[2].stopPos());
+		debug.steps(" endPos: ");
+		debug.stepsln(motor[2].endPos());
+		debug.stepsln("");
+	}
 }
 
 
@@ -1067,149 +1063,5 @@ void appMode(bool p_setting) {
 
 bool appMode() {
 	return app_mode;
-}
-
-void debugFunct(byte val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(val);
-	}
-}
-
-void debugFunct(int val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(val);
-	}
-}
-
-void debugFunct(float val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(val);
-	}
-}
-
-void debugFunct(unsigned long val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(val);
-	}
-}
-
-void debugFunct(long val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(val);
-	}
-}
-
-void debugFunct(String msg){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print(msg);
-	}
-}
-
-void debugFunctln(byte val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(val);
-	}
-}
-
-void debugFunctln(int val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(val);
-	}
-}
-
-void debugFunctln(float val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(val);
-	}
-}
-
-void debugFunctln(unsigned long val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(val);
-	}
-}
-
-void debugFunctln(long val){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(val);
-	}
-}
-
-void debugFunctln(String msg){
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println(msg);
-	}
-}
-
-void debugSer(byte val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(val);
-	}
-}
-
-void debugSer(int val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(val);
-	}
-}
-
-void debugSer(float val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(val);
-	}
-}
-
-void debugSer(unsigned long val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(val);
-	}
-}
-
-void debugSer(long val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(val);
-	}
-}
-
-void debugSer(String msg){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.print(msg);
-	}
-}
-
-void debugSerln(byte val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(val);
-	}
-}
-
-void debugSerln(int val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(val);
-	}
-}
-
-void debugSerln(float val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(val);
-	}
-}
-
-void debugSerln(unsigned long val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(val);
-	}
-}
-
-void debugSerln(long val){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(val);
-	}
-}
-
-void debugSerln(String msg){
-	if (usb_debug & DB_GEN_SER){
-		USBSerial.println(msg);
-	}
 }
 
