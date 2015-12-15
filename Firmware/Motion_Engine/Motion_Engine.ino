@@ -962,6 +962,51 @@ uint8_t checkMotorAttach() {
 	return(attached);
 }
 
+/*
+
+=========================================
+		   Debug Functions
+=========================================
+
+*/
+
+
+template <typename T>
+void debugSer(T data){
+	if (usb_debug & DB_GEN_SER)
+		USBSerial.print(data);
+}
+
+template <typename T>
+void debugSerln(T data){
+	if (usb_debug & DB_GEN_SER)
+		USBSerial.println(data);
+}
+
+template <typename T>
+void debugFunct(T data){
+	if (usb_debug & DB_FUNCT)
+		USBSerial.print(data);
+}
+
+template <typename T>
+void debugFunctln(T data){
+	if (usb_debug & DB_FUNCT)
+		USBSerial.println(data);
+}
+
+template <typename T>
+void debugCom(T data){
+	if (usb_debug & DB_COM_OUT)
+		USBSerial.print(data);
+}
+
+template <typename T>
+void debugComln(T data){
+	if (usb_debug & DB_COM_OUT)
+		USBSerial.println(data);
+}
+
 void motorDebug() {
 
 	USBSerial.print("Current Steps ");
