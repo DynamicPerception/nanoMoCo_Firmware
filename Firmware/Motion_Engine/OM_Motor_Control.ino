@@ -184,10 +184,8 @@ void takeUpBacklash(){
 			msAutoSet(i);*/
 
 		// Print debug info if proper flag is set
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Microsteps: ");
-			USBSerial.println(motor[i].ms());
-		}
+		debugFunct("Microsteps: ");
+		debugFunctln(motor[i].ms());		
 	}
 }
 
@@ -246,29 +244,27 @@ void startProgramCom() {
 
 	// Don't start a new program if one is already running
 	if (!running) {
-
-		if (usb_debug & DB_FUNCT){
-			USBSerial.println("Motor distances:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos() - motor[i].currentPos());
-			}
-			USBSerial.println("Motor start:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].startPos());
-			}
-			USBSerial.println("Motor stop:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].stopPos());
-			}
-			USBSerial.println("Motor current:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].currentPos());
-			}
-			USBSerial.println("Motor travel:");
-			for (byte i = 0; i < MOTOR_COUNT; i++){
-				USBSerial.println(motor[i].planTravelLength());
-			}
+		
+		debugFunctln("Motor distances:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos() - motor[i].currentPos());
 		}
+		debugFunctln("Motor start:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].startPos());
+		}
+		debugFunctln("Motor stop:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].stopPos());
+		}
+		debugFunctln("Motor current:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].currentPos());
+		}
+		debugFunctln("Motor travel:");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debugFunctln(motor[i].planTravelLength());
+		}		
 
 		//if it was paused and not SMS then recalculate move from pause time
 		if (was_pause && Motors::planType() != SMS){
@@ -372,16 +368,13 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 	}
 
 	// USB print the debug value, if necessary
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Top speed requested: ");
-		USBSerial.println(comparison_speed);
-	}
+	debugFunct("Top speed requested: ");
+	debugFunctln(comparison_speed);	
 
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 	// If the requested speed is too high, send error value, don't change microstepping setting
-	if (comparison_speed >= MAX_CUTOFF ) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("Excessive speed requested");
+	if (comparison_speed >= MAX_CUTOFF ) {		
+		debugFunctln("Excessive speed requested");
 		return 0;
 	}
 	else {
@@ -410,7 +403,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-	USBSerial.println("Trying to auto-set microsteps!!!!");
+	debugFunctln("Trying to auto-set microsteps!!!!");
 	unsigned long time = millis();
 	byte microsteps;
 	
@@ -432,20 +425,17 @@ byte msAutoSet(uint8_t p_motor) {
 		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
 		// USB print the debug value, if necessary
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Requested Microsteps: ");
-			USBSerial.println(microsteps);
-			USBSerial.println("Microsteps successfully set");
-		}
+		debugFunct("Requested Microsteps: ");
+		debugFunctln(microsteps);
+		debugFunctln("Microsteps successfully set");
 		return microsteps;
 		
 	}	
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
 	else {
-		if (usb_debug & DB_FUNCT)
-				USBSerial.println("Motors are running, can't auto-set microsteps");
-			return false;
+		debugFunctln("Motors are running, can't auto-set microsteps");
+		return false;
 	}
 }
 
@@ -460,11 +450,9 @@ p_input: True or false setting.
 
 void joystickSet(byte p_input) {
 	joystick_mode = p_input;
-
-	if (usb_debug & DB_GEN_SER) {
-		USBSerial.print("Joystick: ");
-		USBSerial.println(joystick_mode);
-	}
+	
+	debugSer("Joystick: ");
+	debugSerln(joystick_mode);	
 
 	// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 	if (joystick_mode){
@@ -521,11 +509,6 @@ byte pingPongMode() {
 
 void setJoystickSpeed(int p_motor, float p_speed){
 
-	//USBSerial.print("Setting joystick speed, motor ");
-	//USBSerial.print(p_motor);
-	//USBSerial.print(", speed: ");
-	//USBSerial.println(p_speed);
-
 	float old_speed = motor[p_motor].desiredSpeed();
 	float new_speed = p_speed;
 
@@ -551,9 +534,7 @@ void setJoystickSpeed(int p_motor, float p_speed){
 		motor[p_motor].continuous(true);
 		motor[p_motor].move(dir, 0);
 		startISR();
-
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("Command Mot.13 - Auto-starting continuous move");
+		debugSerln("Command Mot.13 - Auto-starting continuous move");
 	}
 }
       

@@ -368,9 +368,8 @@ void setup() {
   
 	// Start Bluetooth communications
 	altSerial.begin(9600);
-
-	if (usb_debug & DB_FUNCT)
-		USBSerial.println("setup() - Done setting things up!");
+	
+	debugFunctln("setup() - Done setting things up!");
   
 	// Set controller I/O pin modes
 	pinMode(DEBUG_PIN, OUTPUT);
@@ -490,8 +489,7 @@ void loop() {
 			estop_time = millis();
 		else if (!df_mode && millis() - estop_time > 3000) {
 			ledChase(2);
-			if (usb_debug & DB_FUNCT)
-				USBSerial.print("Entering DF mode");
+			debugFunct("Entering DF mode");
 			// Change motors to 8th stepping before starting DF mode
 			for (byte i = 0; i < MOTOR_COUNT; i++){
 				motor[i].ms(8);
@@ -680,11 +678,9 @@ void eStop() {
 				enable_count++;
 			else
 				enable_count = 1;
-
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("eStop() - Switch count ");
-				USBSerial.println(enable_count);
-			}
+						
+			debugFunct("eStop() - Switch count ");
+			debugFunctln(enable_count);
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
 			if (enable_count >= THRESHOLD && !external_intervalometer) {
@@ -787,24 +783,22 @@ unsigned long totalProgramTime() {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				if (usb_debug & DB_FUNCT){				
-					USBSerial.print("totalProgramTime() - Motor: ");
-					USBSerial.print(i);
-					USBSerial.print(" Interval: ");
-					USBSerial.print(Camera.intervalTime());
-					USBSerial.print("  Lead in: ");
-					USBSerial.print(motor[i].planLeadIn());
-					USBSerial.print("  Accel: ");
-					USBSerial.print(motor[i].planAccelLength());
-					USBSerial.print("  Travel: ");
-					USBSerial.print(motor[i].planTravelLength());
-					USBSerial.print("  Decel: ");
-					USBSerial.print(motor[i].planDecelLength());
-					USBSerial.print("  Lead out: ");
-					USBSerial.print(motor[i].planLeadOut());
-					USBSerial.print("  Motor time: ");
-					USBSerial.println(motor_time);
-				}
+				debugFunct("totalProgramTime() - Motor: ");
+				debugFunct(i);
+				debugFunct(" Interval: ");
+				debugFunct(Camera.intervalTime());
+				debugFunct("  Lead in: ");
+				debugFunct(motor[i].planLeadIn());
+				debugFunct("  Accel: ");
+				debugFunct(motor[i].planAccelLength());
+				debugFunct("  Travel: ");
+				debugFunct(motor[i].planTravelLength());
+				debugFunct("  Decel: ");
+				debugFunct(motor[i].planDecelLength());
+				debugFunct("  Lead out: ");
+				debugFunct(motor[i].planLeadOut());
+				debugFunct("  Motor time: ");
+				debugFunctln(motor_time);
 			}
 			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
 			else
@@ -945,12 +939,12 @@ uint8_t checkMotorAttach() {
 			attached |= (1 << i);
 		// Put the motor back to sleep so it doesn't interfere with reading of the next motor
 		motor[i].sleep(true);
-		if (usb_debug & DB_FUNCT) {
-			USBSerial.print("Motor ");
-			USBSerial.print(i);
-			USBSerial.print(" current draw: ");
-			USBSerial.println(amps);
-		}
+		
+		debugFunct("Motor ");
+		debugFunct(i);
+		debugFunct(" current draw: ");
+		debugFunctln(amps);
+		
 	}
 
 	// Restore the saved sleep states
@@ -1004,6 +998,30 @@ void debugCom(T data){
 template <typename T>
 void debugComln(T data){
 	if (usb_debug & DB_COM_OUT)
+		USBSerial.println(data);
+}
+
+template <typename T>
+void debugCom(T data, int base){
+	if (usb_debug & DB_COM_OUT)
+		USBSerial.print(data);
+}
+
+template <typename T>
+void debugComln(T data, int base){
+	if (usb_debug & DB_COM_OUT)
+		USBSerial.println(data, base);
+}
+
+template <typename T>
+void debugConfirm(T data){
+	if (usb_debug & DB_CONFIRM)
+		USBSerial.print(data);
+}
+
+template <typename T>
+void debugConfirmln(T data){
+	if (usb_debug & DB_CONFIRM)
 		USBSerial.println(data);
 }
 

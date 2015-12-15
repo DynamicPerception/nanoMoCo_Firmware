@@ -49,14 +49,12 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-
-	if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Entering function");
+	
+	debugFunctln("cycleCamera() - Entering function");
 
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
-	if (pause_flag) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Pausing program");
+	if (pause_flag) {		
+		debugFunctln("cycleCamera() - Pausing program");
 		pauseProgram();
 	}
 
@@ -91,17 +89,14 @@ void cycleCamera() {
 		  ready_to_stop = false;
 
 		  // Debug output
-		  if (usb_debug & DB_FUNCT) {
-			  USBSerial.println("cycleCamera() - All motors done moving!");
-			  if ((totalProgramTime() - last_run_time) > 0) {
-				  USBSerial.println(totalProgramTime());
-				  USBSerial.println(last_run_time);
-				  USBSerial.print("cycleCamera() - There are ");
-				  USBSerial.print((long)totalProgramTime() - (long)last_run_time);
-				  USBSerial.println("ms of lead-out time remaining");
-			  }
-
-		  }
+		  debugFunctln("cycleCamera() - All motors done moving!");
+		  if ((totalProgramTime() - last_run_time) > 0) {
+			  debugFunct(totalProgramTime());
+			  debugFunct(last_run_time);
+			  debugFunct("cycleCamera() - There are ");
+			  debugFunct((long)totalProgramTime() - (long)last_run_time);
+			  debugFunctln("ms of lead-out time remaining");
+		  }	
 	  }
 
 		// stop program running w/o clearing variables
@@ -120,8 +115,7 @@ void cycleCamera() {
 			}
 
 		}
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 1");
+		debugFunctln("cycleCamera() - Bailing from camera cycle at point 1");
 		return;
 	}
 	// If either the SMS or continuous move is complete and the camera is in "keep alive" mode
@@ -132,17 +126,15 @@ void cycleCamera() {
   
   // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
-	  if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
+	  debugFunctln("cycleCamera() - Skipping shot, waiting for external trigger");
 	  return;
   }
 		
 	// trigger any outputs that need to go before the exposure
 	if( (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) ) {
 		altBlock = ALT_OUT_BEFORE;
-		altOutStart(ALT_OUT_BEFORE);
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+		altOutStart(ALT_OUT_BEFORE);		
+		debugFunctln("cycleCamera() - Bailing from camera cycle at point 2");
 		return;
 	}
 	
@@ -152,48 +144,42 @@ void cycleCamera() {
 
   if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.intervalTime() || !Camera.enable || external_intervalometer ) {
 
-	  if (usb_debug & DB_FUNCT){
-		  USBSerial.print("cycleCamera() - Shots: ");
-		  USBSerial.print(camera_fired);
-		  USBSerial.print(" ");
-
-		  for (byte i = 0; i < MOTOR_COUNT; i++){
-			  USBSerial.print("Motor ");
-			  USBSerial.print(i);
-			  USBSerial.print(": ");
-			  USBSerial.print(motor[i].currentPos());
-			  USBSerial.print(" ");
-		  }
-		  USBSerial.println("");
+	  debugFunct("cycleCamera() - Shots: ");
+	  debugFunct(camera_fired);
+	  debugFunct(" ");
+	  for (byte i = 0; i < MOTOR_COUNT; i++){
+		  debugFunct("Motor ");
+		  debugFunct(i);
+		  debugFunct(": ");
+		  debugFunct(motor[i].currentPos());
+		  debugFunct(" ");
 	  }
+	  debugFunctln("");	  
 
       // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
         Engine.state(ST_MOVE);
         camera_tm = millis();  
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 3");
+		
+		debugFunctln("cycleCamera() - Bailing from camera cycle at point 3");
         return;
       }
 	  
-
-      // trigger focus, if needed, which will set off the chain of
+	  // trigger focus, if needed, which will set off the chain of
       // callback executions that will walk us through the complete exposure cycle.
       // -- if no focus is configured, nothing will happen but trigger
       // the callback that will trigger exposing the camera immediately
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("cycleCamera() - Camera busy: ");
-		USBSerial.println(Camera.busy());
-	}
+	debugFunct("cycleCamera() - Camera busy: ");
+	debugFunctln(Camera.busy());
+	
     if( ! Camera.busy() ) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Initiating exposure cycle");
-      // only execute cycle if the camera is not currently busy
-      Engine.state(ST_BLOCK);
-	  altBlock = ALT_OFF;
-	  altForceShot = false;
-      camera_tm = millis();  
-      Camera.focus();
+		debugFunctln("cycleCamera() - Initiating exposure cycle");
+		// only execute cycle if the camera is not currently busy
+		Engine.state(ST_BLOCK);
+		altBlock = ALT_OFF;
+		altForceShot = false;
+		camera_tm = millis();  
+		Camera.focus();
     } 
     
   }
@@ -215,26 +201,23 @@ void cycleCamera() {
  */
  
 uint8_t cycleShotOK(uint8_t p_prealt) {
-	if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleShotOK() - Enter function");
+	
+	debugFunctln("cycleShotOK() - Enter function");
 
     // if we're in alt i/o as external intervalometer mode...
 	  if( altExtInt ) {
-		  if (usb_debug & DB_FUNCT)
-			  USBSerial.println("cycleShotOK() - Ext. interval mode active");
+		  debugFunctln("cycleShotOK() - Ext. interval mode active");
 			// don't do a pre-output clearance if alt_block is true...
 		  if( p_prealt && altBlock )
 			return false;
         
 			// determine whether or not to fire based on alt_force_shot
-		  if (altForceShot == true) {
-			  if (usb_debug & DB_FUNCT)
-				  USBSerial.println("cycleShotOK() - altForceShot detected ************");
+		  if (altForceShot == true) {			  
+			  debugFunctln("cycleShotOK() - altForceShot detected ************");
 			  return true;
 		  }
 		  else {
-			  if (usb_debug & DB_FUNCT)
-				  USBSerial.println("cycleShotOK() - altForceShot not detected");
+			  debugFunctln("cycleShotOK() - altForceShot not detected");
 			  return false;
 		  }
 	  }
@@ -322,8 +305,7 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
-		  if (usb_debug & DB_FUNCT)
-			USBSerial.println("Auto pausing!!!");
+		  debugFunctln("Auto pausing!!!");
           pauseProgram();
       }
     }

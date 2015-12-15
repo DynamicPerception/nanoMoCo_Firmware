@@ -151,16 +151,12 @@ void kf_startProgram(){
 
 void kf_pauseProgram(){
 
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("PAUSING KF PROGRAM");
-	}
+	debugFunct("PAUSING KF PROGRAM");
 
 	// Stop all motors
-	for (byte i = 0; i < MOTOR_COUNT; i++){
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Stopping motor ");
-			USBSerial.println(i);
-		}
+	for (byte i = 0; i < MOTOR_COUNT; i++){	
+		debugFunct("Stopping motor ");
+		debugFunctln(i);	
 		setJoystickSpeed(i, 0);
 	}
 
@@ -176,10 +172,8 @@ void kf_pauseProgram(){
 
 void kf_stopProgram(){
 
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("STOPPING KF PROGRAM");
-	}
-
+	debugFunct("STOPPING KF PROGRAM");
+	
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
 		setJoystickSpeed(i, 0);
@@ -202,28 +196,23 @@ void kf_updateProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
 		kf_this_pause = millis() - kf_pause_start;
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("Pause length: ");
-			USBSerial.println(kf_this_pause);
-		}
+		debugFunct("Pause length: ");
+		debugFunctln(kf_this_pause);		
 		return;
 	}
 
 	// Update run_time, don't include time spent paused
 	kf_run_time = millis() - kf_start_time - kf_pause_time;
-
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("Run time: ");
-		USBSerial.println(kf_run_time);
-	}
+		
+	debugFunct("Run time: ");
+	debugFunctln(kf_run_time);	
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
 	int start_delay = micros();
 	while (micros() - start_delay < time_delay){
-	
+		// Wait for the delay to finish
 	}
-
 	
 	// Continuous move update	
 	if (Motors::planType() != SMS){
@@ -284,9 +273,8 @@ void kf_updateSMS(){
 	}
 
 	// Send the motors to their next locations
-	if (usb_debug & DB_FUNCT){
-		USBSerial.println("Sending motors to new locations");
-	}
+	debugFunctln("Sending motors to new locations");
+	
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
 		// Make sure there is a point to actually query
@@ -294,15 +282,14 @@ void kf_updateSMS(){
 			continue;
 
 		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print("About to send to location #: ");
-			USBSerial.println(kf_curSmsFrame + 1);
-			USBSerial.print("Sending to ");
-			USBSerial.println(nextPos);
-			USBSerial.println("");
-		}
-		sendTo(i, (long)nextPos);		
-		
+	
+		debugFunct("About to send to location #: ");
+		debugFunctln(kf_curSmsFrame + 1);
+		debugFunct("Sending to ");
+		debugFunctln(nextPos);
+		debugFunctln("");
+	
+		sendTo(i, (long)nextPos);				
 	}		
 	kf_curSmsFrame++;
 	kf_okForSmsMove = false;
@@ -314,10 +301,8 @@ void kf_CameraCheck() {
 	int auxPreShotTime = 0;
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
-	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {
-		if (usb_debug & DB_FUNCT){
-			USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
-		}
+	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {		
+		debugFunctln("cycleCamera() - Skipping shot, waiting for external trigger");		
 		return;
 	}
 
@@ -352,9 +337,7 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			if (usb_debug & DB_FUNCT){
-				USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
-			}
+			debugFunctln("cycleCamera() - Bailing from camera cycle at point 2");			
 			kf_auxFired = true;
 			return;
 		}
@@ -372,10 +355,8 @@ void kf_CameraCheck() {
 	// Trigger the focus
 	if (!kf_focusDone){
 		if (!kf_focusFired){
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Time at focus: ");
-				USBSerial.println(kf_run_time);
-			}
+			debugFunct("Time at focus: ");
+			debugFunctln(kf_run_time);			
 			Camera.focus();
 			kf_focusFired = true;
 			return;
@@ -391,10 +372,8 @@ void kf_CameraCheck() {
 	// Trigger the exposure
 	if (!kf_shutterDone){
 		if (!kf_shutterFired){
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Time at exposure: ");
-				USBSerial.println(kf_run_time);
-			}
+			debugFunct("Time at exposure: ");
+			debugFunctln(kf_run_time);
 			Camera.expose();
 			kf_shutterFired = true;
 		}
@@ -406,10 +385,8 @@ void kf_CameraCheck() {
 		kf_shutterDone = true;
 		kf_forceShotInProgress = false;
 
-		// One the camera functions are complete, it's okay to make the next SMS move
-		if (usb_debug & DB_FUNCT){
-			USBSerial.println("Shutter done, ready for move");
-		}
+		// One the camera functions are complete, it's okay to make the next SMS move		
+		debugFunctln("Shutter done, ready for move");		
 		kf_okForSmsMove = true;
 	}
 
@@ -515,21 +492,15 @@ long kf_getMaxMoveTime(){
 		// SMS and cont. TL mode 
 		if (Motors::planType() != CONT_VID){			
 			move_time = Camera.getMaxShots() * Camera.intervalTime();
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Getting TL move time: ");
-			}
+			debugFunct("Getting TL move time: ");			
 		}
 		// Continuous video mode
 		else{			
 			move_time = KeyFrames::getContVidTime();			
-			if (usb_debug & DB_FUNCT){
-				USBSerial.print("Getting video move time: ");
-			}
-		}
-		if (usb_debug & DB_FUNCT){
-			USBSerial.print(move_time);
-			USBSerial.println("ms");
-		}
+			debugFunct("Getting video move time: ");			
+		}		
+		debugFunct(move_time);
+		debugFunctln("ms");		
 	}
 
 	return move_time;
