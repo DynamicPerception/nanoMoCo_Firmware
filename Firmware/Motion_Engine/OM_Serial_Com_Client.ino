@@ -894,9 +894,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 5 set motor's backlash amount  
 	case 5:
 	{
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.println("Backlash from serial");
-		}
+		
+		debug.ser("Backlash from serial");
+		
 		unsigned int in_val = Node.ntoui(input_serial_buffer);		
 		motor[subaddr - 1].backlash(in_val);
 		response(true);
@@ -1706,7 +1706,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 23 causes the motor backlash to be taken up
 	case 23:
 		// Take up any motor backlash		
-		debugFunctln("Taking up backlash...");
+		debug.functln("Taking up backlash...");
 		takeUpBacklash();
 		break;
 
@@ -1726,10 +1726,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 100:
 	{
 		int ret = kf[KeyFrames::getAxis()].getKFCount();
-		debugSer("5.100 -- KF count for axis ");
-		debugSer(KeyFrames::getAxis());
-		debugSer(": ");
-		debugSerln(ret);
+		debug.ser("5.100 -- KF count for axis ");
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(": ");
+		debug.serln(ret);
 		response(true, ret);
 		break;
 	}
@@ -1774,10 +1774,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 105:
 	{
 		uint8_t ret = (uint8_t)kf[KeyFrames::getAxis()].validateAccel();
-		debugSer("5.105 -- Velocity valid for axis ");
-		debugSer(KeyFrames::getAxis());
-		debugSer(": ");
-		debugSerln(ret);
+		debug.ser("5.105 -- Velocity valid for axis ");
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(": ");
+		debug.serln(ret);
 		response(true, ret);
 		break;
 	}
@@ -1786,47 +1786,47 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 106:
 	{
 		uint8_t ret = (uint8_t)kf[KeyFrames::getAxis()].validateAccel();
-		debugSer("5.106 -- Acceleration valid for axis ");
-		debugSer(KeyFrames::getAxis());
-		debugSer(": ");
-		debugSerln(ret);
+		debug.ser("5.106 -- Acceleration valid for axis ");
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(": ");
+		debug.serln(ret);
 		response(true, ret);
 		break;
 	}
 
 	// Command 107 returns the currently set key frame continuous video duration
 	case 107:
-		debugSer("5.107 -- Kf program cont. video duration: ");
-		debugSer(KeyFrames::getContVidTime());
-		debugSerln(" ms:");
+		debug.ser("5.107 -- Kf program cont. video duration: ");
+		debug.ser(KeyFrames::getContVidTime());
+		debug.serln(" ms:");
 		response(true, KeyFrames::getContVidTime());
 		break;
 
 	// Command 120 returns run state of a key frame program: 0 = STOPPED, 1 = RUNNING, 2 = PAUSED
 	case 120:
-		debugSer("5.120 -- Kf program run state: ");
-		debugSerln(kf_getRunState());
+		debug.ser("5.120 -- Kf program run state: ");
+		debug.serln(kf_getRunState());
 		response(true, kf_getRunState());
 		break;
 
 	// Command 121 returns the current key frame program running time
 	case 121:
-		debugSer("5.121 -- Kf program current run time: ");
-		debugSerln(kf_getRunTime());
+		debug.ser("5.121 -- Kf program current run time: ");
+		debug.serln(kf_getRunTime());
 		response(true, kf_getRunTime());
 		break;
 
 	// Command 122 returns the maximum key frame program running time
 	case 122:
-		debugSer("5.122 -- Kf program max run time: ");
-		debugSerln(kf_getMaxTime());
+		debug.ser("5.122 -- Kf program max run time: ");
+		debug.serln(kf_getMaxTime());
 		response(true, kf_getMaxTime());
 		break;
 
 	// Command 123 returns the key frame program percent complete
 	case 123:
-		debugSer("5.122 -- Kf program percent done: ");
-		debugSerln(kf_getPercentDone());
+		debug.ser("5.122 -- Kf program percent done: ");
+		debug.serln(kf_getPercentDone());
 		response(true, kf_getPercentDone());
 		break;
 
@@ -1835,13 +1835,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{
 		int in_val = Node.ntoi(input_serial_buffer);
 		long ret = kf[KeyFrames::getAxis()].getXN(in_val);
-		debugSer("5.130 -- Time position of axis ");
-		debugSer(KeyFrames::getAxis());
-		debugSer(", KF ");
-		debugSer(in_val);
-		debugSer(": ");
-		debugSer(ret);
-		debugSerln(" ms");
+		debug.ser("5.130 -- Time position of axis ");
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(", KF ");
+		debug.ser(in_val);
+		debug.ser(": ");
+		debug.ser(ret);
+		debug.serln(" ms");
 		response(true, ret);
 		break;
 	}
@@ -1850,12 +1850,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{		
 		int in_val = Node.ntoi(input_serial_buffer);
 		long ret = kf[KeyFrames::getAxis()].getFN(in_val);
-		debugSer("5.131 -- Step position of axis ");
-		debugSer(KeyFrames::getAxis());
-		debugSer(", KF ");
-		debugSer(in_val);
-		debugSer(": ");		
-		debugSerln(ret);
+		debug.ser("5.131 -- Step position of axis ");
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(", KF ");
+		debug.ser(in_val);
+		debug.ser(": ");		
+		debug.serln(ret);
 		response(true, ret);
 		break;
 	}

@@ -191,7 +191,7 @@ void takeUpBacklash(boolean kf_move){
 		debug.funct("Microsteps: ");
 		debug.functln(motor[i].ms());		
 	}
-	debugFunctln("Out of loop and moving on!");
+	debug.functln("Out of loop and moving on!");
 }
 
 
@@ -224,8 +224,8 @@ void startProgramCom() {
 				msAutoSet(i);
 
 			// Print debug info if proper flag is set
-			debugFunct("Microsteps: ");
-			debugFunctln(motor[i].ms());
+			debug.funct("Microsteps: ");
+			debug.functln(motor[i].ms());
 			
 		}
 
