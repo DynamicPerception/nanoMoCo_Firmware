@@ -203,9 +203,9 @@ void kf_updateProgram(){
 
 	// Update run_time, don't include time spent paused
 	kf_run_time = millis() - kf_start_time - kf_pause_time;
-		
-	debug.funct("Run time: ");
-	debug.functln(kf_run_time);	
+	
+	//debug.funct("Run time: ");
+	//debug.functln(kf_run_time);	
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
