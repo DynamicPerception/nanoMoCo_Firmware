@@ -78,9 +78,7 @@ void eepromWrite() {
   
   write(EE_ADDR, device_address);
   write(EE_NAME, *device_name, 10);
-  	
-	long tempStart = 0;
-	long tempStop = 0;
+
 	byte tempMS = 0;
 	bool tempSleep = false;
 	
