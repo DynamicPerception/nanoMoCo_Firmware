@@ -175,15 +175,21 @@ void takeUpBacklash(boolean kf_move){
 	}
 
 	// Can't wait when it's a keyframe move. For some reason this causes the controller to lock	
-	unsigned long time = millis();
-	while (wait_required && !kf_move){
-		// Wait a second for backlash takeup to finish
-		debugFunct("Time elapsed: ");
-		debugFunctln(millis() - time);
-		if (millis() - time > MILLIS_PER_SECOND){
-			debugFunctln("Done waiting!");
-			break;
-		}	
+	if (wait_required && !kf_move) {
+		unsigned long time = millis();
+		while (millis() - time < MILLIS_PER_SECOND){
+			// Wait a second for backlash takeup to finish
+		}
+	}
+
+	// Re-set all the motors to their proper microstep settings
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		/*if (!graffikMode())
+			msAutoSet(i);*/
+
+		// Print debug info if proper flag is set
+		debug.funct("Microsteps: ");
+		debug.functln(motor[i].ms());		
 	}
 	debugFunctln("Out of loop and moving on!");
 }
@@ -254,29 +260,26 @@ void startProgramCom() {
 
 	// Don't start a new program if one is already running
 	if (!running) {
-
-		
-		debugFunctln("Motor distances:");
+		debug.functln("Motor distances:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debugFunctln(motor[i].stopPos() - motor[i].currentPos());
+			debug.functln(motor[i].stopPos() - motor[i].currentPos());
 		}
-		debugFunctln("Motor start:");
+		debug.functln("Motor start:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debugFunctln(motor[i].startPos());
+			debug.functln(motor[i].startPos());
 		}
-		debugFunctln("Motor stop:");
+		debug.functln("Motor stop:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debugFunctln(motor[i].stopPos());
+			debug.functln(motor[i].stopPos());
 		}
-		debugFunctln("Motor current:");
+		debug.functln("Motor current:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debugFunctln(motor[i].currentPos());
+			debug.functln(motor[i].currentPos());
 		}
-		debugFunctln("Motor travel:");
+		debug.functln("Motor travel:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debugFunctln(motor[i].planTravelLength());
-		}
-		
+			debug.functln(motor[i].planTravelLength());
+		}		
 
 		//if it was paused and not SMS then recalculate move from pause time
 		if (was_pause && Motors::planType() != SMS){
@@ -379,15 +382,14 @@ byte validateProgram(byte p_motor, bool p_autosteps) {
 		comparison_speed = motor[p_motor].getTopSpeed();
 	}
 
-	// USB print the debug value, if necessary	
-	debugFunct("Top speed requested: ");
-	debugFunctln(comparison_speed);
+	// USB print the debug value, if necessary
+	debug.funct("Top speed requested: ");
+	debug.functln(comparison_speed);	
 
 	// Check the comparison speed against the cutoff values and select the appropriate microstepping setting
 	// If the requested speed is too high, send error value, don't change microstepping setting
-	if (comparison_speed >= MAX_CUTOFF ) {
-		
-		debugFunctln("Excessive speed requested");
+	if (comparison_speed >= MAX_CUTOFF ) {		
+		debug.functln("Excessive speed requested");
 		return 0;
 	}
 	else {
@@ -416,7 +418,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-	debugFunctln("Trying to auto-set microsteps!!!!");
+	debug.functln("Trying to auto-set microsteps!!!!");
 	unsigned long time = millis();
 	byte microsteps;
 	
@@ -437,18 +439,17 @@ byte msAutoSet(uint8_t p_motor) {
 		// Save the microstep settings
 		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
-		// USB print the debug value, if necessary		
-		debugFunct("Requested Microsteps: ");
-		debugFunctln((int)microsteps);
-		debugFunctln("Microsteps successfully set");
-		
+		// USB print the debug value, if necessary
+		debug.funct("Requested Microsteps: ");
+		debug.functln(microsteps);
+		debug.functln("Microsteps successfully set");
 		return microsteps;
 		
 	}	
 
 	// If the motor or program is running and a report is requested, return 0 to indicate that the auto-set routine was not completed
-	else {		
-		debugFunctln("Motors are running, can't auto-set microsteps");
+	else {
+		debug.functln("Motors are running, can't auto-set microsteps");
 		return false;
 	}
 }
@@ -464,11 +465,9 @@ p_input: True or false setting.
 
 void joystickSet(byte p_input) {
 	joystick_mode = p_input;
-
-	if (usb_debug & DB_GEN_SER) {
-		USBSerial.print("Joystick: ");
-		USBSerial.println(joystick_mode);
-	}
+	
+	debug.ser("Joystick: ");
+	debug.serln(joystick_mode);	
 
 	// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 	if (joystick_mode){
@@ -525,11 +524,6 @@ byte pingPongMode() {
 
 void setJoystickSpeed(int p_motor, float p_speed){
 
-	//USBSerial.print("Setting joystick speed, motor ");
-	//USBSerial.print(p_motor);
-	//USBSerial.print(", speed: ");
-	//USBSerial.println(p_speed);
-
 	float old_speed = motor[p_motor].desiredSpeed();
 	float new_speed = p_speed;
 
@@ -555,9 +549,7 @@ void setJoystickSpeed(int p_motor, float p_speed){
 		motor[p_motor].continuous(true);
 		motor[p_motor].move(dir, 0);
 		startISR();
-
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("Command Mot.13 - Auto-starting continuous move");
+		debug.serln("Command Mot.13 - Auto-starting continuous move");
 	}
 }
       

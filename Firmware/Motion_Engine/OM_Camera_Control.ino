@@ -67,12 +67,12 @@ void camCallBack(byte code) {
   // function is called in an interrupt and can daisy-chain under certain configurations,
   // which can result in unexpected behavior
   
-  if( code == OM_CAM_FFIN ) {	  
-	  debugFunctln("camCallBack() - Entering exposure state");
+  if( code == OM_CAM_FFIN ) {
+	  debug.functln("camCallBack() - Entering exposure state");
 	  Engine.state(ST_EXP);
   }
   else if( code == OM_CAM_EFIN ) {	
-	debugFunctln("camCallBack() - Entering wait state");
+	debug.functln("camCallBack() - Entering wait state");
 	camera_fired++;
     Engine.state(ST_WAIT);
   }

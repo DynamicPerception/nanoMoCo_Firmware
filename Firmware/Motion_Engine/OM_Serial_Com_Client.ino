@@ -85,29 +85,27 @@ to respond to
   */
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
-  node = MOCOBUS;
-  commandTime = millis();
-  if(usb_debug & DB_COM_OUT){
-	  USBSerial.print("MocoBus ");
-	  USBSerial.print("SubAddr: ");
-	  USBSerial.print(subaddr);
-	  USBSerial.print(" command: ");
-	  USBSerial.print(command);
-	  USBSerial.print(" buf[0]: ");
-	  USBSerial.print(buf[0], HEX);
-	  USBSerial.print(" buf[1]: ");
-	  USBSerial.print(buf[1], HEX);
-	  USBSerial.print(" buf[2]: ");
-	  USBSerial.print(buf[2], HEX);
-	  USBSerial.print(" buf[3]: ");
-	  USBSerial.print(buf[3], HEX);
-	  USBSerial.print(" buf[4]: ");
-	  USBSerial.print(buf[4], HEX);
-	  USBSerial.print(" time: ");
-	  USBSerial.println(commandTime);
-	  USBSerial.println("");
-  }
-  serCommandHandler(subaddr, command, buf);
+	node = MOCOBUS;
+	commandTime = millis();  
+	debug.com("MocoBus ");
+	debug.com("SubAddr: ");
+	debug.com(subaddr);
+	debug.com(" command: ");
+	debug.com(command);
+	debug.com(" buf[0]: ");
+	debug.com(buf[0], HEX);
+	debug.com(" buf[1]: ");
+	debug.com(buf[1], HEX);
+	debug.com(" buf[2]: ");
+	debug.com(buf[2], HEX);
+	debug.com(" buf[3]: ");
+	debug.com(buf[3], HEX);
+	debug.com(" buf[4]: ");
+	debug.com(buf[4], HEX);
+	debug.com(" time: ");
+	debug.comln(commandTime);
+	debug.comln("");  
+	serCommandHandler(subaddr, command, buf);
 }
 
 /* Handles Node 2 Commands
@@ -118,29 +116,26 @@ void serNode1Handler(byte subaddr, byte command, byte*buf) {
   */
 
 void serNodeBlueHandler(byte subaddr, byte command, byte*buf) {
-  node = BLE;
-  commandTime = millis();
-  if (usb_debug & DB_COM_OUT){
-	  USBSerial.print("Bluetooth ");
-	  USBSerial.print("SubAddr: ");
-	  USBSerial.print(subaddr);
-	  USBSerial.print(" command: ");
-	  USBSerial.print(command);
-	  USBSerial.print(" buf[0]: ");
-	  USBSerial.print(buf[0], HEX);
-	  USBSerial.print(" buf[1]: ");
-	  USBSerial.print(buf[1], HEX);
-	  USBSerial.print(" buf[2]: ");
-	  USBSerial.print(buf[2], HEX);
-	  USBSerial.print(" buf[3]: ");
-	  USBSerial.print(buf[3], HEX);
-	  USBSerial.print(" buf[4]: ");
-	  USBSerial.print(buf[4], HEX);
-	  USBSerial.print(" time: ");
-	  USBSerial.println(commandTime);
-  }
-  
-  serCommandHandler(subaddr, command, buf);
+	node = BLE;
+	commandTime = millis();
+	debug.com("Bluetooth ");
+	debug.com("SubAddr: ");
+	debug.com(subaddr);
+	debug.com(" command: ");
+	debug.com(command);
+	debug.com(" buf[0]: ");
+	debug.com(buf[0], HEX);
+	debug.com(" buf[1]: ");
+	debug.com(buf[1], HEX);
+	debug.com(" buf[2]: ");
+	debug.com(buf[2], HEX);
+	debug.com(" buf[3]: ");
+	debug.com(buf[3], HEX);
+	debug.com(" buf[4]: ");
+	debug.com(buf[4], HEX);
+	debug.com(" time: ");
+	debug.comln(commandTime);  
+	serCommandHandler(subaddr, command, buf);
 }
 
 
@@ -216,9 +211,8 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true, but not when in Graffik mode
 	   if (!graffikMode()){
-		   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {
-			   if (usb_debug & DB_GEN_SER)
-				   USBSerial.println("Invalid general command");
+		   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {			   
+			   debug.serln("Invalid general command");
 			   response(false);
 			   return;
 		   }
@@ -234,11 +228,9 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 	   // Check for joystick mode and return on non-valid commands if true
 	   if (!graffikMode()){
 		   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
-			   if (usb_debug & DB_GEN_SER)
-				   USBSerial.println("Invalid motor command");
+			   debug.serln("Invalid motor command");
 			   response(false);
 			   return;
-
 		   }
 	   }
 
@@ -280,9 +272,8 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	  
 	  //resets controller to default address/name, flashes the debug LED 5 times to indicate restart required      
     case OM_BCAST_SET_ADDRESS:
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("Setting new address!");
-	  if (buf[0] <= 255 && buf[0] >= 2){
+		debug.serln("Setting new address!");
+		if (buf[0] <= 255 && buf[0] >= 2){
 		  	device_address = buf[0];
 			OMEEPROM::write(EE_ADDR, device_address);
 			Node.address(device_address);
@@ -290,15 +281,13 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 			if (graffikMode())
 			response(true);
 			flasher(DEBUG_PIN, 5);
-
-	  }
-      break;
+		}
+		break;
 
 	case OM_GRAFFIK_MODE_USB:
 	{
 		node = USB;
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.print("Graffik mode enabled");
+		debug.ser("Graffik mode enabled");
 		graffikMode(true);
 		response(true);
 	}
@@ -531,10 +520,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 			   byte mode = input_serial_buffer[0];			   
 			   joystickSet(mode);
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("incoming request for joystick mode: ");
-				   USBSerial.println(mode);
-			   }
+			   debug.ser("incoming request for joystick mode: ");
+			   debug.serln(mode);
 			   response(true);
 			   break;
 	}
@@ -548,8 +535,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 25 sends all motors to their start positions. 
 	case 25:
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("Sending motors to start positions");
+		debug.serln("Sending motors to start positions");
 		sendAllToStart();
 		response(true);
 		break;
@@ -559,13 +545,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			long tempPos = motor[i].currentPos();
-			motor[i].startPos(tempPos);
-			if (usb_debug & DB_GEN_SER){
-				USBSerial.print("Motor ");
-				USBSerial.print(i);
-				USBSerial.print(" start: ");
-				USBSerial.println(motor[i].startPos());
-			}			
+			motor[i].startPos(tempPos);			
+			debug.ser("Motor ");
+			debug.ser(i);
+			debug.ser(" start: ");
+			debug.serln(motor[i].startPos());						
 		}
 		response(true);
 		break;
@@ -576,13 +560,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			long tempPos = motor[i].currentPos();
-			motor[i].stopPos(tempPos);
-			if (usb_debug & DB_GEN_SER){
-				USBSerial.print("Motor ");
-				USBSerial.print(i);
-				USBSerial.print(" stop: ");
-				USBSerial.println(motor[i].stopPos());
-			}			
+			motor[i].stopPos(tempPos);			
+			debug.ser("Motor ");
+			debug.ser(i);
+			debug.ser(" stop: ");
+			debug.serln(motor[i].stopPos());						
 		}
 		response(true);
 		break;
@@ -643,20 +625,20 @@ void serMain(byte command, byte* input_serial_buffer) {
 					status = 1;
 				else
 					status = 0;
-				if (usb_debug & DB_GEN_SER){
-					USBSerial.print("Command Gen.101 - Run Status: ");
-					USBSerial.println(status);
-				}
+				
+				debug.ser("Command Gen.101 - Run Status: ");
+				debug.serln(status);
+				
 				response(true, status);
 	}
       break;
     
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Gen.102 - Run time: ");
-			USBSerial.println (last_run_time);
-		}
+		
+		debug.ser("Command Gen.102 - Run time: ");
+		debug.serln (last_run_time);
+		
 		if (external_intervalometer)
 			response(true, totalProgramTime());
 		else
@@ -759,11 +741,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 		
 	//Command 118 reads motors' continuous mode setting
-	case 118:
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Gen.118 - Plan type: ");
-			USBSerial.println(Motors::planType());
-		}
+	case 118:		
+		debug.ser("Command Gen.118 - Plan type: ");
+		debug.serln(Motors::planType());		
 		response(true, Motors::planType());
 		break;
 
@@ -779,13 +759,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 121 reads the ping-pong flag setting
 	case 121:
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Gen.121 - Ping pong mode: ");
-			if (ping_pong_mode)
-				USBSerial.println("True");
-			else
-				USBSerial.println("False");
-		}
+		debug.ser("Command Gen.121 - Ping pong mode: ");
+		if (ping_pong_mode)
+			debug.serln("True");
+		else
+			debug.serln("False");		
 		response(true, pingPongMode());
 		break;
 
@@ -797,10 +775,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 123 reports the percent completion of the current program
 	case 123:
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Completion: ");
-			USBSerial.println(programPercent());
-		}
+		debug.ser("Completion: ");
+		debug.serln(programPercent());		
 		response(true, programPercent());
 		break;
 
@@ -811,11 +787,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Gen.125 - Total run time: ");
-			USBSerial.println(totalProgramTime());
-			USBSerial.println("");
-		}
+		debug.ser("Command Gen.125 - Total run time: ");
+		debug.serln(totalProgramTime());
+		debug.serln("");
 		response(true, totalProgramTime());
 		break;
 
@@ -955,8 +929,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
   
     //Command 9 set motor's home limit
 	case 9:
-		motor[subaddr - 1].homeSet();		
-		//eepromWrite();
+		motor[subaddr - 1].homeSet();				
 		response(true);
 	    break;	
 
@@ -964,8 +937,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 10:
 	{
 		long tempPos = motor[subaddr - 1].currentPos();
-		motor[subaddr - 1].endPos(tempPos);
-		//OMEEPROM::write(EE_END_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, tempPos);
+		motor[subaddr - 1].endPos(tempPos);		
 		response(true);
 		break;
 	}
@@ -1044,10 +1016,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   // how many steps to take
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
-			   if (usb_debug & DB_GEN_SER){
-				   USBSerial.print("Command Mot.15 - Commanded steps: ");
-				   USBSerial.println(steps);
-			   }
+			   debug.ser("Command Mot.15 - Commanded steps: ");
+			   debug.serln(steps);
+
 			   // move
 			   if (steps == 0)
 				 motor[subaddr - 1].continuous(true);
@@ -1097,10 +1068,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//If Graffik mode is enabled, setting the lead-in will not reset the lead-out
 	case 19:
 		motor[subaddr - 1].planLeadIn(Node.ntoul(input_serial_buffer));
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Lead-in:");
-			USBSerial.println(motor[subaddr - 1].planLeadIn());
-		}
+		debug.ser("Lead-in:");
+		debug.serln(motor[subaddr - 1].planLeadIn());
 		if (!graffik_mode)
 			motor[subaddr - 1].planLeadOut(0);
 		cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
@@ -1154,8 +1123,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		motor[subaddr - 1].homeSet();
 		motor[subaddr - 1].endPos(0);
 		motor[subaddr - 1].startPos(0);
-		motor[subaddr - 1].stopPos(0);
-		eepromWrite();
+		motor[subaddr - 1].stopPos(0);		
 		response(true);
 		break;
 
@@ -1293,9 +1261,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 107 reads whether the motor is currently running
 	case 107:
-		response(true, motor[subaddr - 1].running());		
-		debugSer("Command Mot.107 - Motor running? ");
-		debugSerln(motor[subaddr - 1].running());		
+		response(true, motor[subaddr - 1].running());
+		debug.ser("Command Mot.107 - Motor running? ");
+		debug.serln(motor[subaddr - 1].running());
 		break;
 
 	//Command 108 reads the continuous speed for the motor
@@ -1404,10 +1372,8 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	{
 		unsigned long in_val = Node.ntoui(input_serial_buffer);
 		Camera.setMaxShots(in_val);
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Cam.06 - Max shots: ");
-			USBSerial.println(Camera.getMaxShots());
-		}
+		debug.ser("Command Cam.06 - Max shots: ");
+		debug.serln(Camera.getMaxShots());
 		response(true);
 		break;
 	}
@@ -1499,10 +1465,8 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 109 gets the number of shots fired 
 	case 109:
 		response(true, camera_fired);
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Command Cam.109 - Camera fired: ");
-			USBSerial.println(camera_fired);
-		}
+		debug.ser("Command Cam.109 - Camera fired: ");
+		debug.serln(camera_fired);
 		break;
 		
 	//Command 110 reports whether the camera is in test mode
@@ -1513,8 +1477,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 111 reports the keep-alive state
 	case 111:
 		response(true, keep_camera_alive);
-		break;
-      
+		break;      
             
     //Error    
     default: 
@@ -1555,11 +1518,9 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 10:
 	{
 		int axis = Node.ntoi(input_serial_buffer);
-
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Selecting axis ");
-			USBSerial.println(axis);
-		}
+		
+		debug.ser("Selecting axis ");
+		debug.serln(axis);
 
 		// A valid axis must be selected
 		if (axis >= 0 && axis <= MOTOR_COUNT){		   
@@ -1583,12 +1544,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			int axis = KeyFrames::getAxis();
 			kf[axis].setKFCount(in_val);								
 			
-			if (usb_debug & DB_GEN_SER){
-				USBSerial.print("Axis ");
-				USBSerial.print(axis);
-				USBSerial.print(" -- Setting key frame count: ");
-				USBSerial.println(kf[axis].getKFCount());
-			}
+			debug.ser("Axis ");
+			debug.ser(axis);
+			debug.ser(" -- Setting key frame count: ");
+			debug.serln(kf[axis].getKFCount());
 		}		   			  
 		response(true, in_val);
 		break;
@@ -1607,14 +1566,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setXN(in_val);		
 		long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;
 
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Axis ");
-			USBSerial.print(axis);
-			USBSerial.print(" -- Setting absicssa ");
-			USBSerial.print(frame);
-			USBSerial.print(": ");
-			USBSerial.println(kf[axis].getXN(frame));
-		}
+		debug.ser("Axis ");
+		debug.ser(axis);
+		debug.ser(" -- Setting absicssa ");
+		debug.ser(frame);
+		debug.ser(": ");
+		debug.serln(kf[axis].getXN(frame));
 
 		// Echo the assigned value
 		response(true, echo);
@@ -1633,15 +1590,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setFN(in_val);
 		long echo = kf[axis].getFN(frame) * FLOAT_TO_FIXED;
 
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Axis ");
-			USBSerial.print(axis);
-			USBSerial.print(" -- Setting position ");
-			USBSerial.print(frame);
-			USBSerial.print(": ");
-			USBSerial.println(kf[axis].getFN(frame));
-		}
-
+		debug.ser("Axis ");
+		debug.ser(axis);
+		debug.ser(" -- Setting position ");
+		debug.ser(frame);
+		debug.ser(": ");
+		debug.serln(kf[axis].getFN(frame));
+		
 		// Echo the assigned value
 		response(true, echo);
 		break;
@@ -1660,15 +1615,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setDN(in_val);
 		long echo = kf[axis].getDN(frame) * FLOAT_TO_FIXED;
 
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Axis ");
-			USBSerial.print(axis);
-			USBSerial.print(" -- Setting velocity ");
-			USBSerial.print(frame);
-			USBSerial.print(": ");
-			USBSerial.println(kf[axis].getDN(frame));
-		}
-
+		debug.ser("Axis ");
+		debug.ser(axis);
+		debug.ser(" -- Setting velocity ");
+		debug.ser(frame);
+		debug.ser(": ");
+		debug.serln(kf[axis].getDN(frame));
+		
 		// Echo the assigned value
 		response(true, echo);		
 		break;
@@ -1701,14 +1654,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			motor[axis].stopPos(motor[axis].currentPos());
 		}
 
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("Axis ");
-			USBSerial.print(axis);
-			USBSerial.print(" -- Setting start/stop points -- start: ");
-			USBSerial.print(motor[axis].startPos());
-			USBSerial.print(" Stop: ");
-			USBSerial.println(motor[axis].stopPos());
-		}
+		debug.ser("Axis ");
+		debug.ser(axis);
+		debug.ser(" -- Setting start/stop points -- start: ");
+		debug.ser(motor[axis].startPos());
+		debug.ser(" Stop: ");
+		debug.serln(motor[axis].stopPos());
 		
 		response(true);
 		break;
@@ -1723,12 +1674,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 		unsigned long echo = KeyFrames::getContVidTime();
 
-		if (usb_debug & DB_GEN_SER){			
-			USBSerial.print("Setting continuous time: ");
-			USBSerial.print(echo);			
-			USBSerial.println("ms");
-		}
-
+		debug.ser("Setting continuous time: ");
+		debug.ser(echo);			
+		debug.serln("ms");
+		
 		// Echo the assigned value
 		response(true, echo);
 		break;
@@ -1795,12 +1744,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{
 		float in_val = Node.ntof(input_serial_buffer);
 		long ret = (long)(kf[KeyFrames::getAxis()].pos(in_val) * FLOAT_TO_FIXED);
-		if (usb_debug & DB_GEN_SER){
-			USBSerial.print("The position at time ");
-			USBSerial.print(in_val);
-			USBSerial.print(": ");
-			USBSerial.println(ret);
-		}
+		
+		debug.ser("The position at time ");
+		debug.ser(in_val);
+		debug.ser(": ");
+		debug.serln(ret);
+		
 		response(true, ret);
 		break;
 	}
@@ -1919,13 +1868,11 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
           Node Response Functions
 ===========================================*/
 
-void response_check(uint8_t p_stat) {
-	if (usb_debug & DB_CONFIRM){
-		if (!p_stat)
-			USBSerial.println("Command response: FAILURE");		
-		else{
-			USBSerial.println("Command response OK!");			
-		}
+void response_check(uint8_t p_stat) {	
+	if (!p_stat)
+		debug.confirmln("Command response: FAILURE");		
+	else{
+		debug.confirmln("Command response OK!");				
 	}
 }
 
