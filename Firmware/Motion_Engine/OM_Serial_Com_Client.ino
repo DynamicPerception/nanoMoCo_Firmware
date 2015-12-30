@@ -404,9 +404,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 10 send all motors home
 	case 10:
 		// send a motor home
-		motor[0].home();
-		motor[1].home();
-		motor[2].home();
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			motor[i].contSpeed(mot_max_speed);
+			motor[i].home();
+		}
 		startISR();
 		response(true);
 		break;
@@ -593,7 +594,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 
-	//Command 50 sets App Mode on or off
+	//Command 51 sets App Mode on or off
 	case 51:
 	{
 		graffikMode(false);
@@ -626,7 +627,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 				else
 					status = 0;
 				
-				debug.ser("Command Gen.101 - Run Status: ");
+				debug.ser("Gen.101 - Run Status: ");
 				debug.serln(status);
 				
 				response(true, status);
@@ -636,7 +637,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
 		
-		debug.ser("Command Gen.102 - Run time: ");
+		debug.ser("Gen.102 - Run time: ");
 		debug.serln (last_run_time);
 		
 		if (external_intervalometer)
@@ -742,7 +743,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		
 	//Command 118 reads motors' continuous mode setting
 	case 118:		
-		debug.ser("Command Gen.118 - Plan type: ");
+		debug.ser("Gen.118 - Plan type: ");
 		debug.serln(Motors::planType());		
 		response(true, Motors::planType());
 		break;
@@ -759,7 +760,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 121 reads the ping-pong flag setting
 	case 121:
-		debug.ser("Command Gen.121 - Ping pong mode: ");
+		debug.ser("Gen.121 - Ping pong mode: ");
 		if (ping_pong_mode)
 			debug.serln("True");
 		else
@@ -787,7 +788,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 125 returns the total run time of the current program in milliseconds
 	case 125:
-		debug.ser("Command Gen.125 - Total run time: ");
+		debug.ser("Gen.125 - Total run time: ");
 		debug.serln(totalProgramTime());
 		debug.serln("");
 		response(true, totalProgramTime());
@@ -1016,7 +1017,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 			   // how many steps to take
 			   unsigned long steps = Node.ntoul(input_serial_buffer);
-			   debug.ser("Command Mot.15 - Commanded steps: ");
+			   debug.ser("Mot.15 - Commanded steps: ");
 			   debug.serln(steps);
 
 			   // move
@@ -1262,7 +1263,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 107 reads whether the motor is currently running
 	case 107:
 		response(true, motor[subaddr - 1].running());
-		debug.ser("Command Mot.107 - Motor running? ");
+		debug.ser("Mot.107 - Motor running? ");
 		debug.serln(motor[subaddr - 1].running());
 		break;
 
@@ -1346,33 +1347,40 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 2 set camera enable  
     case 2:
       Camera.enable = input_serial_buffer[0];
+	  debug.ser("Cam.02 - Setting camera enable: ");
+	  debug.serln(Camera.enable);
       response(true);
       break;
     
     //Command 3 expose camera now 
     case 3:
       Camera.expose();
+	  debug.serln("Cam.03 - Exposing now!");
       response(true);
       break;
 
     //Command 4 set camera's trigger time  
     case 4:
       Camera.triggerTime( Node.ntoul(input_serial_buffer) );
+	  debug.ser("Cam.04 - Focus time: ");
+	  debug.serln(Camera.triggerTime());
       response(true);
       break;
       
     //Command 5 set camera's focus time
     case 5:
       Camera.focusTime( Node.ntoui(input_serial_buffer) ); 
+	  debug.ser("Cam.05 - Focus time: ");
+	  debug.serln(Camera.focusTime());
       response(true);
       break;
     
     //Command 6 set camera's max shots 
 	case 6:
 	{
-		unsigned long in_val = Node.ntoui(input_serial_buffer);
+		unsigned int in_val = Node.ntoui(input_serial_buffer);
 		Camera.setMaxShots(in_val);
-		debug.ser("Command Cam.06 - Max shots: ");
+		debug.ser("Cam.06 - Max shots: ");
 		debug.serln(Camera.getMaxShots());
 		response(true);
 		break;
@@ -1381,36 +1389,48 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 7 set camera's exposure delay
     case 7:
       Camera.delayTime( Node.ntoui(input_serial_buffer) );
+	  debug.ser("Cam.07 - Delay time: ");
+	  debug.serln(Camera.delayTime());
       response(true);
       break;
    
     //Command 8 set camera's focus w shutter  
     case 8:
       Camera.exposureFocus((uint8_t) input_serial_buffer[0]);
+	  debug.ser("Cam.08 - Focus w/ shutter: ");
+	  debug.serln(Camera.exposureFocus());
 	  response(true);
       break;
       
     //Command 9 repeat cycles
     case 9:
       Camera.repeat = input_serial_buffer[0];
+	  debug.ser("Cam.09 - Repeat cycles: ");
+	  debug.serln(Camera.repeat);
       response(true);
       break;
       
     //Command 10 set camera's interval  
     case 10:
       Camera.intervalTime( Node.ntoul(input_serial_buffer) );
+	  debug.ser("Cam.10 - Interval time: ");
+	  debug.serln(Camera.intervalTime());
       response(true);
       break;
 
 	//Command 11 enables and disables the camera's test mode
     case 11:
 		cameraTest(input_serial_buffer[0]);
+		debug.ser("Cam.11 - Test Mode: ");
+		debug.serln(cameraTest());
 		response(true);
 		break;
 
 	//Command 12 sets camera keep-alive state
 	case 12:
 		keep_camera_alive = input_serial_buffer[0];
+		debug.ser("Cam.12 - Keep alive: ");
+		debug.serln(keep_camera_alive);
 		response(true);
 		break;		
     
@@ -1465,7 +1485,7 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 109 gets the number of shots fired 
 	case 109:
 		response(true, camera_fired);
-		debug.ser("Command Cam.109 - Camera fired: ");
+		debug.ser("Cam.109 - Camera fired: ");
 		debug.serln(camera_fired);
 		break;
 		
@@ -1632,7 +1652,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	{
 		unsigned int in_val = Node.ntoui(input_serial_buffer);
 		KeyFrames::updateRate(in_val);
-		response(true);
+		unsigned int echo = KeyFrames::updateRate();
+		debug.ser("KF.15 - Axis ");		
+		debug.ser(KeyFrames::getAxis());
+		debug.ser(" -- Setting motor velocity update rate: ");		
+		debug.serln(echo);
+		response(true, echo);
 		break;
 	}
 
@@ -1653,8 +1678,8 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 			motor[axis].startPos(motor[axis].currentPos());
 			motor[axis].stopPos(motor[axis].currentPos());
 		}
-
-		debug.ser("Axis ");
+				
+		debug.ser("KF.16 - Axis ");
 		debug.ser(axis);
 		debug.ser(" -- Setting start/stop points -- start: ");
 		debug.ser(motor[axis].startPos());
@@ -1669,12 +1694,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 17:
 	{
 		// Parse the incoming value
-		float in_val = Node.ntoul(input_serial_buffer);
+		long in_val = Node.ntol(input_serial_buffer);
 		KeyFrames::setContVidTime(in_val);
 
-		unsigned long echo = KeyFrames::getContVidTime();
-
-		debug.ser("Setting continuous time: ");
+		long echo = KeyFrames::getContVidTime();
+				
+		debug.ser("KF.17 - Setting continuous time: ");
 		debug.ser(echo);			
 		debug.serln("ms");
 		

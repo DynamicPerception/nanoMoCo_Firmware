@@ -36,6 +36,28 @@ boolean kf_forceShotInProgress = false;
 
 void kf_printKeyFrameData(){
 
+	// General program parameters
+	USBSerial.print("~~~~~~ General Program Params ~~~~~~");
+	USBSerial.println("");
+
+	USBSerial.print("Max camera time: ");
+	USBSerial.println(kf_getMaxCamTime());
+	USBSerial.print("Max move time: ");
+	USBSerial.println(kf_getMaxMoveTime());
+	USBSerial.print("Run status: ");
+	USBSerial.println(kf_getRunState());
+	
+	if (kf_getRunState != 0){
+		USBSerial.print("Current run time: ");
+		USBSerial.println(kf_getRunTime());
+		USBSerial.print("Percent complete: ");
+		USBSerial.println(kf_getPercentDone());		
+	}
+	USBSerial.print("Program mode: ");
+	USBSerial.println(Motors::planType());
+	USBSerial.print("Continuous video time: ");
+	USBSerial.println(KeyFrames::getContVidTime());
+
 	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
 		// Indicate the current axis
 		USBSerial.print("~~~~~~ AXIS ");
