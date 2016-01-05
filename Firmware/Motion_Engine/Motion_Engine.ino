@@ -499,19 +499,13 @@ void loop() {
 	}	
 
 	// Print debug information if necessary
-	if ((millis() - debug_time) > 500) {
+	if ((millis() - debug_time) > 2000) {
+		USBSerial.print("Free memory: ");
+		USBSerial.println(freeMemory());
 		motorDebug();
 		debug_time = millis();
-	}
+	}		
 
-	// Print debug information if necessary
-	if ((millis() - debug_time) > 2000) {
-		//motorDebug();
-		debug_time = millis();		
-		//debugToggle();
-	}
-
-		
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
 		for (byte i = 0; i < MOTOR_COUNT; i++){

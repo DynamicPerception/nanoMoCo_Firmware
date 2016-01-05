@@ -467,7 +467,7 @@ void joystickSet(byte p_input) {
 	joystick_mode = p_input;
 	
 	debug.ser("Joystick: ");
-	debug.serln(joystick_mode);	
+	debug.serln(String(joystick_mode));	
 
 	// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 	if (joystick_mode){
