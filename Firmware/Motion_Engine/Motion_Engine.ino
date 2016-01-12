@@ -355,7 +355,8 @@ const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
 void setup() {
 	
 	// Start USB serial communications
-	USBSerial.begin(19200);
+	USBSerial.begin(
+	)	;
 	delay(100);
   
 	// Start Bluetooth communications
@@ -499,10 +500,10 @@ void loop() {
 	}	
 
 	// Print debug information if necessary
-	if ((millis() - debug_time) > 2000) {
+	if ((millis() - debug_time) > 500) {
 		USBSerial.print("Free memory: ");
 		USBSerial.println(freeMemory());
-		motorDebug();
+		//motorDebug();
 		debug_time = millis();
 	}		
 
@@ -775,22 +776,6 @@ unsigned long totalProgramTime() {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				debug.funct("totalProgramTime() - Motor: ");
-				debug.funct(i);
-				debug.funct(" Interval: ");
-				debug.funct(Camera.intervalTime());
-				debug.funct("  Lead in: ");
-				debug.funct(motor[i].planLeadIn());
-				debug.funct("  Accel: ");
-				debug.funct(motor[i].planAccelLength());
-				debug.funct("  Travel: ");
-				debug.funct(motor[i].planTravelLength());
-				debug.funct("  Decel: ");
-				debug.funct(motor[i].planDecelLength());
-				debug.funct("  Lead out: ");
-				debug.funct(motor[i].planLeadOut());
-				debug.funct("  Motor time: ");
-				debug.functln(motor_time);
 			}
 			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
 			else
@@ -958,59 +943,32 @@ uint8_t checkMotorAttach() {
 void motorDebug() {
 
 	if (debug.getState() & DebugClass::DB_STEPS){
-		debug.steps("Current Steps ");
-		debug.steps(motor[0].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[0].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[0].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[0].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[0].stopPos());
-		debug.steps(" endPos: ");
-		debug.steps(motor[0].endPos());
-		debug.steps(" running: ");
-		debug.steps(motor[0].running());
-		debug.steps(" enable: ");
-		debug.steps(motor[0].enable());
-		debug.steps(" Type: ");
-		debug.stepsln(Motors::planType());
-		debug.steps(" shots: ");
-		debug.steps(camera_fired);
-		debug.steps(" leadIn: ");
-		debug.stepsln(motor[0].planLeadIn());
+		
 
-		debug.steps("Current Steps ");
-		debug.steps(motor[1].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[1].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[1].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[1].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[1].stopPos());
-		debug.steps(" endPos: ");
-		debug.steps(motor[1].endPos());
-		debug.steps(" Type: ");
-		debug.stepsln(Motors::planType());
-		debug.steps(" leadIn: ");
-		debug.stepsln(motor[1].planLeadIn());
-
-		debug.steps("Current Steps ");
-		debug.steps(motor[2].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[2].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[2].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[2].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[2].stopPos());
-		debug.steps(" endPos: ");
-		debug.stepsln(motor[2].endPos());
-		debug.stepsln("");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debug.steps("Current Steps ");
+			debug.steps(motor[i].currentPos());
+			debug.steps(" continious Speed: ");
+			debug.steps(motor[i].contSpeed());
+			debug.steps(" backlash: ");
+			debug.steps(motor[i].backlash());
+			debug.steps(" startPos: ");
+			debug.steps(motor[i].startPos());
+			debug.steps(" stopPos: ");
+			debug.steps(motor[i].stopPos());
+			debug.steps(" endPos: ");
+			debug.steps(motor[i].endPos());
+			debug.steps(" running: ");
+			debug.steps(motor[i].running());
+			debug.steps(" enable: ");
+			debug.steps(motor[i].enable());
+			debug.steps(" Type: ");
+			debug.stepsln(Motors::planType());
+			debug.steps(" shots: ");
+			debug.steps(camera_fired);
+			debug.steps(" leadIn: ");
+			debug.stepsln(motor[i].planLeadIn());
+		}
 	}
 }
 
