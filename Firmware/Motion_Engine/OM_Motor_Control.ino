@@ -260,23 +260,24 @@ void startProgramCom() {
 
 	// Don't start a new program if one is already running
 	if (!running) {
-		debug.functln("Motor distances:");
+		const String MOTOR = "Motor ";
+		debug.functln(MOTOR + "dist: ");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			debug.functln(motor[i].stopPos() - motor[i].currentPos());
 		}
-		debug.functln("Motor start:");
+		debug.functln(MOTOR + "start:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			debug.functln(motor[i].startPos());
 		}
-		debug.functln("Motor stop:");
+		debug.functln(MOTOR + "stop:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			debug.functln(motor[i].stopPos());
 		}
-		debug.functln("Motor current:");
+		debug.functln(MOTOR + "current:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			debug.functln(motor[i].currentPos());
 		}
-		debug.functln("Motor travel:");
+		debug.functln(MOTOR + "travel:");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			debug.functln(motor[i].planTravelLength());
 		}		
@@ -418,7 +419,7 @@ p_motor_number: motor to modify microstepping
 */
 
 byte msAutoSet(uint8_t p_motor) {
-	debug.functln("Trying to auto-set microsteps!!!!");
+	debug.functln("Trying to auto-set microsteps");
 	unsigned long time = millis();
 	byte microsteps;
 	
@@ -441,8 +442,7 @@ byte msAutoSet(uint8_t p_motor) {
 
 		// USB print the debug value, if necessary
 		debug.funct("Requested Microsteps: ");
-		debug.functln(microsteps);
-		debug.functln("Microsteps successfully set");
+		debug.functln(microsteps);		
 		return microsteps;
 		
 	}	
@@ -467,7 +467,7 @@ void joystickSet(byte p_input) {
 	joystick_mode = p_input;
 	
 	debug.ser("Joystick: ");
-	debug.serln(joystick_mode);	
+	debug.serln(String(joystick_mode));	
 
 	// Set the speed of all motors to zero when turning on joystick mode to prevent runaway motors
 	if (joystick_mode){
@@ -549,7 +549,7 @@ void setJoystickSpeed(int p_motor, float p_speed){
 		motor[p_motor].continuous(true);
 		motor[p_motor].move(dir, 0);
 		startISR();
-		debug.serln("Command Mot.13 - Auto-starting continuous move");
+		debug.serln("Mot.13 - Auto-starting continuous move");
 	}
 }
       

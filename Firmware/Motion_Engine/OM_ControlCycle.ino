@@ -49,11 +49,12 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-	debug.functln("cycleCamera() - Entering function");
+	const String CYCLE_CAMERA = "cycleCamera() - ";
+	debug.functln(CYCLE_CAMERA + "Start");
 
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
 	if (pause_flag) {		
-		debug.functln("cycleCamera() - Pausing program");
+		debug.functln(CYCLE_CAMERA + "Pausing");
 		pauseProgram();
 	}
 
@@ -88,13 +89,13 @@ void cycleCamera() {
 		  ready_to_stop = false;
 
 		  // Debug output
-		  debug.functln("cycleCamera() - All motors done moving!");
+		  debug.functln(CYCLE_CAMERA + "All mot done moving");
 		  if ((totalProgramTime() - last_run_time) > 0) {
 			  debug.funct(totalProgramTime());
 			  debug.funct(last_run_time);
-			  debug.funct("cycleCamera() - There are ");
+			  debug.funct(CYCLE_CAMERA + "There are ");
 			  debug.funct((long)totalProgramTime() - (long)last_run_time);
-			  debug.functln("ms of lead-out time remaining");
+			  debug.functln("ms of lead-out remaining");
 		  }	
 	  }
 
@@ -114,7 +115,7 @@ void cycleCamera() {
 			}
 
 		}
-		debug.functln("cycleCamera() - Bailing from camera cycle at point 1");
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 1");
 		return;
 	}
 	// If either the SMS or continuous move is complete and the camera is in "keep alive" mode
@@ -125,7 +126,7 @@ void cycleCamera() {
   
   // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
-	  debug.functln("cycleCamera() - Skipping shot, waiting for external trigger");
+	  debug.functln(CYCLE_CAMERA + "Skipping shot, waiting for external trigger");
 	  return;
   }
 		
@@ -133,7 +134,7 @@ void cycleCamera() {
 	if( (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) ) {
 		altBlock = ALT_OUT_BEFORE;
 		altOutStart(ALT_OUT_BEFORE);		
-		debug.functln("cycleCamera() - Bailing from camera cycle at point 2");
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 2");
 		return;
 	}
 	
@@ -143,7 +144,7 @@ void cycleCamera() {
 
   if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.intervalTime() || !Camera.enable || external_intervalometer ) {
 
-	  debug.funct("cycleCamera() - Shots: ");
+	  debug.functln(CYCLE_CAMERA + "Shots: ");
 	  debug.funct(camera_fired);
 	  debug.funct(" ");
 	  for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -160,7 +161,7 @@ void cycleCamera() {
         Engine.state(ST_MOVE);
         camera_tm = millis();  
 		
-		debug.functln("cycleCamera() - Bailing from camera cycle at point 3");
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 3");
         return;
       }
 	  
@@ -168,11 +169,11 @@ void cycleCamera() {
       // callback executions that will walk us through the complete exposure cycle.
       // -- if no focus is configured, nothing will happen but trigger
       // the callback that will trigger exposing the camera immediately
-	debug.funct("cycleCamera() - Camera busy: ");
+	  debug.functln(CYCLE_CAMERA + "Camera busy: ");
 	debug.functln(Camera.busy());
 	
     if( ! Camera.busy() ) {
-		debug.functln("cycleCamera() - Initiating exposure cycle");
+		debug.functln(CYCLE_CAMERA + "Starting exposure cycle");
 		// only execute cycle if the camera is not currently busy
 		Engine.state(ST_BLOCK);
 		altBlock = ALT_OFF;
@@ -201,22 +202,24 @@ void cycleCamera() {
  
 uint8_t cycleShotOK(uint8_t p_prealt) {
 	
-	debug.functln("cycleShotOK() - Enter function");
+	const String CYCLE_SHOT_OK = "cycleShotOK() - ";
+
+	debug.functln(CYCLE_SHOT_OK + "Enter function");
 
     // if we're in alt i/o as external intervalometer mode...
 	  if( altExtInt ) {
-		  debug.functln("cycleShotOK() - Ext. interval mode active");
+		  debug.functln(CYCLE_SHOT_OK + "Ext. interval mode active");
 			// don't do a pre-output clearance if alt_block is true...
 		  if( p_prealt && altBlock )
 			return false;
         
 			// determine whether or not to fire based on alt_force_shot
 		  if (altForceShot == true) {			  
-			  debug.functln("cycleShotOK() - altForceShot detected ************");
+			  debug.functln(CYCLE_SHOT_OK + "altForceShot detected ************");
 			  return true;
 		  }
 		  else {
-			  debug.functln("cycleShotOK() - altForceShot not detected");
+			  debug.functln(CYCLE_SHOT_OK + "altForceShot not detected");
 			  return false;
 		  }
 	  }

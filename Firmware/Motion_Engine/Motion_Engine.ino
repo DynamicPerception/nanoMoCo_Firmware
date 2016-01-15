@@ -500,18 +500,12 @@ void loop() {
 
 	// Print debug information if necessary
 	if ((millis() - debug_time) > 500) {
-		motorDebug();
-		debug_time = millis();
-	}
-
-	// Print debug information if necessary
-	if ((millis() - debug_time) > 2000) {
+		//USBSerial.print("Free memory: ");
+		//USBSerial.println(freeMemory());
 		//motorDebug();
-		debug_time = millis();		
-		//debugToggle();
-	}
+		debug_time = millis();
+	}		
 
-		
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
 		for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -756,7 +750,7 @@ uint8_t programPercent() {
 	if (Motors::planType() == SMS)
 		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
 
-	// Otherwise determin the percent completion based on run-time (don't include the start delay)
+	// Otherwise determine the percent completion based on run-time (don't include the start delay)
 	else
 		percent_new = round((float)(run_time - start_delay) / (float)longest_move * 100.0);
 
@@ -781,22 +775,6 @@ unsigned long totalProgramTime() {
 			// SMS: Total the exposures for the program and multiply by the interval
 			if (motor[i].planType() == SMS) {
 				motor_time = Camera.intervalTime() * (motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut());
-				debug.funct("totalProgramTime() - Motor: ");
-				debug.funct(i);
-				debug.funct(" Interval: ");
-				debug.funct(Camera.intervalTime());
-				debug.funct("  Lead in: ");
-				debug.funct(motor[i].planLeadIn());
-				debug.funct("  Accel: ");
-				debug.funct(motor[i].planAccelLength());
-				debug.funct("  Travel: ");
-				debug.funct(motor[i].planTravelLength());
-				debug.funct("  Decel: ");
-				debug.funct(motor[i].planDecelLength());
-				debug.funct("  Lead out: ");
-				debug.funct(motor[i].planLeadOut());
-				debug.funct("  Motor time: ");
-				debug.functln(motor_time);
 			}
 			// CONT_TL AND CONT_VID: all segments are in milliseconds, no need to multiply anything
 			else
@@ -964,59 +942,32 @@ uint8_t checkMotorAttach() {
 void motorDebug() {
 
 	if (debug.getState() & DebugClass::DB_STEPS){
-		debug.steps("Current Steps ");
-		debug.steps(motor[0].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[0].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[0].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[0].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[0].stopPos());
-		debug.steps(" endPos: ");
-		debug.steps(motor[0].endPos());
-		debug.steps(" running: ");
-		debug.steps(motor[0].running());
-		debug.steps(" enable: ");
-		debug.steps(motor[0].enable());
-		debug.steps(" Type: ");
-		debug.stepsln(Motors::planType());
-		debug.steps(" shots: ");
-		debug.steps(camera_fired);
-		debug.steps(" leadIn: ");
-		debug.stepsln(motor[0].planLeadIn());
+		
 
-		debug.steps("Current Steps ");
-		debug.steps(motor[1].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[1].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[1].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[1].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[1].stopPos());
-		debug.steps(" endPos: ");
-		debug.steps(motor[1].endPos());
-		debug.steps(" Type: ");
-		debug.stepsln(Motors::planType());
-		debug.steps(" leadIn: ");
-		debug.stepsln(motor[1].planLeadIn());
-
-		debug.steps("Current Steps ");
-		debug.steps(motor[2].currentPos());
-		debug.steps(" continious Speed: ");
-		debug.steps(motor[2].contSpeed());
-		debug.steps(" backlash: ");
-		debug.steps(motor[2].backlash());
-		debug.steps(" startPos: ");
-		debug.steps(motor[2].startPos());
-		debug.steps(" stopPos: ");
-		debug.steps(motor[2].stopPos());
-		debug.steps(" endPos: ");
-		debug.stepsln(motor[2].endPos());
-		debug.stepsln("");
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			debug.steps("Current Steps ");
+			debug.steps(motor[i].currentPos());
+			debug.steps(" continious Speed: ");
+			debug.steps(motor[i].contSpeed());
+			debug.steps(" backlash: ");
+			debug.steps(motor[i].backlash());
+			debug.steps(" startPos: ");
+			debug.steps(motor[i].startPos());
+			debug.steps(" stopPos: ");
+			debug.steps(motor[i].stopPos());
+			debug.steps(" endPos: ");
+			debug.steps(motor[i].endPos());
+			debug.steps(" running: ");
+			debug.steps(motor[i].running());
+			debug.steps(" enable: ");
+			debug.steps(motor[i].enable());
+			debug.steps(" Type: ");
+			debug.stepsln(Motors::planType());
+			debug.steps(" shots: ");
+			debug.steps(camera_fired);
+			debug.steps(" leadIn: ");
+			debug.stepsln(motor[i].planLeadIn());
+		}
 	}
 }
 

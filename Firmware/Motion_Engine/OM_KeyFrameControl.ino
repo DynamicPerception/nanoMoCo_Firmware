@@ -55,7 +55,7 @@ void kf_printKeyFrameData(){
 	}
 	USBSerial.print("Program mode: ");
 	USBSerial.println(Motors::planType());
-	USBSerial.print("Continuous video time: ");
+	USBSerial.print("Cont. video time: ");
 	USBSerial.println(KeyFrames::getContVidTime());
 
 	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
@@ -235,8 +235,8 @@ void kf_updateProgram(){
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
-	int start_delay = micros();
-	while (micros() - start_delay < time_delay){
+	unsigned long  start_wait = micros();
+	while (micros() - start_wait < time_delay){
 		// Wait for the delay to finish
 	}
 	
@@ -320,12 +320,13 @@ void kf_updateSMS(){
 
 void kf_CameraCheck() {
 
+	const String KF_CAM_CHECK = "kf_CameraCheck() - ";
 
 	int auxPreShotTime = 0;
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
 	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {		
-		debug.functln("cycleCamera() - Skipping shot, waiting for external trigger");		
+		debug.functln(KF_CAM_CHECK + "Skipping shot, waiting for external trigger");		
 		return;
 	}
 
@@ -360,7 +361,7 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			debug.functln("cycleCamera() - Bailing from camera cycle at point 2");			
+			debug.functln(KF_CAM_CHECK + "Bailing from camera cycle at point 2");
 			kf_auxFired = true;
 			return;
 		}
@@ -520,7 +521,7 @@ long kf_getMaxMoveTime(){
 		// Continuous video mode
 		else{			
 			move_time = KeyFrames::getContVidTime();			
-			debug.funct("Getting video move time: ");			
+			debug.funct("Getting vid move time: ");			
 		}		
 		debug.funct(move_time);
 		debug.functln("ms");		
