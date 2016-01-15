@@ -68,13 +68,11 @@ void camCallBack(byte code) {
   // which can result in unexpected behavior
   
   if( code == OM_CAM_FFIN ) {
-	  if (usb_debug & DB_FUNCT)
-		USBSerial.println("camCallBack() - Entering exposure state");
+	  debug.functln("camCallBack() - Start");
 	  Engine.state(ST_EXP);
   }
-  else if( code == OM_CAM_EFIN ) {
-	if (usb_debug & DB_FUNCT)
-	  USBSerial.println("camCallBack() - Entering wait state");
+  else if( code == OM_CAM_EFIN ) {	
+	debug.functln("camCallBack() - Stop");
 	camera_fired++;
     Engine.state(ST_WAIT);
   }
@@ -135,10 +133,10 @@ void cameraTest(uint8_t p_start) {
 		}
 
 		// Remember the current max shots setting
-		old_max_shots = Camera.maxShots;
+		old_max_shots = Camera.getMaxShots();
 
 		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
-		Camera.maxShots = 10000;
+		Camera.setMaxShots(10000);
 
 		// Starting the program will make the camera fire, but the motors won't move
 		startProgram();
@@ -155,7 +153,7 @@ void cameraTest(uint8_t p_start) {
 		for (byte i = 0; i < MOTOR_COUNT; i++)
 			motor[i].enable(old_enable[i]);
 
-		Camera.maxShots = old_max_shots;
+		Camera.setMaxShots(old_max_shots);
 
 		// Reset the shot count to 0
 		camera_fired = 0;
@@ -183,7 +181,7 @@ Automatically sets the max shots value based upon the lead-in, travel, and lead-
 void cameraAutoMaxShots() {
 
 	// This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
-	if (motor[0].planType() != SMS)
+	if (Motors::planType() != SMS)
 		return;
 
 	unsigned int longest = 0;
@@ -196,7 +194,7 @@ void cameraAutoMaxShots() {
 			longest = current;
 	}
 
-	Camera.maxShots = longest;
+	Camera.setMaxShots(longest);
 }
 
 

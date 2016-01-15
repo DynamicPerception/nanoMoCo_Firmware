@@ -60,12 +60,44 @@ void sendToStart(uint8_t p_motor) {
 	else
 		motor[p_motor].programBackCheck(false);
 
-
-	// Move at the maximum motor speed
-	motor[p_motor].ms(4);
+	//// Move at the maximum motor speed
+	//if (!graffikMode())
+	//	motor[p_motor].ms(4);
 	motor[p_motor].contSpeed(mot_max_speed);
 
 	// Start the move
 	motor[p_motor].moveToStart();
+	startISR();
+}
+
+void sendToStop(uint8_t p_motor){
+
+	//// Move at the maximum motor speed
+	//if (!graffikMode())
+	//	motor[p_motor].ms(4);
+	motor[p_motor].contSpeed(mot_max_speed);
+
+	motor[p_motor].moveToStop();
+	startISR();
+}
+
+void sendTo(uint8_t p_motor, long p_pos){
+	
+	//// When not in Graffik Mode (i.e. App mode), use the lowest microsteps
+	//if (!graffikMode()){
+	//	motor[p_motor].ms(4);		
+	//}
+
+	// Move at the maximum motor speed
+	debug.funct("Sending motor ");
+	debug.funct(p_motor);
+	debug.funct(" to position ");
+	debug.functln(p_pos);
+	motor[p_motor].contSpeed(mot_max_speed);
+	motor[p_motor].moveTo(p_pos, true);
+	debug.funct("Speed: ");
+	debug.functln(motor[p_motor].contSpeed());
+	debug.funct("Continuous: ");
+	debug.functln(motor[p_motor].continuous());
 	startISR();
 }

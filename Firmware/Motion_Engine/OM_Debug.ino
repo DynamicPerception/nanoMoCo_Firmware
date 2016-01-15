@@ -43,31 +43,32 @@ in the usb_debug variable to its opposite state. Set only one bit at a time to a
 */
 
 byte setDebugOutput(byte p_setting) {
-
+	byte setting = debug.getState();
 	// If the specified flag is already on, turn it off, otherwise turn it on.
-	if (usb_debug & p_setting)
-		usb_debug &= ~p_setting;
+	if (setting & p_setting)
+		setting &= ~p_setting;
 	else
-		usb_debug |= p_setting;
+		setting |= p_setting;
+	debug.setState(setting);
 
 	USBSerial.print("Requested setting change: ");
 	USBSerial.println(p_setting, BIN);
 	USBSerial.print("Debug flags: ");
-	USBSerial.println(usb_debug, BIN);
+	USBSerial.println(setting, BIN);
 	USBSerial.println("");
 
 	// Set debug states for libraries
 	bool motor_debug = false;
 	bool camera_debug = false;
-	if (usb_debug & DB_FUNCT)
+	if (setting & DebugClass::DB_FUNCT)
 		camera_debug = true;
-	if (usb_debug & DB_MOTOR)
+	if (setting & DebugClass::DB_MOTOR)
 		motor_debug = true;
 	OMCamera::debugOutput(camera_debug);
 	OMMotorFunctions::debugOutput(motor_debug);
 
 	// Return the full USB debug flag byte
-	return usb_debug;
+	return setting;
 }
 
 /*
@@ -77,14 +78,22 @@ Sets the debug LED on or off, respectively
 
 */
 
-void debugOn() {
-  
+void debugOn() {  
   digitalWrite(DEBUG_PIN, HIGH);
+  debug_LED = true;
 }
 
-void debugOff() {
-  
+void debugOff() {  
   digitalWrite(DEBUG_PIN, LOW);
+  debug_LED = false;
+}
+
+// Toggles the state of the debug LED
+void debugToggle(){
+	if(debug_LED)
+		debugOff();
+	else
+		debugOn();
 }
 
 void selfDiagnostic() {

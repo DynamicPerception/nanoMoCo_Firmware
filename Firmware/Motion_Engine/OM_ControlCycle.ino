@@ -32,10 +32,8 @@ See dynamicperception.com for more information
 */
 
 
-
-
-unsigned long  camera_tm         = 0;
-byte altBlock = 0;
+unsigned long	camera_tm	= 0;
+byte			altBlock	= 0;
 
 
 void setupControlCycle() {
@@ -51,40 +49,54 @@ void setupControlCycle() {
 
 
 void cycleCamera() {
-	/*if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Entering function");*/
+	const String CYCLE_CAMERA = "cycleCamera() - ";
+	debug.functln(CYCLE_CAMERA + "Start");
 
 	// Check to see if a pause was requested. The program is paused here to avoid unexpected stops in the middle of a move or exposure.
-	if (pause_flag) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Pausing program");
+	if (pause_flag) {		
+		debug.functln(CYCLE_CAMERA + "Pausing");
 		pauseProgram();
 	}
-	
-  // Stop program if max shots exceeded or if the continuous TL/video program as reached its destination
-  // The program stops when camera_fired exceeds Camera.maxShots instead of equalling it in order to allow the camera to take an exposure at its final destination
-  if((Camera.maxShots > 0  && camera_fired > Camera.maxShots) || (motor[0].planType() != SMS && motor[0].programDone() && motor[1].programDone() && motor[2].programDone()) ) {
+
+
+	// Determine whether the critera for denoting a completed SMS or continuous program have been met
+	bool sms_done = false;
+	bool continuous_done = false;
+	if (Motors::planType() == SMS)
+		sms_done = Camera.getMaxShots() > 0 && camera_fired > Camera.getMaxShots();		
+	else if (Motors::planType() != SMS){
+		continuous_done = true;
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			if (!motor[i].programDone())
+				continuous_done = false;
+		}
+	}
+
+	/*
+	* Stop program if max shots exceeded or if the continuous TL/video program as reached its destination.
+	* The program stops when camera_fired exceeds Camera.maxShots instead of equalling it in order to allow the camera to take an exposure at its final destination.
+	* If the keep_camera_alive variable is true, then the program will not stop (i.e. the camera will continue shooting) until the program is manually stopped by
+	* pressing the e-stop button.
+	*/
+	if (!keep_camera_alive && (sms_done || continuous_done)) {
 
 	  bool ready_to_stop = true;
 
 	  // If this is a video move there might be a lead-out to wait for, so if the run time is less than the total calculated time, don't stop the program yet
 	  // totalProgramTime() and last_run_time are unsigned, so they must be recast as signed values to avoid rolling the result if last_runt_time is longer
-	  if (motor[0].planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
+	  if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
 		  
 		  ready_to_stop = false;
 
 		  // Debug output
-		  if (usb_debug & DB_FUNCT) {
-			  USBSerial.println("cycleCamera() - All motors done moving!");
-			  if ((totalProgramTime() - last_run_time) > 0) {
-				  USBSerial.println(totalProgramTime());
-				  USBSerial.println(last_run_time);
-				  USBSerial.print("cycleCamera() - There are ");
-				  USBSerial.print((long)totalProgramTime() - (long)last_run_time);
-				  USBSerial.println("ms of lead-out time remaining");
-			  }
-
-		  }
+		  debug.functln(CYCLE_CAMERA + "All mot done moving");
+		  if ((totalProgramTime() - last_run_time) > 0) {
+			  debug.funct(totalProgramTime());
+			  debug.funct(last_run_time);
+			  debug.funct(CYCLE_CAMERA + "There are ");
+			  debug.funct((long)totalProgramTime() - (long)last_run_time);
+			  debug.functln("ms of lead-out remaining");
+		  }	
 	  }
 
 		// stop program running w/o clearing variables
@@ -93,54 +105,36 @@ void cycleCamera() {
 			program_complete = true;
 
 			// If not running a ping-pong move, activate the camera trigger to stop the video recording
-			if (!ping_pong_mode && motor[0].planType() == CONT_VID)
+			if (!ping_pong_mode && Motors::planType() == CONT_VID)
 				Camera.expose();
 
 			// If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
-			else if (ping_pong_mode && motor[0].planType() == CONT_VID) {
+			else if (ping_pong_mode && Motors::planType() == CONT_VID) {
 				reverseStartStop();
 				startProgram();
 			}
 
 		}
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 1");
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 1");
 		return;
-  }
-
-		//// If multiple key frames were set, load the parameters for the next position and start the program again
-		//if (key_move && current_frame < key_frames) {
-		//	for (byte i = 0; i < MOTOR_COUNT; i++) {
-
-		//		// Re-set each motor's parameters for the next key frame
-		//		motor[i].stopPos(motor[i].keyDest(current_frame));
-		//		motor[i].planTravelLength(motor[i].keyTime(current_frame));
-		//		motor[i].planAccelLength(motor[i].keyAccel(current_frame));
-		//		motor[i].planDecelLength(motor[i].keyDecel(current_frame));
-		//		motor[i].planLeadIn(motor[i].keyLead(current_frame));
-
-		//	}
-		//	current_frame++;
-		//	startProgram();
-		//}
-
-		//else if (key_move && current_frame >= key_frames)
-		//	current_frame = 0;
-  	   //}
+	}
+	// If either the SMS or continuous move is complete and the camera is in "keep alive" mode
+	// indicate that the camera is still shooting
+	else if (keep_camera_alive && (sms_done || continuous_done)) {
+		still_shooting_flag = true;
+	}
   
   // if in external interval mode, don't do anything if a force shot isn't registered
   if (altExtInt && !altForceShot) {
-	  if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleCamera() - Skipping shot, waiting for external trigger");
+	  debug.functln(CYCLE_CAMERA + "Skipping shot, waiting for external trigger");
 	  return;
   }
 		
 	// trigger any outputs that need to go before the exposure
 	if( (ALT_OUT_BEFORE == altInputs[0] || ALT_OUT_BEFORE == altInputs[1]) && cycleShotOK(true) ) {
 		altBlock = ALT_OUT_BEFORE;
-		altOutStart(ALT_OUT_BEFORE);
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 2");
+		altOutStart(ALT_OUT_BEFORE);		
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 2");
 		return;
 	}
 	
@@ -148,50 +142,44 @@ void cycleCamera() {
     // if enough time has passed, and we're ok to take an exposure
     // note: for slaves, we only get here by a master signal, so we don't check interval timing
 
-  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.interval || !Camera.enable || external_intervalometer ) {
+  if( ComMgr.master() == false || ( millis() - camera_tm ) >= Camera.intervalTime() || !Camera.enable || external_intervalometer ) {
 
-	  if (usb_debug & DB_FUNCT){
-		  USBSerial.print("cycleCamera() - Shots: ");
-		  USBSerial.print(camera_fired);
-		  USBSerial.print(" ");
-
-		  for (byte i = 0; i < MOTOR_COUNT; i++){
-			  USBSerial.print("Motor ");
-			  USBSerial.print(i);
-			  USBSerial.print(": ");
-			  USBSerial.print(motor[i].currentPos());
-			  USBSerial.print(" ");
-		  }
-		  USBSerial.println("");
+	  debug.functln(CYCLE_CAMERA + "Shots: ");
+	  debug.funct(camera_fired);
+	  debug.funct(" ");
+	  for (byte i = 0; i < MOTOR_COUNT; i++){
+		  debug.funct("Motor ");
+		  debug.funct(i);
+		  debug.funct(": ");
+		  debug.funct(motor[i].currentPos());
+		  debug.funct(" ");
 	  }
+	  debug.functln("");	  
 
       // skip camera actions if camera disabled  
       if( ! Camera.enable ) {
         Engine.state(ST_MOVE);
         camera_tm = millis();  
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Bailing from camera cycle at point 3");
+		
+		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 3");
         return;
       }
 	  
-
-      // trigger focus, if needed, which will set off the chain of
+	  // trigger focus, if needed, which will set off the chain of
       // callback executions that will walk us through the complete exposure cycle.
       // -- if no focus is configured, nothing will happen but trigger
       // the callback that will trigger exposing the camera immediately
-	if (usb_debug & DB_FUNCT){
-		USBSerial.print("cycleCamera() - Camera busy: ");
-		USBSerial.print(Camera.busy());
-	}
+	  debug.functln(CYCLE_CAMERA + "Camera busy: ");
+	debug.functln(Camera.busy());
+	
     if( ! Camera.busy() ) {
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println("cycleCamera() - Initiating exposure cycle");
-      // only execute cycle if the camera is not currently busy
-      Engine.state(ST_BLOCK);
-	  altBlock = ALT_OFF;
-	  altForceShot = false;
-      camera_tm = millis();  
-      Camera.focus();
+		debug.functln(CYCLE_CAMERA + "Starting exposure cycle");
+		// only execute cycle if the camera is not currently busy
+		Engine.state(ST_BLOCK);
+		altBlock = ALT_OFF;
+		altForceShot = false;
+		camera_tm = millis();  
+		Camera.focus();
     } 
     
   }
@@ -213,35 +201,34 @@ void cycleCamera() {
  */
  
 uint8_t cycleShotOK(uint8_t p_prealt) {
-	if (usb_debug & DB_FUNCT)
-		USBSerial.println("cycleShotOK() - Enter function");
+	
+	const String CYCLE_SHOT_OK = "cycleShotOK() - ";
+
+	debug.functln(CYCLE_SHOT_OK + "Enter function");
 
     // if we're in alt i/o as external intervalometer mode...
 	  if( altExtInt ) {
-		  if (usb_debug & DB_FUNCT)
-			  USBSerial.println("cycleShotOK() - Ext. interval mode active");
+		  debug.functln(CYCLE_SHOT_OK + "Ext. interval mode active");
 			// don't do a pre-output clearance if alt_block is true...
 		  if( p_prealt && altBlock )
 			return false;
         
 			// determine whether or not to fire based on alt_force_shot
-		  if (altForceShot == true) {
-			  if (usb_debug & DB_FUNCT)
-				  USBSerial.println("cycleShotOK() - altForceShot detected ************");
+		  if (altForceShot == true) {			  
+			  debug.functln(CYCLE_SHOT_OK + "altForceShot detected ************");
 			  return true;
 		  }
 		  else {
-			  if (usb_debug & DB_FUNCT)
-				  USBSerial.println("cycleShotOK() - altForceShot not detected");
+			  debug.functln(CYCLE_SHOT_OK + "altForceShot not detected");
 			  return false;
 		  }
 	  }
   
 	// pre--output clearance check
-	if(altBeforeDelay >= Camera.interval && !altBlock){  //Camera.interval is less than the altBeforeDelay, go as fast as possible
+	if(altBeforeDelay >= Camera.intervalTime() && !altBlock){  //Camera.intervalTime() is less than the altBeforeDelay, go as fast as possible
 		return true;
 	} 
-	else if( (millis() - camera_tm) >= (Camera.interval - altBeforeDelay)  && ! altBlock )
+	else if( (millis() - camera_tm) >= (Camera.intervalTime() - altBeforeDelay)  && ! altBlock )
 		return true;
 
   
@@ -268,7 +255,7 @@ void cycleClearToMove() {
        // do not move if a motor delay is programmed...
 	   for(int i = 0; i < MOTOR_COUNT; i++){
 		   
-		   if( (motor[i].enable() &&  motor[i].planLeadIn() > 0 )){
+		   if( (motor[i].enable())){
 			   if ((minPlanLead != 0 && motor[i].planLeadIn() < minPlanLead) || (i == 0))
 					minPlanLead = motor[i].planLeadIn();
 		   }  
@@ -276,7 +263,7 @@ void cycleClearToMove() {
 	   }
 	   
 	   //do not move until the minimum plan lead in has passed, if planType() == CONT_VID then the plan lead in is in ms
-	   if ((minPlanLead > 0 && ((camera_fired <= minPlanLead && motor[0].planType() != CONT_VID) || (motor[0].planType() == CONT_VID && run_time <= minPlanLead)))) {
+	   if ((minPlanLead > 0 && ((camera_fired <= minPlanLead && Motors::planType() != CONT_VID) || (Motors::planType() == CONT_VID && run_time <= minPlanLead)))) {
 		   	Engine.state(ST_CLEAR);
 		   	return;
 	   	}
@@ -304,10 +291,12 @@ void cycleCheckMotor() {
          // still running
 
      // do not block on continuous motion of any sort
-	 for (int i = 0; i < MOTOR_COUNT; i++){
-      if( motor[i].planMoveType  == SMS && motor[i].running() == true )
-        return;
-	 }
+	if (OMMotorFunctions::planType() == SMS){
+		for (int i = 0; i < MOTOR_COUNT; i++){
+			if (motor[i].running() == true)
+				return;
+		}
+	}
 
     // no longer running, ok to fire camera
 
@@ -318,8 +307,7 @@ void cycleCheckMotor() {
         
         // if autopause is enabled then pause upon completion of movement
       if( motor[0].autoPause == true || motor[1].autoPause == true || motor[2].autoPause == true ) {
-		  if (usb_debug & DB_FUNCT)
-			USBSerial.println("Auto pausing!!!");
+		  debug.functln("Auto pausing!!!");
           pauseProgram();
       }
     }

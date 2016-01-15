@@ -115,8 +115,7 @@ void altHandler(byte p_which) {
     }
     else if( altInputs[p_which] == ALT_EXTINT ) {
         
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println("External trigger detected");
+		debug.serln("External trigger detected");
 		
 		// set camera ok to fire
         altForceShot = true;
@@ -206,13 +205,10 @@ void altConnect(byte p_which, byte p_mode) {
 				attachInterrupt(3, altISRTwo, altDirection);
 				break;
 		}
-	} else {
-    
-		// it's an output mode
-    
+	} else {    
+		// it's an output mode    
 		pinMode(pin, OUTPUT);
-		digitalWrite(pin, ! altOutTrig);
-    
+		digitalWrite(pin, ! altOutTrig);    
 	}
  
   
