@@ -235,8 +235,8 @@ void kf_updateProgram(){
 
 	// Adding a small delay seems to keep the controller from randomly locking. I don't know why...
 	int time_delay = 500;
-	int start_delay = micros();
-	while (micros() - start_delay < time_delay){
+	unsigned long  start_wait = micros();
+	while (micros() - start_wait < time_delay){
 		// Wait for the delay to finish
 	}
 	

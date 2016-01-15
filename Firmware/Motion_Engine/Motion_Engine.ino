@@ -500,8 +500,8 @@ void loop() {
 
 	// Print debug information if necessary
 	if ((millis() - debug_time) > 500) {
-		USBSerial.print("Free memory: ");
-		USBSerial.println(freeMemory());
+		//USBSerial.print("Free memory: ");
+		//USBSerial.println(freeMemory());
 		//motorDebug();
 		debug_time = millis();
 	}		
@@ -750,7 +750,7 @@ uint8_t programPercent() {
 	if (Motors::planType() == SMS)
 		percent_new = round((float)camera_fired / (float)longest_move * 100.0);
 
-	// Otherwise determin the percent completion based on run-time (don't include the start delay)
+	// Otherwise determine the percent completion based on run-time (don't include the start delay)
 	else
 		percent_new = round((float)(run_time - start_delay) / (float)longest_move * 100.0);
 
