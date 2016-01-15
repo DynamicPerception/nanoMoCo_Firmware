@@ -2145,8 +2145,7 @@ void debugMessage(byte subaddr, int command, String message){
 	debugMessage(subaddr, command, message, -1e9);
 }
 
-void debugMessage(byte subaddr, int command, String message, float 
-	){		
+void debugMessage(byte subaddr, int command, String message, float data){		
 
 	switch (subaddr){
 	case 0:

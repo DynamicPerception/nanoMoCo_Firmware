@@ -355,8 +355,7 @@ const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
 void setup() {
 	
 	// Start USB serial communications
-	USBSerial.begin(
-	)	;
+	USBSerial.begin(19200);
 	delay(100);
   
 	// Start Bluetooth communications
