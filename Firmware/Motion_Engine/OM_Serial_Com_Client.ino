@@ -81,7 +81,7 @@ to respond to
 
   only Node1 goes through this function, determines which node
   to respond to
-
+long endPos[] = { 0, 0, 0 };
   */
 
 
@@ -328,7 +328,7 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	case OM_GRAFFIK_MODE_USB:
 	{
 		node = USB;
-		//debug.ser("Graffik mode enabled");
+		debug.ser("Graffik mode enabled");
 		graffikMode(true);
 		response(true);
 	}
@@ -1978,8 +1978,8 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
 			kf[axis].setKFCount(in_val);								
-			msg = "Selecting axis: ";
-			debugMessage(KF, command, MSG, axis);
+			msg = "Setting key frame count: ";
+			debugMessage(KF, command, MSG, in_val);
 		}		   			  
 		response(true, in_val);
 		break;
@@ -1998,7 +1998,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setXN(in_val);		
 		long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;				
 		msg = "Setting abscissa: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getXN(frame));
 
 		// Echo the assigned value
 		response(true, echo);
@@ -2017,7 +2017,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setFN(in_val);
 		long echo = kf[axis].getFN(frame) * FLOAT_TO_FIXED;
 		msg = "Setting position: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getFN(frame));
 		
 		// Echo the assigned value
 		response(true, echo);
@@ -2037,7 +2037,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setDN(in_val);
 		long echo = kf[axis].getDN(frame) * FLOAT_TO_FIXED;
 		msg = "Setting velocity: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getDN(frame));
 		
 		// Echo the assigned value
 		response(true, echo);		
@@ -2268,7 +2268,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 130:
 	{
 		int in_val = Node.ntoi(input_serial_buffer);
-		long ret = kf[KeyFrames::getAxis()].getXN(in_val);
+		long ret = (long) kf[KeyFrames::getAxis()].getXN(in_val);
 		msg = "Time of requested KF: ";
 		debugMessage(KF, command, MSG, ret);
 		response(true, ret);
@@ -2278,9 +2278,19 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 131:
 	{		
 		int in_val = Node.ntoi(input_serial_buffer);
-		long ret = kf[KeyFrames::getAxis()].getFN(in_val);
+		long ret = (long) kf[KeyFrames::getAxis()].getFN(in_val);
 		msg = "Pos of requested KF: ";
 		debugMessage(KF, command, MSG, ret);
+		response(true, ret);
+		break;
+	}
+	// Command 132 returns the velocity of the requested key frame for the current axis
+	case 132:
+	{
+		int in_val = Node.ntoi(input_serial_buffer);
+		long ret = (long) kf[KeyFrames::getAxis()].getDN(in_val) * FLOAT_TO_FIXED;
+		msg = "Vel of requested KF: ";
+		debugMessage(KF, command, MSG, kf[KeyFrames::getAxis()].getDN(in_val));
 		response(true, ret);
 		break;
 	}
