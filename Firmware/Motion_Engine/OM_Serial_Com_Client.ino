@@ -81,10 +81,10 @@ to respond to
 
   only Node1 goes through this function, determines which node
   to respond to
-long endPos[] = { 0, 0, 0 };
+
   */
 
-
+long endPos[] = { 0, 0, 0 };
 
 char buffer[30];
 const PROGMEM char DIV[] = ": ";
@@ -1132,11 +1132,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 10 set motor's end limit here
 	case 10:
-	{
+	{			   
 		msg = "Setting end here: ";
-		debugMessage(subaddr, command, MSG);		
-		long tempPos = thisMotor.currentPos();
-		thisMotor.endPos(tempPos);		
+		debugMessage(subaddr, command, MSG, thisMotor.currentPos());		
+		endPos[subaddr - 1] = thisMotor.currentPos();
+		//long tempPos = thisMotor.currentPos();
+		//thisMotor.endPos(tempPos);		
 		response(true);
 		break;
 	}
@@ -1544,8 +1545,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 105:
 	{
 		msg = "End pos: ";
-		debugMessage(subaddr, command, MSG, thisMotor.endPos());
-		response(true, thisMotor.endPos());
+		debugMessage(subaddr, command, MSG, endPos[subaddr - 1]);
+		response(true, endPos[subaddr - 1]);
 		break;
 	}
 
