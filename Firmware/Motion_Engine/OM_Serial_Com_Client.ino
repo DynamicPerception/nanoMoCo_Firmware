@@ -1546,7 +1546,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	{
 		msg = "End pos: ";
 		debugMessage(subaddr, command, MSG, endPos[subaddr - 1]);
-		response(true, true);
+		response(true, endPos[subaddr - 1]);
 		break;
 	}
 
