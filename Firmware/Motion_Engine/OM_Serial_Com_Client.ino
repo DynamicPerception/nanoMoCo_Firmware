@@ -1943,10 +1943,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// A valid axis must be selected
 		if (axis >= 0 && axis <= MOTOR_COUNT){		   
 			// Set the current axis
-			KeyFrames::setAxis(axis);		   
-			kf[axis].resetXN();
-			kf[axis].resetFN();
-			kf[axis].resetDN();				   
+			KeyFrames::setAxis(axis);		   		   
 		}
 		response(true, axis);
 		break;
@@ -1960,6 +1957,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// If this is the start of a new transmission, set the count and the receive flag
 		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
+			// Clear any existing frame data
+			kf[axis].resetXN();
+			kf[axis].resetFN();
+			kf[axis].resetDN();
 			kf[axis].setKFCount(in_val);								
 			msg = "Setting key frame count: ";
 			debugMessage(KF, command, MSG, in_val);
