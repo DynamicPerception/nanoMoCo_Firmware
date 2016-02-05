@@ -194,6 +194,7 @@ unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
 boolean		  keep_camera_alive	= false;
+boolean		  intervalometer_mode = false;
 
 
 /***************************************
@@ -675,26 +676,9 @@ void eStop() {
 			debug.functln(enable_count);
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
-			if (enable_count >= THRESHOLD && !external_intervalometer) {
-				limitSwitchAttach(0);
-				altConnect(0, ALT_EXTINT);
-				altConnect(1, ALT_EXTINT);
-				altSetup();
-				external_intervalometer = true;
+			if (enable_count >= THRESHOLD) {
+				resetUSBconnection();
 				enable_count = 0;
-
-				// Turn the debug light on to confirm the setting
-				debugOn();
-			}
-			else if (enable_count >= THRESHOLD && external_intervalometer) {
-				altConnect(0, ALT_OFF);
-				altConnect(1, ALT_OFF);
-				altSetup();
-				external_intervalometer = false;
-				enable_count = 0;
-
-				// Turn the debug light off to confirm the setting
-				debugOff();
 			}
 		}
 
@@ -702,6 +686,30 @@ void eStop() {
 			stopAllMotors();
 	}
 	last_interrupt_time = interrupt_time;
+}
+
+void setIntervalometerMode(boolean enabled){
+	if (enabled){
+		limitSwitchAttach(0);
+		altConnect(0, ALT_EXTINT);
+		altConnect(1, ALT_EXTINT);
+		altSetup();
+		external_intervalometer = true;
+		// Turn the debug light on to confirm the setting
+		debugOn();
+	}
+	else{
+		altConnect(0, ALT_OFF);
+		altConnect(1, ALT_OFF);
+		altSetup();
+		external_intervalometer = false;
+		// Turn the debug light off to confirm the setting
+		debugOff();
+	}
+}
+
+boolean getIntervalometerMode(){
+	return intervalometer_mode;
 }
 
 
@@ -814,6 +822,13 @@ uint8_t programComplete() {
 
 */
 
+void resetUSBconnection(){
+	ledChase(1);
+	USBSerial.end();
+	delay(100);
+	USBSerial.begin(19200);
+	delay(100);	
+}
 
 void flasher(byte pin, int count) {
     // flash a pin several times (blink)

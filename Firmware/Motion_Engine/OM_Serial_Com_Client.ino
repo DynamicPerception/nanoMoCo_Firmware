@@ -1785,6 +1785,16 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 	}
+
+	//Command 13 sets external intervalometer (slave) mode
+	case 13:
+	{
+		setIntervalometerMode(input_serial_buffer[0]);
+		msg = "Setting intervalometer mode: ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true);
+		break;
+	}
     
     
     //*****************CAMERA READ COMMANDS********************
@@ -1894,6 +1904,15 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Keep-alive? : ";
 		debugMessage(subaddr, command, MSG, keep_camera_alive);
 		response(true, keep_camera_alive);
+		break;
+	}
+
+	//Command 112 reports the keep-alive state
+	case 112:
+	{
+		msg = "Intervalometer mode? : ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true, getIntervalometerMode());
 		break;
 	}
             
