@@ -81,10 +81,10 @@ to respond to
 
   only Node1 goes through this function, determines which node
   to respond to
-long endPos[] = { 0, 0, 0 };
+
   */
 
-
+long endPos[] = { 0, 0, 0 };
 
 char buffer[30];
 const PROGMEM char DIV[] = ": ";
@@ -93,30 +93,12 @@ const PROGMEM char BUF1[] = " buf[1]: ";
 const PROGMEM char BUF2[] = " buf[2]: ";
 const PROGMEM char BUF3[] = " buf[3]: ";
 const PROGMEM char BUF4[] = " buf[4]: ";
-
-const PROGMEM char DASH_SENDING_MOTOR[] = " - Sending motor ";
-const PROGMEM char SENDING_MOTORS_TO[] = "Sending motors to ";
-const PROGMEM char SETTING_MOTOR[] = "Setting motor ";
-const PROGMEM char SETTING[] = "Setting ";
-const PROGMEM char SENDING[] = "Sending to ";
 const int GEN = 0;
 const int CAM = 4;
 const int KF = 5;
 const PROGMEM char SUBADDR[] = "Subaddr:";
 const PROGMEM char COMMAND[] = " command:";
-const PROGMEM char MOTOR[] = "motor ";
 const PROGMEM char TIME[] = "time ";
-const PROGMEM char START[] = "start ";
-const PROGMEM char STOP[] = "stop ";
-const PROGMEM char HOME[] = "home ";
-const PROGMEM char END[] = "end ";
-const PROGMEM char HERE[] = "here ";
-const PROGMEM char POS[] = "position ";
-const PROGMEM char RUN[] = "run ";
-const PROGMEM char JOYSTICK[] = "joystick ";
-const PROGMEM char MODE[] = "mode ";
-const PROGMEM char SET[] = "Set ";
-const PROGMEM char ALL[] = "all ";
 
 const PROGMEM char GEN_STR[] = "Gen.";
 const PROGMEM char MOT_STR[] = "Mot.";
@@ -1132,11 +1114,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 10 set motor's end limit here
 	case 10:
-	{
+	{			   
 		msg = "Setting end here: ";
-		debugMessage(subaddr, command, MSG);		
-		long tempPos = thisMotor.currentPos();
-		thisMotor.endPos(tempPos);		
+		debugMessage(subaddr, command, MSG, thisMotor.currentPos());		
+		endPos[subaddr - 1] = thisMotor.currentPos();
+		//long tempPos = thisMotor.currentPos();
+		//thisMotor.endPos(tempPos);		
 		response(true);
 		break;
 	}
@@ -1544,8 +1527,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 105:
 	{
 		msg = "End pos: ";
-		debugMessage(subaddr, command, MSG, thisMotor.endPos());
-		response(true, thisMotor.endPos());
+		debugMessage(subaddr, command, MSG, endPos[subaddr - 1]);
+		response(true, endPos[subaddr - 1]);
 		break;
 	}
 
@@ -1802,6 +1785,16 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 	}
+
+	//Command 13 sets external intervalometer (slave) mode
+	case 13:
+	{
+		setIntervalometerMode(input_serial_buffer[0]);
+		msg = "Setting intervalometer mode: ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true);
+		break;
+	}
     
     
     //*****************CAMERA READ COMMANDS********************
@@ -1913,6 +1906,15 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, keep_camera_alive);
 		break;
 	}
+
+	//Command 112 reports the keep-alive state
+	case 112:
+	{
+		msg = "Intervalometer mode? : ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true, getIntervalometerMode());
+		break;
+	}
             
     //Error    
     default: 
@@ -1960,10 +1962,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// A valid axis must be selected
 		if (axis >= 0 && axis <= MOTOR_COUNT){		   
 			// Set the current axis
-			KeyFrames::setAxis(axis);		   
-			kf[axis].resetXN();
-			kf[axis].resetFN();
-			kf[axis].resetDN();				   
+			KeyFrames::setAxis(axis);		   		   
 		}
 		response(true, axis);
 		break;
@@ -1977,6 +1976,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// If this is the start of a new transmission, set the count and the receive flag
 		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
+			// Clear any existing frame data
+			kf[axis].resetXN();
+			kf[axis].resetFN();
+			kf[axis].resetDN();
 			kf[axis].setKFCount(in_val);								
 			msg = "Setting key frame count: ";
 			debugMessage(KF, command, MSG, in_val);
@@ -2222,7 +2225,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 107 returns the currently set key frame continuous video duration
 	case 107:
 	{
-		msg = "Accel valid: ";
+		msg = "Cont. vid duration: ";
 		debugMessage(KF, command, MSG, KeyFrames::getContVidTime());
 		response(true, KeyFrames::getContVidTime());
 		break;
