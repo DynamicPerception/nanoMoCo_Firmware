@@ -2206,7 +2206,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 107 returns the currently set key frame continuous video duration
 	case 107:
 	{
-		msg = "Accel valid: ";
+		msg = "Cont. vid duration: ";
 		debugMessage(KF, command, MSG, KeyFrames::getContVidTime());
 		response(true, KeyFrames::getContVidTime());
 		break;
