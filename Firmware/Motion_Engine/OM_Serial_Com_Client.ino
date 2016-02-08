@@ -1915,6 +1915,23 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, getIntervalometerMode());
 		break;
 	}
+
+	//Command 113 reports the avoid offset
+	//This is the time after the beginning of an interval at which the motors start their moves.
+	//It is used for timing commands sent to the NMX such that they will not cause movement-related errors
+	case 113:
+	{
+				msg = "Avoid offset: ";
+				long avoidOffset;
+				// The avoid offset is only needed if an SMS program is currently running
+				if (kf_running && Motors::planType() == SMS)
+					avoidOffset = Camera.focusTime() + Camera.triggerTime() + Camera.delayTime();
+				else
+					avoidOffset = 0;
+				debugMessage(subaddr, command, MSG, avoidOffset);
+				response(true, avoidOffset);
+				break;
+	}
             
     //Error    
     default: 
