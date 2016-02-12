@@ -111,6 +111,7 @@ const PROGMEM char BLUETOOTH_STR[] = "Bluetooth ";
 
 #define msg static const char PROGMEM MSG[]
 #define thisMotor motor[subaddr - 1]
+#define getMsg getMsgFromFlash
 
 char* getMsgFromFlash(const char* message) {
 	strcpy_P(buffer, message);			
@@ -119,21 +120,21 @@ char* getMsgFromFlash(const char* message) {
 
 
 void printInputBuffer(byte subaddr, byte command, byte* buf){
-	debug.com(SUBADDR);
+	debug.com(getMsg(SUBADDR));
 	debug.com(subaddr);
-	debug.com(COMMAND);
+	debug.com(getMsg(COMMAND));
 	debug.com(command);
-	debug.com(BUF0);
+	debug.com(getMsg(BUF0));
 	debug.com(buf[0], HEX);
-	debug.com(BUF1);
+	debug.com(getMsg(BUF1));
 	debug.com(buf[1], HEX);
-	debug.com(BUF2);
+	debug.com(getMsg(BUF2));
 	debug.com(buf[2], HEX);
-	debug.com(BUF3);
+	debug.com(getMsg(BUF3));
 	debug.com(buf[3], HEX);
-	debug.com(BUF4);
+	debug.com(getMsg(BUF4));
 	debug.com(buf[4], HEX);
-	debug.com(TIME);
+	debug.com(getMsg(TIME));
 	debug.comln(commandTime);
 	debug.comln("");
 }
@@ -1921,16 +1922,16 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//It is used for timing commands sent to the NMX such that they will not cause movement-related errors
 	case 113:
 	{
-				msg = "Avoid offset: ";
-				long avoidOffset;
-				// The avoid offset is only needed if an SMS program is currently running
-				if (kf_running && Motors::planType() == SMS)
-					avoidOffset = Camera.focusTime() + Camera.triggerTime() + Camera.delayTime();
-				else
-					avoidOffset = 0;
-				debugMessage(subaddr, command, MSG, avoidOffset);
-				response(true, avoidOffset);
-				break;
+		msg = "Avoid offset: ";
+		long avoidOffset;
+		// The avoid offset is only needed if an SMS program is currently running
+		if (kf_running && Motors::planType() == SMS)
+			avoidOffset = Camera.focusTime() + Camera.triggerTime() + Camera.delayTime();
+		else
+			avoidOffset = 0;
+		debugMessage(subaddr, command, MSG, avoidOffset);
+		response(true, avoidOffset);
+		break;
 	}
             
     //Error    
