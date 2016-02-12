@@ -263,6 +263,7 @@ unsigned long	start_delay			= 0;				// Time delay for program starting
 bool			delay_flag			= 0;				// If true, the program run time has not exceeded the start delay time
 bool			pause_flag			= false;			// pause flag for later call of pauseProgram() 
 bool			still_shooting_flag = false;			// If true, the program moves have completed, but the camera is still shooting
+bool			ping_pong_flag		= false;			// If true, the program has completed its first cycle, but is continuing in ping-pong mode
 bool			program_complete	= false;			// program completion flag
 
 
@@ -611,6 +612,7 @@ void stopProgram(uint8_t force_clear) {
 	
 	running = false;
 	still_shooting_flag = false;
+	ping_pong_flag = false;
 
 	// clear out motor moved data and stop motor 
 	clearAll();	

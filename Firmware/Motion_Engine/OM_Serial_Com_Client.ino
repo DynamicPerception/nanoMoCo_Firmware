@@ -364,6 +364,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 			debugMessage(GEN, command, MSG);
 			stopProgram();
 			pause_flag = false;
+			ping_pong_flag = false;
 			response(true);
 			break;
 	  }
@@ -595,9 +596,13 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 24 sets the motors' ping_pong_mode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
 	case 24:
+	{
 		pingPongMode(input_serial_buffer[0]);
+		msg = "Setting ping-pong mode";
+		debugMessage(GEN, command, MSG);
 		response(true);
 		break;
+	}
 
 	//Command 25 sends all motors to their start positions. 
 	case 25:
@@ -697,6 +702,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 	{
 				uint8_t status;
 				// program run status
+				if (ping_pong_flag)
+					status = 5;
 				if (still_shooting_flag)
 					status = 4;
 				else if (delay_flag)

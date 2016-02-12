@@ -110,6 +110,7 @@ void cycleCamera() {
 
 			// If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
 			else if (ping_pong_mode && Motors::planType() == CONT_VID) {
+				ping_pong_flag = true;
 				reverseStartStop();
 				startProgram();
 			}
