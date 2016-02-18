@@ -712,6 +712,39 @@ boolean getIntervalometerMode(){
 	return intervalometer_mode;
 }
 
+byte getRunStatus(){
+	
+	byte status				= 00000000;
+	const byte RUNNING		= 00000001;
+	const byte PAUSED		= 00000010;	
+	const byte KF			= 00000100;
+	const byte DELAY		= 00001000;
+	const byte KEEPALIVE	= 00010000;
+	const byte PINGPONG		= 00100000;
+
+	if (running){
+		status &= RUNNING;
+	}
+	else if (kf_running){
+		status &= RUNNING;
+		status &= KF;
+	}
+
+	if (kf_paused || pause_flag){
+		status &= PAUSED;
+	}
+	if (delay_flag){
+		status &= DELAY;
+	}
+	if (still_shooting_flag){
+		status &= KEEPALIVE;
+	}
+	if (ping_pong_flag){
+		status &= PINGPONG;
+	}
+	return status;
+}
+
 
 /*
 

@@ -700,24 +700,12 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 101 reads run status
 	case 101:
 	{
-				uint8_t status;
-				// program run status
-				if (ping_pong_flag)
-					status = 5;
-				if (still_shooting_flag)
-					status = 4;
-				else if (delay_flag)
-					status = 3;
-				else if (running && !still_shooting_flag && !delay_flag)
-					status = 2;
-				else if (pause_flag)
-					status = 1;
-				else
-					status = 0;
+		byte status = getRunStatus();
+
+		msg = "Program run status: ";
+		debugMessage(GEN, command, MSG, status);	
 				
-				//debugMessage(GEN, command, RUN + "status: ", status);	
-				
-				response(true, status);
+		response(true, status);
 	}
       break;
     
