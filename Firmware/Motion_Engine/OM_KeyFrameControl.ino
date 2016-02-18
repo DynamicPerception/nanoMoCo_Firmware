@@ -211,6 +211,7 @@ void kf_stopProgram(){
 	// Turn off the key frame program flag
 	kf_running = false;
 	kf_paused = false;
+	still_shooting_flag = false;
 
 	// If it's a video move, trigger the camera once to stop the recording
 	if (Motors::planType() == CONT_VID)
@@ -240,8 +241,8 @@ void kf_updateProgram(){
 		// Wait for the delay to finish
 	}
 	
-	// Continuous move update	
-	if (Motors::planType() != SMS){		
+	// Continuous move update (don't update in keep-alive phase)
+	if (Motors::planType() != SMS && !still_shooting_flag){
 		kf_updateContSpeed();
 	}
 
@@ -249,14 +250,28 @@ void kf_updateProgram(){
 	if (Motors::planType() != CONT_VID)
 		kf_CameraCheck();
 
-	// SMS move update
-	if (Motors::planType() == SMS){
+	// SMS move update (don't update in keep-alive phase)
+	if (Motors::planType() == SMS && !still_shooting_flag){
 		kf_updateSMS();
 	}
 
 	// Check to see if the program is done
 	if (kf_run_time > kf_getMaxCamTime()){
-		kf_stopProgram();
+		// Make sure the motors are stopped, but let the program continue running
+		if (keep_camera_alive){
+			still_shooting_flag = true;
+
+			// Make sure all motors are stopped
+			for (byte i = 0; i < MOTOR_COUNT; i++){
+				setJoystickSpeed(i, 0);
+			}
+
+			// Disable joystick mode
+			joystickSet(false);
+		}
+		else{
+			kf_stopProgram();
+		}		
 	}
 }
 
