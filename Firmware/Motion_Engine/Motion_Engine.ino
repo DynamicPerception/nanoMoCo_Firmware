@@ -714,37 +714,42 @@ boolean getIntervalometerMode(){
 
 byte getRunStatus(){
 	
-	byte status				= 00000000;
-	const byte RUNNING		= 00000001;
-	const byte PAUSED		= 00000010;	
-	const byte KF			= 00000100;
-	const byte DELAY		= 00001000;
-	const byte KEEPALIVE	= 00010000;
-	const byte PINGPONG		= 00100000;
+	byte status				= B00000000;
+	const byte RUNNING		= B00000001;
+	const byte PAUSED		= B00000010;
+	const byte KEYFRAME		= B00000100;
+	const byte DELAY		= B00001000;
+	const byte KEEPALIVE	= B00010000;
+	const byte PINGPONG		= B00100000;
 
 	if (running){
-		status &= RUNNING;
+		status |= RUNNING;
 	}
 	else if (kf_running){
-		status &= RUNNING;
-		status &= KF;
+		status |= RUNNING;
+		status |= KEYFRAME;
 	}
 
-	if (kf_paused || pause_flag){
-		status &= PAUSED;
+	if (pause_flag){
+		// The "running" var for the legacy program is false when paused, so indicate it manually
+		status |= RUNNING;
+		status |= PAUSED;		
+	}
+	else if (kf_paused){
+		status |= PAUSED;
+		status |= KEYFRAME;
 	}
 	if (delay_flag){
-		status &= DELAY;
+		status |= DELAY;
 	}
-	if (still_shooting_flag){
-		status &= KEEPALIVE;
+	if (still_shooting_flag){		
+		status |= KEEPALIVE;
 	}
 	if (ping_pong_flag){
-		status &= PINGPONG;
-	}
+		status |= PINGPONG;
+	}	
 	return status;
 }
-
 
 /*
 
