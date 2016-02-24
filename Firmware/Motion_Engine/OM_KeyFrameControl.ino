@@ -259,6 +259,7 @@ void kf_updateProgram(){
 	if (kf_run_time > kf_getMaxCamTime()){
 		// Make sure the motors are stopped, but let the program continue running
 		if (keep_camera_alive){
+			debug.serln("Starting keep alive phase");
 			still_shooting_flag = true;
 
 			// Make sure all motors are stopped
@@ -270,7 +271,17 @@ void kf_updateProgram(){
 			joystickSet(false);
 		}
 		else{
+			debug.serln("Stopping kf program");
 			kf_stopProgram();
+			// If ping-pong mode is active, reverse and start a new program
+			if (ping_pong_mode = true){
+				debug.serln("Starting ping-pong phase");
+				ping_pong_flag = true;
+				debug.serln("Reversing key points");
+				reverseStartStop();
+				debug.serln("Starting new kf bounce program");
+				kf_startProgram();
+			}
 		}		
 	}
 }

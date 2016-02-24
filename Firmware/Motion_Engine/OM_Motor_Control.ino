@@ -552,6 +552,68 @@ void setJoystickSpeed(int p_motor, float p_speed){
 		debug.serln("Mot.13 - Auto-starting continuous move");
 	}
 }
+
+/** Reverse Move
+
+Stops the motors, switches the start and stop positions, then restarts the motors.
+Moves only if ping_pong_mode is enabled.
+*/
+
+void reverseStartStop(){
+	debug.serln("reverseStartStop()");
+
+	for (int i = 0; i < MOTOR_COUNT; i++){
+		//Switches start and stop positions
+		long curStart = motor[i].startPos();
+		long curStop = motor[i].stopPos();
+		motor[i].startPos(curStop);
+		motor[i].stopPos(curStart);
+	}
+
+	// Swap key point order		
+	for (int i = 0; i < MOTOR_COUNT; i++){
+		KeyFrames::setAxis(i);
+		int count = kf[i].getKFCount();
+
+		// Don't try to reverse if there's nothing to reverse
+		if (count == 0){	
+			continue;
+		}
+
+		// Allocate space for temporary array
+		float* tempAbscissa = (float*)malloc(count * sizeof(float));
+		float* tempPos		= (float*)malloc(count * sizeof(float));
+		float* tempVel		= (float*)malloc(count * sizeof(float));
+	
+		// Copy existing array to temporary arr. Don't reverse abscissa order.
+		float maxAbscissa = kf[i].getXN(count-1);
+		for (int j = 0; j < count; j++){
+			// Need to mirror abscissas rather than simply reversing them
+			tempAbscissa[j] = maxAbscissa - kf[i].getXN((count - 1) - j);			
+			tempPos[j]		= kf[i].getFN((count - 1) - j);
+			// Invert velocities
+			tempVel[j]		= -kf[i].getDN((count - 1) - j);
+		}
+
+		// Clear existing key frames
+		kf[i].resetXN();
+		kf[i].resetFN();
+		kf[i].resetDN();
+		kf[i].setKFCount(count);
+
+		// Repopulate in reverse order
+		for (int j = 0; j < count; j++){
+			kf[i].setXN(tempAbscissa[j]);
+			kf[i].setFN(tempPos[j]);
+			kf[i].setDN(tempVel[j]);
+		}
+
+		// Free memory used in tempoary arrays
+		free(tempAbscissa);
+		free(tempPos);
+		free(tempVel);
+	}
+}
       
 
 
