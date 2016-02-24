@@ -700,23 +700,10 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 101 reads run status
 	case 101:
 	{
-		uint8_t status;
-		// program run status
-		if (ping_pong_flag)
-			status = 5;
-		if (still_shooting_flag)
-			status = 4;
-		else if (delay_flag)
-			status = 3;
-		else if (running && !still_shooting_flag && !delay_flag)
-			 status = 2;
-		else if (pause_flag)
-			status = 1;
-		else
-			 status = 0;
-				
-		msg = "Run status: ";
-		debugMessage(GEN, command, MSG, status);			
+		byte status = getRunStatus();
+
+		msg = "Program run status: ";
+		debugMessage(GEN, command, MSG, status);	
 				
 		response(true, status);
 	}
@@ -975,16 +962,6 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, motorSleep());
 		break;
 	}
-
-	//Command 140 returns the full run status as a single byte. Prefer this command over 0.101 and 
-	// 5.120, as they will be depreciated in future versions
-	case 140:
-	{
-		byte status = getRunStatus();
-		msg = "Program run status: ";
-		debugMessage(GEN, command, MSG, status);
-	}
-
 	//Command 150 returns whether the controller is in Graffik Mode
 	case 150:
 	{
