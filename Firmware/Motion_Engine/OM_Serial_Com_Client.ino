@@ -84,7 +84,7 @@ to respond to
 
   */
 
-
+long endPos[] = { 0, 0, 0 };
 
 char buffer[30];
 const PROGMEM char DIV[] = ": ";
@@ -93,30 +93,12 @@ const PROGMEM char BUF1[] = " buf[1]: ";
 const PROGMEM char BUF2[] = " buf[2]: ";
 const PROGMEM char BUF3[] = " buf[3]: ";
 const PROGMEM char BUF4[] = " buf[4]: ";
-
-const PROGMEM char DASH_SENDING_MOTOR[] = " - Sending motor ";
-const PROGMEM char SENDING_MOTORS_TO[] = "Sending motors to ";
-const PROGMEM char SETTING_MOTOR[] = "Setting motor ";
-const PROGMEM char SETTING[] = "Setting ";
-const PROGMEM char SENDING[] = "Sending to ";
 const int GEN = 0;
 const int CAM = 4;
 const int KF = 5;
 const PROGMEM char SUBADDR[] = "Subaddr:";
 const PROGMEM char COMMAND[] = " command:";
-const PROGMEM char MOTOR[] = "motor ";
 const PROGMEM char TIME[] = "time ";
-const PROGMEM char START[] = "start ";
-const PROGMEM char STOP[] = "stop ";
-const PROGMEM char HOME[] = "home ";
-const PROGMEM char END[] = "end ";
-const PROGMEM char HERE[] = "here ";
-const PROGMEM char POS[] = "position ";
-const PROGMEM char RUN[] = "run ";
-const PROGMEM char JOYSTICK[] = "joystick ";
-const PROGMEM char MODE[] = "mode ";
-const PROGMEM char SET[] = "Set ";
-const PROGMEM char ALL[] = "all ";
 
 const PROGMEM char GEN_STR[] = "Gen.";
 const PROGMEM char MOT_STR[] = "Mot.";
@@ -129,6 +111,7 @@ const PROGMEM char BLUETOOTH_STR[] = "Bluetooth ";
 
 #define msg static const char PROGMEM MSG[]
 #define thisMotor motor[subaddr - 1]
+#define getMsg getMsgFromFlash
 
 char* getMsgFromFlash(const char* message) {
 	strcpy_P(buffer, message);			
@@ -137,21 +120,21 @@ char* getMsgFromFlash(const char* message) {
 
 
 void printInputBuffer(byte subaddr, byte command, byte* buf){
-	debug.com(SUBADDR);
+	debug.com(getMsg(SUBADDR));
 	debug.com(subaddr);
-	debug.com(COMMAND);
+	debug.com(getMsg(COMMAND));
 	debug.com(command);
-	debug.com(BUF0);
+	debug.com(getMsg(BUF0));
 	debug.com(buf[0], HEX);
-	debug.com(BUF1);
+	debug.com(getMsg(BUF1));
 	debug.com(buf[1], HEX);
-	debug.com(BUF2);
+	debug.com(getMsg(BUF2));
 	debug.com(buf[2], HEX);
-	debug.com(BUF3);
+	debug.com(getMsg(BUF3));
 	debug.com(buf[3], HEX);
-	debug.com(BUF4);
+	debug.com(getMsg(BUF4));
 	debug.com(buf[4], HEX);
-	debug.com(TIME);
+	debug.com(getMsg(TIME));
 	debug.comln(commandTime);
 	debug.comln("");
 }
@@ -328,7 +311,7 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 	case OM_GRAFFIK_MODE_USB:
 	{
 		node = USB;
-		//debug.ser("Graffik mode enabled");
+		debug.ser("Graffik mode enabled");
 		graffikMode(true);
 		response(true);
 	}
@@ -381,6 +364,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 			debugMessage(GEN, command, MSG);
 			stopProgram();
 			pause_flag = false;
+			ping_pong_flag = false;
 			response(true);
 			break;
 	  }
@@ -612,9 +596,13 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 24 sets the motors' ping_pong_mode, if enabled it causes the motors to bounce back and forth
 	//from the start and stop position until the user stops the program.
 	case 24:
+	{
 		pingPongMode(input_serial_buffer[0]);
+		msg = "Setting ping-pong mode";
+		debugMessage(GEN, command, MSG);
 		response(true);
 		break;
+	}
 
 	//Command 25 sends all motors to their start positions. 
 	case 25:
@@ -712,22 +700,25 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 101 reads run status
 	case 101:
 	{
-				uint8_t status;
-				// program run status
-				if (still_shooting_flag)
-					status = 4;
-				else if (delay_flag)
-					status = 3;
-				else if (running && !still_shooting_flag && !delay_flag)
-					status = 2;
-				else if (pause_flag)
-					status = 1;
-				else
-					status = 0;
+		uint8_t status;
+		// program run status
+		if (ping_pong_flag)
+			status = 5;
+		if (still_shooting_flag)
+			status = 4;
+		else if (delay_flag)
+			status = 3;
+		else if (running && !still_shooting_flag && !delay_flag)
+			 status = 2;
+		else if (pause_flag)
+			status = 1;
+		else
+			 status = 0;
 				
-				//debugMessage(GEN, command, RUN + "status: ", status);	
+		msg = "Run status: ";
+		debugMessage(GEN, command, MSG, status);			
 				
-				response(true, status);
+		response(true, status);
 	}
       break;
     
@@ -984,6 +975,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		response(true, motorSleep());
 		break;
 	}
+
+	//Command 140 returns the full run status as a single byte. Prefer this command over 0.101 and 
+	// 5.120, as they will be depreciated in future versions
+	case 140:
+	{
+		byte status = getRunStatus();
+		msg = "Program run status: ";
+		debugMessage(GEN, command, MSG, status);
+	}
+
 	//Command 150 returns whether the controller is in Graffik Mode
 	case 150:
 	{
@@ -1132,11 +1133,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 	//Command 10 set motor's end limit here
 	case 10:
-	{
+	{			   
 		msg = "Setting end here: ";
-		debugMessage(subaddr, command, MSG);		
-		long tempPos = thisMotor.currentPos();
-		thisMotor.endPos(tempPos);		
+		debugMessage(subaddr, command, MSG, thisMotor.currentPos());		
+		endPos[subaddr - 1] = thisMotor.currentPos();
+		//long tempPos = thisMotor.currentPos();
+		//thisMotor.endPos(tempPos);		
 		response(true);
 		break;
 	}
@@ -1544,8 +1546,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 105:
 	{
 		msg = "End pos: ";
-		debugMessage(subaddr, command, MSG, thisMotor.endPos());
-		response(true, thisMotor.endPos());
+		debugMessage(subaddr, command, MSG, endPos[subaddr - 1]);
+		response(true, endPos[subaddr - 1]);
 		break;
 	}
 
@@ -1802,6 +1804,16 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true);
 		break;
 	}
+
+	//Command 13 sets external intervalometer (slave) mode
+	case 13:
+	{
+		setIntervalometerMode(input_serial_buffer[0]);
+		msg = "Setting intervalometer mode: ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true);
+		break;
+	}
     
     
     //*****************CAMERA READ COMMANDS********************
@@ -1913,6 +1925,32 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, keep_camera_alive);
 		break;
 	}
+
+	//Command 112 reports the keep-alive state
+	case 112:
+	{
+		msg = "Intervalometer mode? : ";
+		debugMessage(subaddr, command, MSG, getIntervalometerMode());
+		response(true, getIntervalometerMode());
+		break;
+	}
+
+	//Command 113 reports the avoid offset
+	//This is the time after the beginning of an interval at which the motors start their moves.
+	//It is used for timing commands sent to the NMX such that they will not cause movement-related errors
+	case 113:
+	{
+		msg = "Avoid offset: ";
+		long avoidOffset;
+		// The avoid offset is only needed if an SMS program is currently running
+		if (kf_running && Motors::planType() == SMS)
+			avoidOffset = Camera.focusTime() + Camera.triggerTime() + Camera.delayTime();
+		else
+			avoidOffset = 0;
+		debugMessage(subaddr, command, MSG, avoidOffset);
+		response(true, avoidOffset);
+		break;
+	}
             
     //Error    
     default: 
@@ -1960,10 +1998,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// A valid axis must be selected
 		if (axis >= 0 && axis <= MOTOR_COUNT){		   
 			// Set the current axis
-			KeyFrames::setAxis(axis);		   
-			kf[axis].resetXN();
-			kf[axis].resetFN();
-			kf[axis].resetDN();				   
+			KeyFrames::setAxis(axis);		   		   
 		}
 		response(true, axis);
 		break;
@@ -1977,9 +2012,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		// If this is the start of a new transmission, set the count and the receive flag
 		if (in_val >= 0){				   		
 			int axis = KeyFrames::getAxis();
+			// Clear any existing frame data
+			kf[axis].resetXN();
+			kf[axis].resetFN();
+			kf[axis].resetDN();
 			kf[axis].setKFCount(in_val);								
-			msg = "Selecting axis: ";
-			debugMessage(KF, command, MSG, axis);
+			msg = "Setting key frame count: ";
+			debugMessage(KF, command, MSG, in_val);
 		}		   			  
 		response(true, in_val);
 		break;
@@ -1998,7 +2037,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setXN(in_val);		
 		long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;				
 		msg = "Setting abscissa: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getXN(frame));
 
 		// Echo the assigned value
 		response(true, echo);
@@ -2017,7 +2056,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setFN(in_val);
 		long echo = kf[axis].getFN(frame) * FLOAT_TO_FIXED;
 		msg = "Setting position: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getFN(frame));
 		
 		// Echo the assigned value
 		response(true, echo);
@@ -2037,7 +2076,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 		kf[axis].setDN(in_val);
 		long echo = kf[axis].getDN(frame) * FLOAT_TO_FIXED;
 		msg = "Setting velocity: ";
-		debugMessage(KF, command, MSG, echo);		
+		debugMessage(KF, command, MSG, kf[axis].getDN(frame));
 		
 		// Echo the assigned value
 		response(true, echo);		
@@ -2222,7 +2261,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 107 returns the currently set key frame continuous video duration
 	case 107:
 	{
-		msg = "Accel valid: ";
+		msg = "Cont. vid duration: ";
 		debugMessage(KF, command, MSG, KeyFrames::getContVidTime());
 		response(true, KeyFrames::getContVidTime());
 		break;
@@ -2268,7 +2307,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 130:
 	{
 		int in_val = Node.ntoi(input_serial_buffer);
-		long ret = kf[KeyFrames::getAxis()].getXN(in_val);
+		long ret = (long) kf[KeyFrames::getAxis()].getXN(in_val);
 		msg = "Time of requested KF: ";
 		debugMessage(KF, command, MSG, ret);
 		response(true, ret);
@@ -2278,9 +2317,19 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 131:
 	{		
 		int in_val = Node.ntoi(input_serial_buffer);
-		long ret = kf[KeyFrames::getAxis()].getFN(in_val);
+		long ret = (long) kf[KeyFrames::getAxis()].getFN(in_val);
 		msg = "Pos of requested KF: ";
 		debugMessage(KF, command, MSG, ret);
+		response(true, ret);
+		break;
+	}
+	// Command 132 returns the velocity of the requested key frame for the current axis
+	case 132:
+	{
+		int in_val = Node.ntoi(input_serial_buffer);
+		long ret = (long) kf[KeyFrames::getAxis()].getDN(in_val) * FLOAT_TO_FIXED;
+		msg = "Vel of requested KF: ";
+		debugMessage(KF, command, MSG, kf[KeyFrames::getAxis()].getDN(in_val));
 		response(true, ret);
 		break;
 	}

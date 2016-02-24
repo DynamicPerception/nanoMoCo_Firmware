@@ -41,8 +41,6 @@ See dynamicperception.com for more information
 #include <MemoryFree.h>
 #include <hermite_spline.h>
 #include <key_frames.h>
-#include <matrix_math.h>
-#include <spline_calc.h>
 
 // openmoco standard libraries
 #include <OMComHandler.h>
@@ -112,7 +110,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 47;				// Serial API version
+const int SERIAL_VERSION			= 49;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -194,6 +192,7 @@ unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
 boolean		  keep_camera_alive	= false;
+boolean		  intervalometer_mode = false;
 
 
 /***************************************
@@ -262,6 +261,7 @@ unsigned long	start_delay			= 0;				// Time delay for program starting
 bool			delay_flag			= 0;				// If true, the program run time has not exceeded the start delay time
 bool			pause_flag			= false;			// pause flag for later call of pauseProgram() 
 bool			still_shooting_flag = false;			// If true, the program moves have completed, but the camera is still shooting
+bool			ping_pong_flag		= false;			// If true, the program has completed its first cycle, but is continuing in ping-pong mode
 bool			program_complete	= false;			// program completion flag
 
 
@@ -610,6 +610,7 @@ void stopProgram(uint8_t force_clear) {
 	
 	running = false;
 	still_shooting_flag = false;
+	ping_pong_flag = false;
 
 	// clear out motor moved data and stop motor 
 	clearAll();	
@@ -675,26 +676,9 @@ void eStop() {
 			debug.functln(enable_count);
 
 			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
-			if (enable_count >= THRESHOLD && !external_intervalometer) {
-				limitSwitchAttach(0);
-				altConnect(0, ALT_EXTINT);
-				altConnect(1, ALT_EXTINT);
-				altSetup();
-				external_intervalometer = true;
+			if (enable_count >= THRESHOLD) {
+				resetUSBconnection();
 				enable_count = 0;
-
-				// Turn the debug light on to confirm the setting
-				debugOn();
-			}
-			else if (enable_count >= THRESHOLD && external_intervalometer) {
-				altConnect(0, ALT_OFF);
-				altConnect(1, ALT_OFF);
-				altSetup();
-				external_intervalometer = false;
-				enable_count = 0;
-
-				// Turn the debug light off to confirm the setting
-				debugOff();
 			}
 		}
 
@@ -704,6 +688,68 @@ void eStop() {
 	last_interrupt_time = interrupt_time;
 }
 
+void setIntervalometerMode(boolean enabled){
+	if (enabled){
+		limitSwitchAttach(0);
+		altConnect(0, ALT_EXTINT);
+		altConnect(1, ALT_EXTINT);
+		altSetup();
+		external_intervalometer = true;
+		// Turn the debug light on to confirm the setting
+		debugOn();
+	}
+	else{
+		altConnect(0, ALT_OFF);
+		altConnect(1, ALT_OFF);
+		altSetup();
+		external_intervalometer = false;
+		// Turn the debug light off to confirm the setting
+		debugOff();
+	}
+}
+
+boolean getIntervalometerMode(){
+	return intervalometer_mode;
+}
+
+byte getRunStatus(){
+	
+	byte status				= B00000000;
+	const byte RUNNING		= B00000001;
+	const byte PAUSED		= B00000010;
+	const byte KEYFRAME		= B00000100;
+	const byte DELAY		= B00001000;
+	const byte KEEPALIVE	= B00010000;
+	const byte PINGPONG		= B00100000;
+
+	if (running){
+		status |= RUNNING;
+	}
+	else if (kf_running){
+		status |= RUNNING;
+		status |= KEYFRAME;
+	}
+
+	if (pause_flag){
+		// The "running" var for the legacy program is false when paused, so indicate it manually
+		status |= RUNNING;
+		status |= PAUSED;		
+	}
+	else if (kf_paused){
+		status |= PAUSED;
+		status |= KEYFRAME;
+	}
+	if (delay_flag){
+		status |= DELAY;
+	}
+	if (still_shooting_flag){		
+		status |= KEEPALIVE;
+	}
+	if (ping_pong_flag){
+		status |= PINGPONG;
+	}	
+	return status;
+}
 
 /*
 
@@ -814,6 +860,13 @@ uint8_t programComplete() {
 
 */
 
+void resetUSBconnection(){
+	ledChase(1);
+	USBSerial.end();
+	delay(100);
+	USBSerial.begin(19200);
+	delay(100);	
+}
 
 void flasher(byte pin, int count) {
     // flash a pin several times (blink)

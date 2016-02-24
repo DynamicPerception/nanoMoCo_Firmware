@@ -195,28 +195,6 @@ void stopAllMotors() {
 
 }
 
-/** Reverse Move
-
-  Stops the motors, switches the start and stop positions, then restarts the motors.
-  Moves only if ping_pong_mode is enabled.
-  */
-
-void reverseStartStop(){
-	
-	
-	for (int i = 0; i < MOTOR_COUNT; i++){
-	
-		//Switches start and stop positions
-		long curStart = motor[i].startPos();
-		long curStop = motor[i].stopPos();
-		motor[i].startPos(curStop);
-		motor[i].stopPos(curStart);
-
-	}
-	
-}
-
-
 /** Clear Steps Moved
 
   Clears the count of steps moved.  Additionally, if the motor is currently
