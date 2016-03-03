@@ -983,6 +983,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 		byte status = getRunStatus();
 		msg = "Program run status: ";
 		debugMessage(GEN, command, MSG, status);
+		response(true, status);
+		break;
 	}
 
 	//Command 150 returns whether the controller is in Graffik Mode
