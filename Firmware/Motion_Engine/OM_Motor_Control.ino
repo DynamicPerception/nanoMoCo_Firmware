@@ -476,7 +476,7 @@ void joystickSet(byte p_input) {
 	}
 	// If we're exiting joystick mode, turn off the joystick watchdog mode
 	else if (!joystick_mode) {
-		watchdog = false;
+		watchdogMode(false);
 	}
 }
 
@@ -523,7 +523,7 @@ byte pingPongMode() {
 }
 
 void setJoystickSpeed(int p_motor, float p_speed){
-
+		
 	float old_speed = motor[p_motor].desiredSpeed();
 	float new_speed = p_speed;
 
@@ -550,6 +550,25 @@ void setJoystickSpeed(int p_motor, float p_speed){
 		motor[p_motor].move(dir, 0);
 		startISR();
 		debug.serln("Mot.13 - Auto-starting continuous move");
+	}
+
+	// If all the motors are commanded to zero speed, disable watchdog until a new non-zero speed is set
+	if (p_speed == 0){
+		bool allStopped = true;
+		for (byte i = 0; i < MOTOR_COUNT; i++){
+			if (motor[i].desiredSpeed() != 0){
+				allStopped = false;
+				break;
+			}
+		}
+		if (allStopped){
+			watchdog_active = false;
+		}
+
+	}
+	// If watchdog mode is enabled and the speed is non-zero, activate watchdog
+	else if(watchdogMode()){
+		watchdog_active = true;
 	}
 }
 

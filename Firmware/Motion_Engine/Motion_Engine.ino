@@ -283,7 +283,8 @@ extern void df_TimerHandler(void);
 //Variables for joystick move, if watchdog is true the system expects a command at least once
 //every WATCHDOG_MAX_TIME (mS), if it doesn't receive a command it will stop the motors
 const unsigned int WATCHDOG_MAX_TIME = 1000;
-uint8_t watchdog = false;
+uint8_t watchdog_mode = false;
+uint8_t watchdog_active = false;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
 
@@ -507,7 +508,7 @@ void loop() {
 	}		
 
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
-	if (watchdog && (millis() - commandTime > WATCHDOG_MAX_TIME)){
+	if (watchdog_active && (millis() - commandTime > WATCHDOG_MAX_TIME)){
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			if (motor[i].running()){
 				stopAllMotors();
@@ -675,9 +676,16 @@ void eStop() {
 			debug.funct("eStop() - Switch count ");
 			debug.functln(enable_count);
 
-			// If the user has pressed the e-stop enough times within the alloted time span, enabled the external intervalometer
-			if (enable_count >= THRESHOLD) {
+			// If the user has pressed the e-stop enough times within the alloted time span, reset the USB connection and toggle the external intervalometer mode.
+			if (enable_count >= THRESHOLD) {				
 				resetUSBconnection();
+
+				if (!external_intervalometer){
+					setIntervalometerMode(true);					
+				}
+				else{
+					setIntervalometerMode(false);
+				}
 				enable_count = 0;
 			}
 		}
@@ -1069,3 +1077,11 @@ bool appMode() {
 	return app_mode;
 }
 
+void watchdogMode(bool enabled){
+	watchdog_mode = enabled;	
+	watchdog_active = enabled;	
+}
+
+bool watchdogMode(){
+	return watchdog_mode;
+}

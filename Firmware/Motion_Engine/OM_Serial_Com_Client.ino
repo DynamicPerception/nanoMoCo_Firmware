@@ -502,9 +502,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 14 sets joystick watchdog flag
 	case 14:
 	{			
-		watchdog = input_serial_buffer[0];
+		watchdogMode(input_serial_buffer[0]);
 		msg = "Setting watchdog mode: ";
-		debugMessage(GEN, command, MSG, watchdog);
+		debugMessage(GEN, command, MSG, watchdogMode());
 		response(true);
 		break;
 	}
@@ -885,9 +885,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 122:
 	{
 		msg = "Watchdog mode? : ";
-		debugMessage(GEN, command, MSG, watchdog);
+		debugMessage(GEN, command, MSG, watchdogMode());
 		if (!joystick_mode)
-			response(true, watchdog);
+			response(true, watchdogMode());
 		break;
 	}
 
