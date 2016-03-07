@@ -211,6 +211,7 @@ void kf_stopProgram(){
 	// Turn off the key frame program flag
 	kf_running = false;
 	kf_paused = false;
+	ping_pong_flag = false;
 	still_shooting_flag = false;
 
 	// If it's a video move, trigger the camera once to stop the recording
