@@ -895,7 +895,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 123:
 	{
 		msg = "% Complete: ";
-		debugMessage(GEN, command, MSG, programComplete());		
+		debugMessage(GEN, command, MSG, programPercent());		
 		debug.serln(programPercent());		
 		response(true, programPercent());
 		break;
