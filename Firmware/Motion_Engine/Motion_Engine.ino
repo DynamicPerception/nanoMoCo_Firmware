@@ -110,7 +110,7 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 51;				// Serial API version
+const int SERIAL_VERSION			= 52;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -677,8 +677,8 @@ void eStop() {
 			debug.functln(enable_count);
 
 			// If the user has pressed the e-stop enough times within the alloted time span, reset the USB connection and toggle the external intervalometer mode.
-			if (enable_count >= THRESHOLD) {				
-				resetUSBconnection();
+			if (enable_count >= THRESHOLD) {								
+				
 
 				if (!external_intervalometer){
 					setIntervalometerMode(true);					
@@ -687,6 +687,8 @@ void eStop() {
 					setIntervalometerMode(false);
 				}
 				enable_count = 0;
+				delay(100);
+				resetUSBconnection();
 			}
 		}
 
@@ -869,7 +871,6 @@ uint8_t programComplete() {
 */
 
 void resetUSBconnection(){
-	ledChase(1);
 	USBSerial.end();
 	delay(100);
 	USBSerial.begin(19200);
