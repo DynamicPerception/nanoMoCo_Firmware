@@ -197,6 +197,17 @@ void cameraAutoMaxShots() {
 	Camera.setMaxShots(longest);
 }
 
+// Returns the total number of shots from the current program pass, plus any previous passes
+unsigned int getTotalShots(){
+	return camera_fired + ping_pong_shots;
+}
+
+// Clears shot counters
+void clearShotCounter(){
+	camera_fired = 0;
+	ping_pong_shots = 0;
+}
+
 
 
 

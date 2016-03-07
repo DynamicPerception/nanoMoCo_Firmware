@@ -101,20 +101,24 @@ void cycleCamera() {
 
 		// stop program running w/o clearing variables
 		if (ready_to_stop) {
-			stopProgram();
-			program_complete = true;
 
 			// If not running a ping-pong move, activate the camera trigger to stop the video recording
 			if (!ping_pong_mode && Motors::planType() == CONT_VID)
 				Camera.expose();
-
 			// If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
 			else if (ping_pong_mode == true) {
 				ping_pong_flag = true;
+				ping_pong_shots += camera_fired;
+				ping_pong_time += run_time;
+				stopProgram();
 				reverseStartStop();
 				startProgram();
 			}
-
+			// Otherwise, just stop the program
+			else{
+				stopProgram();
+				program_complete = true;
+			}
 		}
 		debug.functln(CYCLE_CAMERA + "Bailing from camera cycle at point 1");
 		return;
@@ -348,6 +352,11 @@ void cycleCheckAltPost() {
     altOutStart(ALT_OUT_AFTER);
   }
   
+}
+
+// Returns the total time of the current pass, plus all previous ping-pong passes
+unsigned long getRunTime(){
+	return last_run_time + ping_pong_time;
 }
 
 

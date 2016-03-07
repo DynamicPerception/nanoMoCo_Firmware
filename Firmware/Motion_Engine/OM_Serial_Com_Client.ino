@@ -725,14 +725,11 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
 	case 102:
 	{
-		msg = "Setting stop pos here for all motors...";
-		debugMessage(GEN, command, MSG, last_run_time);
-		debug.serln(last_run_time);
-
-		if (external_intervalometer)
-			response(true, totalProgramTime());
-		else
-			response(true, last_run_time);
+		msg = "Current run time: ";
+		debugMessage(GEN, command, MSG, getRunTime());
+		debug.serln(getRunTime());
+				
+		response(true, getRunTime());
 		break;
 	}
      
