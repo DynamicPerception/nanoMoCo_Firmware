@@ -256,8 +256,9 @@ unsigned long	start_time			= 0;				// Current time when program starts
 uint8_t			running				= false;			// Program run status
 volatile byte	force_stop			= false;	
 uint8_t			ping_pong_mode		= false;			// ping pong mode variable
-unsigned long	ping_pong_time		= 0;				// Number of shots that have been taken during previous ping-pong passes
-unsigned int	ping_pong_shots		= 0;				// Run time that has elapsed during previous ping-pong passes
+unsigned long	ping_pong_time		= 0;				// Run time that has elapsed during previous ping-pong passes
+unsigned long	kf_ping_pong_time	= 0;				// Run time that has elapsed during previous ping-pong passes in kf mode
+unsigned int	ping_pong_shots		= 0;				// Number of shots that have been taken during previous ping-pong passes
 unsigned long	max_time			= 0;				// maximum run time
 unsigned long	start_delay			= 0;				// Time delay for program starting
 bool			delay_flag			= 0;				// If true, the program run time has not exceeded the start delay time
@@ -614,7 +615,6 @@ void stopProgram(uint8_t force_clear) {
 	running = false;
 	still_shooting_flag = false;
 	ping_pong_flag = false;
-	clearShotCounter();
 
 	// clear out motor moved data and stop motor 
 	clearAll();	
@@ -626,7 +626,7 @@ void startProgram() {
   // start program
   start_time = millis();
 
-  running   = true;
+  running = true;
 	for( int i = 0; i < MOTOR_COUNT; i++){
 		if(motor[i].enable())
 			motor[i].programDone(false);

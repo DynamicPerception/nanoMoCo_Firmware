@@ -1901,9 +1901,9 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 109 gets the number of shots fired 
 	case 109:
 	{
-		response(true, camera_fired);
+		response(true, getTotalShots());
 		msg = "Shots fired: ";
-		debugMessage(subaddr, command, MSG, camera_fired);
+		debugMessage(subaddr, command, MSG, getTotalShots());
 		break;
 	}
 		

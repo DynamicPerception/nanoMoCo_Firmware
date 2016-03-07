@@ -199,7 +199,10 @@ void cameraAutoMaxShots() {
 
 // Returns the total number of shots from the current program pass, plus any previous passes
 unsigned int getTotalShots(){
-	return camera_fired + ping_pong_shots;
+	if (!running && !kf_running)
+		return 0;
+	else
+		return camera_fired + ping_pong_shots;
 }
 
 // Clears shot counters

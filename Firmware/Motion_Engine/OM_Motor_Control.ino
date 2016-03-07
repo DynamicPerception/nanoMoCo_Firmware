@@ -211,10 +211,11 @@ void startProgramCom() {
 	if (!running && !was_pause) {
 
 		// Reset the shot counter to 0. If the user presses the "Fire Camera" button in the joystick screen of the app, it may be a non-zero number.
-		camera_fired = 0;
+		clearShotCounter();
 
 		// Reset the program completion flag
 		program_complete = false;
+		ping_pong_time = 0;
 		
 		takeUpBacklash();		
 

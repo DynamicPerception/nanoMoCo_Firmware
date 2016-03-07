@@ -130,6 +130,7 @@ void kf_startProgram(){
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
 		kf_getMaxCamTime();
+		clearShotCounter();
 
 		// Take up any motor backlash		
 		takeUpBacklash();			
@@ -217,7 +218,6 @@ void kf_stopProgram(){
 	kf_paused = false;
 	ping_pong_flag = false;
 	still_shooting_flag = false;
-	clearShotCounter();
 
 	// If it's a video move, trigger the camera once to stop the recording
 	if (Motors::planType() == CONT_VID)
@@ -280,8 +280,8 @@ void kf_updateProgram(){
 			debug.serln("Stopping kf program");
 			// The shot count and run time are reset when starting a new program, 
 			// so add the shots and them to separate counters for serial reporting
-			ping_pong_time += kf_running;
-			ping_pong_shots += camera_fired;
+			kf_ping_pong_time += kf_run_time;
+			ping_pong_shots += camera_fired;			
 			kf_stopProgram();
 			// If ping-pong mode is active, reverse and start a new program
 			if (ping_pong_mode = true){
@@ -595,7 +595,7 @@ int kf_getRunState(){
 
 
 long kf_getRunTime(){
-	return kf_run_time + ping_pong_time;
+	return kf_run_time + kf_ping_pong_time;
 }
 
 
