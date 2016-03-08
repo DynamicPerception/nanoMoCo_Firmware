@@ -1424,6 +1424,30 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		break;
 	}
 
+	//Command 32 sends the motor the motor's current position to a specified step count
+	//Note: this does not move the motor, it simply changes the current position value.
+	//This can be used for artificially moving the home/end limits relative to the motor
+	case 32:
+	{
+		long pos = Node.ntol(input_serial_buffer);
+		msg = "Setting current position to: ";
+		debugMessage(subaddr, command, MSG, pos);
+		motor[subaddr - 1].currentPos(pos);
+		response(true);
+		break;
+	}
+
+	//Command 33 sets the motor's end position to a specified location
+	case 33:
+	{
+		long pos = Node.ntol(input_serial_buffer);
+		msg = "Setting end position to: ";
+		debugMessage(subaddr, command, MSG, pos);
+		motor[subaddr - 1].endPos(pos);
+		response(true);
+		break;
+	}
+
 	// Command 50 sets the stop-motion flag
 	case 50: 
 	{
