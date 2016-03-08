@@ -91,6 +91,10 @@ void kf_printKeyFrameData(){
 }
 
 void kf_startProgram(){
+	kf_startProgram(false);
+}
+
+void kf_startProgram(boolean isBouncePass){
 		
 	// If resuming
 	if (kf_paused){
@@ -130,7 +134,8 @@ void kf_startProgram(){
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
 		kf_getMaxCamTime();
-		clearShotCounter();
+		if (!isBouncePass)
+			clearShotCounter();
 
 		// Take up any motor backlash		
 		takeUpBacklash();			
@@ -290,7 +295,7 @@ void kf_updateProgram(){
 				debug.serln("Reversing key points");
 				reverseStartStop();
 				debug.serln("Starting new kf bounce program");
-				kf_startProgram();			
+				kf_startProgram(true);			
 			}
 			else{
 				program_complete = true;

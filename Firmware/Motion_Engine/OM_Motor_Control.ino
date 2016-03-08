@@ -523,6 +523,10 @@ byte pingPongMode() {
 	return ping_pong_mode;
 }
 
+byte keepAliveMode(){
+	return keep_camera_alive;
+}
+
 void setJoystickSpeed(int p_motor, float p_speed){
 		
 	float old_speed = motor[p_motor].desiredSpeed();
