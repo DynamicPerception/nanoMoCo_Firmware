@@ -873,7 +873,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 121:
 	{
 		msg = "Pingpong mode: ";
-		debugMessage(GEN, command, MSG, ping_pong_mode);		
+		debugMessage(GEN, command, MSG, pingPongMode());		
 		response(true, pingPongMode());
 		break;
 	}
