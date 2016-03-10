@@ -235,10 +235,13 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true, but not when in Graffik mode
 	   if (!graffikMode()){
-		   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {			   
-			   //debug.serln("Invalid general command");
-			   response(false);
-			   return;
+		   // If this is not a query command
+		   if (joystick_mode == true && command < 100){
+			   // Disallow any motor commands that aren't joystick related during joystick mode
+			   if (!(command == 14 || command == 23 || command == 50 || command == 51)){
+				   response(false);
+				   return;
+			   }
 		   }
 	   }
 
@@ -251,10 +254,13 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true
 	   if (!graffikMode()){
-		   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
-			   //debug.serln("Invalid motor command");
-			   response(false);
-			   return;
+		   // If this is not a query command
+		   if (joystick_mode == true && command < 100){
+			   // Disallow any motor commands that aren't joystick related during joystick mode
+			   if (!(command == 3 || command == 4 || command == 6 || command ==13)){
+				   response(false);
+				   return;
+			   }
 		   }
 	   }
 
