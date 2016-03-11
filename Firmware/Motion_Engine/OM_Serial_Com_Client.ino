@@ -1383,6 +1383,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		debugMessage(subaddr, command, MSG);
 		thisMotor.homeSet();
 		thisMotor.endPos(0);
+		endPos[subaddr - 1] = 0;
 		thisMotor.startPos(0);
 		thisMotor.stopPos(0);
 		response(true);
@@ -1449,7 +1450,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		long pos = Node.ntol(input_serial_buffer);
 		msg = "Setting end position to: ";
 		debugMessage(subaddr, command, MSG, pos);
-		motor[subaddr - 1].endPos(pos);
+		//motor[subaddr - 1].endPos(pos);
+		endPos[subaddr - 1] = pos;
 		response(true);
 		break;
 	}
