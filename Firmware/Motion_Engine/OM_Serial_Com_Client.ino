@@ -2310,7 +2310,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 121 returns the current key frame program running time
 	case 121:
 	{
-		msg = "Current run time: ";
+		msg = "KF Current run time: ";
 		debugMessage(KF, command, MSG, kf_getRunTime());
 		response(true, kf_getRunTime());
 		break;
