@@ -419,7 +419,7 @@ p_motor_number: motor to modify microstepping
 
 */
 
-byte msAutoSet(uint8_t p_motor, boolean validateOnly) {
+byte msAutoSet(uint8_t p_motor) {
 	return msAutoSet(p_motor, false);
 }
 
