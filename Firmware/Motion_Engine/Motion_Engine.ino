@@ -755,10 +755,10 @@ byte getRunStatus(){
 	if (delay_flag){
 		status |= DELAY;
 	}
-	if (still_shooting_flag){		
+	if (keepAliveMode()){		
 		status |= KEEPALIVE;
 	}
-	if (ping_pong_flag){
+	if (pingPongMode()){
 		status |= PINGPONG;
 	}	
 	return status;

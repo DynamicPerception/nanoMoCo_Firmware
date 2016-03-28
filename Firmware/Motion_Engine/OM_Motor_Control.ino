@@ -419,7 +419,11 @@ p_motor_number: motor to modify microstepping
 
 */
 
-byte msAutoSet(uint8_t p_motor) {
+byte msAutoSet(uint8_t p_motor, boolean validateOnly) {
+	return msAutoSet(p_motor, false);
+}
+
+byte msAutoSet(uint8_t p_motor, boolean validateOnly) {
 	debug.functln("Trying to auto-set microsteps");
 	unsigned long time = millis();
 	byte microsteps;
@@ -429,6 +433,13 @@ byte msAutoSet(uint8_t p_motor) {
 		
 		// Get program validation info
 		microsteps = validateProgram(p_motor, true);
+
+		if (validateOnly){
+			if (microsteps == false)
+				return 0;
+			else
+				return 1;
+		}
 
 		// Return an error code of 255 if called from msAutoSet(), since a 0 error is given when the routine cannot be run
 		if (microsteps == false)
@@ -521,6 +532,10 @@ Returns ping-pong mode status
 
 byte pingPongMode() {
 	return ping_pong_mode;
+}
+
+byte keepAliveMode(){
+	return keep_camera_alive;
 }
 
 void setJoystickSpeed(int p_motor, float p_speed){

@@ -91,6 +91,10 @@ void kf_printKeyFrameData(){
 }
 
 void kf_startProgram(){
+	kf_startProgram(false);
+}
+
+void kf_startProgram(boolean isBouncePass){
 		
 	// If resuming
 	if (kf_paused){
@@ -130,7 +134,8 @@ void kf_startProgram(){
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
 		kf_getMaxCamTime();
-		clearShotCounter();
+		if (!isBouncePass)
+			clearShotCounter();
 
 		// Take up any motor backlash		
 		takeUpBacklash();			
@@ -284,13 +289,13 @@ void kf_updateProgram(){
 			ping_pong_shots += camera_fired;			
 			kf_stopProgram();
 			// If ping-pong mode is active, reverse and start a new program
-			if (ping_pong_mode = true){
+			if (pingPongMode()){
 				debug.serln("Starting ping-pong phase");
 				ping_pong_flag = true;
 				debug.serln("Reversing key points");
 				reverseStartStop();
 				debug.serln("Starting new kf bounce program");
-				kf_startProgram();			
+				kf_startProgram(true);			
 			}
 			else{
 				program_complete = true;
@@ -362,6 +367,11 @@ void kf_CameraCheck() {
 	const String KF_CAM_CHECK = "kf_CameraCheck() - ";
 
 	int auxPreShotTime = 0;
+
+	// If this is the last shot of a pass during ping-pong mode, skip it
+	if (pingPongMode() && camera_fired == Camera.getMaxShots()){
+		return;
+	}
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
 	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {		

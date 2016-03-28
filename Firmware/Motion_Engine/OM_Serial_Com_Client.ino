@@ -235,10 +235,13 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true, but not when in Graffik mode
 	   if (!graffikMode()){
-		   if (joystick_mode == true && command != 14 && command != 23 && command != 50 && command != 51 && command != 120 && command != 122 && command != 200) {			   
-			   //debug.serln("Invalid general command");
-			   response(false);
-			   return;
+		   // If this is not a query command
+		   if (joystick_mode == true && command < 100){
+			   // Disallow any motor commands that aren't joystick related during joystick mode
+			   if (!(command == 14 || command == 23 || command == 50 || command == 51)){
+				   response(false);
+				   return;
+			   }
 		   }
 	   }
 
@@ -251,10 +254,13 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
 
 	   // Check for joystick mode and return on non-valid commands if true
 	   if (!graffikMode()){
-		   if (joystick_mode == true && command != 3 && command != 4 && command != 6 && command != 13 && command != 106 && command != 107) {
-			   //debug.serln("Invalid motor command");
-			   response(false);
-			   return;
+		   // If this is not a query command
+		   if (joystick_mode == true && command < 100){
+			   // Disallow any motor commands that aren't joystick related during joystick mode
+			   if (!(command == 3 || command == 4 || command == 6 || command ==13)){
+				   response(false);
+				   return;
+			   }
 		   }
 	   }
 
@@ -873,7 +879,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	case 121:
 	{
 		msg = "Pingpong mode: ";
-		debugMessage(GEN, command, MSG, ping_pong_mode);		
+		debugMessage(GEN, command, MSG, pingPongMode());		
 		response(true, pingPongMode());
 		break;
 	}
@@ -1377,6 +1383,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		debugMessage(subaddr, command, MSG);
 		thisMotor.homeSet();
 		thisMotor.endPos(0);
+		endPos[subaddr - 1] = 0;
 		thisMotor.startPos(0);
 		thisMotor.stopPos(0);
 		response(true);
@@ -1420,6 +1427,31 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Sending to: ";
 		debugMessage(subaddr, command, MSG, pos);
 		sendTo(subaddr - 1, pos);
+		response(true);
+		break;
+	}
+
+	//Command 32 sends the motor the motor's current position to a specified step count
+	//Note: this does not move the motor, it simply changes the current position value.
+	//This can be used for artificially moving the home/end limits relative to the motor
+	case 32:
+	{
+		long pos = Node.ntol(input_serial_buffer);
+		msg = "Setting current position to: ";
+		debugMessage(subaddr, command, MSG, pos);
+		motor[subaddr - 1].currentPos(pos);
+		response(true);
+		break;
+	}
+
+	//Command 33 sets the motor's end position to a specified location
+	case 33:
+	{
+		long pos = Node.ntol(input_serial_buffer);
+		msg = "Setting end position to: ";
+		debugMessage(subaddr, command, MSG, pos);
+		//motor[subaddr - 1].endPos(pos);
+		endPos[subaddr - 1] = pos;
 		response(true);
 		break;
 	}
@@ -1673,6 +1705,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Lead-out: ";
 		debugMessage(subaddr, command, MSG, thisMotor.planLeadOut());
 		response(true, thisMotor.planLeadOut());
+		break;
+	}
+	//Command 120 returns whether the given motor can achieve the maximum required velocity for the currently set 2-point program
+	case 120:
+	{
+		byte valid = msAutoSet(subaddr - 1, true);
+		msg = "Checking 2-pt vel validity: ";
+		debugMessage(subaddr, command, MSG, valid);
+		response(true, valid);
 		break;
 	}
 
@@ -2278,7 +2319,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 121 returns the current key frame program running time
 	case 121:
 	{
-		msg = "Current run time: ";
+		msg = "KF Current run time: ";
 		debugMessage(KF, command, MSG, kf_getRunTime());
 		response(true, kf_getRunTime());
 		break;
