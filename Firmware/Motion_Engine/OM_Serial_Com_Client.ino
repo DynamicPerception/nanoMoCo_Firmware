@@ -1707,6 +1707,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, thisMotor.planLeadOut());
 		break;
 	}
+	//Command 120 returns whether the given motor can achieve the maximum required velocity for the currently set 2-point program
+	case 120:
+	{
+		byte valid = msAutoSet(subaddr - 1, true);
+		msg = "Checking 2-pt vel validity: ";
+		debugMessage(subaddr, command, MSG, valid);
+		response(true, valid);
+		break;
+	}
 
     //Error    
     default: 
