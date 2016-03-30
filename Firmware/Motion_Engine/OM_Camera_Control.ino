@@ -34,6 +34,7 @@ See dynamicperception.com for more information
 
  
 
+uint8_t oldProgramMode;
 
 void camExpose() {
   
@@ -127,6 +128,11 @@ void cameraTest(uint8_t p_start) {
 
 	// Entering test mode
 	if (camera_test_mode) {
+		
+		// Save current program type, then switch to SMS mode
+		oldProgramMode = Motors::planType();
+		Motors::planType(SMS);
+
 		// Remember each motor's enable mode and disable all of them
 		for (byte i = 0; i < MOTOR_COUNT; i++) {
 			old_enable[i] = motor[i].enable();
@@ -158,6 +164,9 @@ void cameraTest(uint8_t p_start) {
 
 		// Reset the shot count to 0
 		camera_fired = 0;
+
+		// Restore old program type
+		Motors::planType(oldProgramMode);
 	}
 }
 
