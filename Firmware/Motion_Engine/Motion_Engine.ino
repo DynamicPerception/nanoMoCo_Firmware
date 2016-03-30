@@ -562,6 +562,7 @@ void loop() {
 				debugOn();
 			else
 				debugOff();
+			// Proceed with the program
 			Engine.checkCycle();
 			delay_flag = false;
 		}

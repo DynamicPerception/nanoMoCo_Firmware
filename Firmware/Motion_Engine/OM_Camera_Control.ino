@@ -120,6 +120,7 @@ void cameraTest(uint8_t p_start) {
 	if (camera_test_mode == p_start)
 		return;
 
+	Camera.enable = true;
 	static uint8_t old_enable[MOTOR_COUNT];
 	static unsigned long old_max_shots;
 	camera_test_mode = p_start;
