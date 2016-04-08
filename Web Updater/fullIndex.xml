@@ -1,0 +1,1542 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+
+
+<updateindex>
+
+
+
+ <devices>
+
+
+
+	<device id="1">
+
+		<name>MX2 Motion Controller</name>
+
+		<desc>Standard MX2 Motion Controller as Supplied by DP</desc>
+
+		<uploadParams>-C%c;-v;-patmega328p;-carduino;-b57600;-D;-P%p;-Uflash:w:%f:i</uploadParams>
+
+		<updates>
+
+			<update>
+
+				<version>0.94 W</version>
+
+				<desc>New features and fixed some bugs</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.94W.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.93 W</version>
+
+				<desc>New features and fixed some bugs</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.93.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.92 Beta</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.92.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.911 Beta</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.911.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.90</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.90.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.834</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.834.hex</file>
+
+			</update>
+
+		</updates>
+
+	</device>
+
+	<device id="2">
+
+		<name>DIY DollyShield w/ Arduino Uno</name>
+
+		<desc>DIY DollyShield Mounted on an Arduino Uno</desc>
+
+		<uploadParams>-C%c;-v;-patmega328p;-carduino;-D;-P%p;-Uflash:w:%f:i</uploadParams>
+
+		<updates>
+
+			<update>
+
+				<version>0.93 W</version>
+
+				<desc>New features and fixed some bugs</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.93.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.92 Beta</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.92.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.911 Beta</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.911.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.90</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.90.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.834</version>
+
+				<desc>Adds a bunch of new features</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx2/0.834.hex</file>
+
+			</update>
+
+		</updates>
+
+	</device>
+
+	<device id="3">
+
+		<name>NMX 3-Axis Stepper Controller</name>
+
+		<desc>nanoMoCo Stepper Driver/Controller</desc>
+		<uploadParams>-C%c;-v;-pat90usb1287;-cavr109;-D;-P%p;-b57600;-Uflash:w:%f:i</uploadParams>
+		<updates>
+
+			<update>
+
+				<version>0.08 Alpha</version>
+
+				<desc>Hardware connectivity testing</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.08.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.09.00 Alpha</version>
+
+				<desc>1-Axis enabled over BLE</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.09.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.09.01 Alpha</version>
+
+				<desc>Camera enabled with 1-axis version</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.09.1.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.10 Alpha</version>
+
+				<desc>3-Axis functionality enabled. Uses new command set (protocol uses sub-addresses).</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.10.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.11 Alpha</version>
+
+				<desc>Intermittant communication errors fixed by shortening motor ISR time.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.11.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.12.00 Alpha</version>
+
+				<desc>Updated command set. Many bug fixes.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.12.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.12.01 Alpha</version>
+
+				<desc>Fixed continuous motion and backlash compensation bugs.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.12.1.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.13 Alpha</version>
+
+				<desc>Backlash compensation count fixed.
+
+End, start, and stop location update when new home location is set.
+
+Setting continuous speed to 0 now decelerates and stops motor instead of causing divide by 0 error.
+
+E-stop button now functional (pauses program if running or stops all motors during manual move).
+
+Program auto-stops when max shots / max time is reached (no need to send "stop program" command except when stopping in the middle of a program).
+
+Acceleration and deceleration during programmed moves fixed; finite simple move speed now controlled by continuous speed setting, not max speed.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.13.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.14.00 Alpha</version>
+
+				<desc>10-28-14:
+
+Added "ping-pong" mode for continuous video shots.
+
+Lead-in for continuous video moves can now be set in milliseconds.
+
+Fixed motors getting stuck at home and end limits when backlash set to non-zero values.
+
+Fixed lack of acceleration ramping for continuous moves.
+
+Switched debug command to simple toggle (no longer requires on/off to be explicitly set.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.14.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.14.01 Alpha</version>
+
+				<desc>10-29-14:
+
+Fixed "motor running" query command bug.
+
+Changed "bool" types to "uint8_t" so responses to master are now the correct length.
+
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.14.1.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.15 Alpha</version>
+
+				<desc>10-30-14:
+
+Manual move direction changes are now handled by reversing sign on speed, not by issuing new "simple move" command.
+
+Controller echos received commands over USB for debugging purposes.
+
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.15.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.16.00 Alpha</version>
+
+				<desc>10-31-14:
+
+Starting and stopping continuous moves while "joystick mode" is enabled no longer requires a "simple move" command, merely setting a non-zero speed.
+
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.16.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.16.01 Alpha</version>
+
+				<desc>11-3-14:
+
+Fixed max motor step rate query bug.
+
+Motors are automatically set to default maximum step rate when "sent to ..." commands are called.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.16.1.hex</file>
+
+			</update>
+
+
+			<update>
+
+				<version>0.16.02 Alpha</version>
+
+				<desc>11-4-14:
+
+Added program completion query command.
+
+Fixed joystick watchdog query command bug.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.16.2.hex</file>
+
+			</update>
+
+
+			<update>
+
+				<version>0.17.00 Alpha</version>
+
+				<desc>11-5-14:
+
+Fixed controller lockup during 2-axis joystick control.
+
+Added motor command 28 to auto set microsteps based upon programmed move parameters.
+
+"Send to..." commands automatically switch motors to quarter stepping mode to achieve their moves faster.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.17.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.17.01 Alpha</version>
+
+				<desc>11-7-14:
+
+Microsteps auto-set command now reports back 255 when required speed exceeds controller's capability.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.17.1.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.17.02 Alpha</version>
+
+				<desc>11-7-14:
+
+Added general query command 124 to check the attachment state of each motor.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.17.2.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18 Beta</version>
+
+				<desc>11-11-14:
+
+Controller automatically takes up backlash, if necessary, before starting a program move, not during the start of the program move.
+
+SMS now achieves smoother motion by taking more advantage of available moving time and using slower speeds and extended accel/decel lengths.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.01 Beta</version>
+
+				<desc>11-13-14:
+
+Added camera test mode: camera command 11.
+
+Added camera test mode query: camera query command 110.
+
+E-stop will stop camera test mode.
+
+Start move command will be ignored if the program is already running. This prevents weird motor behavior.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.1.hex</file>
+
+			</update>
+
+
+			<update>
+
+				<version>0.18.02 Beta</version>
+
+				<desc>11-19-14:
+
+Percent complete command now works for continuous moves. It will also report 100 after the end of a program move and will reset to 0 at the start of the next program.
+
+Fixed conflict with digital pin for setting microsteps that was causing positional inaccuracy in continuous moves.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.2.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.03 Beta</version>
+
+				<desc>11-20-14:
+
+Added general command 25, send all motors to start positions. The controller will ignore additional "send all to start" commands until the motors have all stopped moving. This will prevent hiccuping if multiple commands are sent before the motors stop.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.3.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.04 Beta</version>
+
+				<desc>11-21-14:
+
+Fixed general command 25 so it now returns only one response to the master device.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.4.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.05 Beta</version>
+
+				<desc>11-24-14:
+
+Added motor query command 117: checks motor's sleep/power save status.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.5.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.06 Beta</version>
+
+				<desc>11-25-14:
+
+Added general query command 125: returns the total length of the current planned move in milliseconds.
+
+Modified pause excecution so that when running in SMS mode, the controller will wait till the end of the current cycle to stop movement.
+
+Watchdog mode is automatically turned off when joystick mode is turned off.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.6.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.07 Beta</version>
+
+				<desc>11-26-14:
+
+Added single step start and end position setting: general commands 26 and 27, respectively.
+
+Controller no longer sends responses for speed commands and watchdog status queries during joystick mode to eliminate invalid response errors.
+
+Modified running status responses: 0 = stopped, 1 = paused, 2 = running.
+
+Added program completion query: general query command 126. The first time it is called after a program completes, it will return true, otherwise it will return false.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.7.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.08 Beta</version>
+
+				<desc>12-03-14:
+
+General query command 126 bug fix: completion value now resets the second time the query is called after the program completes.
+
+General query command 102 modification: when a program has stopped, it now returns the elapsed time when the prgram stopped instead of 0.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.8.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.09 Beta</version>
+
+				<desc>12-04-14:
+
+Fixed bug that caused extra steps to be added to the end of an SMS program if it was paused and resumed.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.9.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.18.10 Beta</version>
+
+				<desc>12-10-14:
+
+Added commands to set and check frames/second setting. Set with general command 28 and a true or false byte, check with general query command 127.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.18.10.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19 Beta</version>
+
+				<desc>12-15-14:
+
+Slowed down motor spline update rate to improve BTLE communications stability.
+
+Controller now resumes successfully from paused state.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.01 Beta</version>
+
+				<desc>12-16-14:
+
+Increased acceleration/deceleration phase during "send to..." moves.
+
+Changed default backlash value to 0.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.01.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.02 Beta</version>
+
+				<desc>12-16-14:
+
+Fixed SMS segment accel/decel bug.
+
+Further increased acceleration/deceleration phase during "send to..." moves.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.02.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.03 Beta</version>
+
+				<desc>12-17-14:
+
+Fixed total program runtime bug for SMS mode.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.03.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.04 Beta</version>
+
+				<desc>12-19-14:
+
+Fixed EEPROM write bug during microstep auto update.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.04.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.05 Beta</version>
+
+				<desc>12-23-14:
+
+Response to auto-microstep setting command now sends 8-bit value response instead of 16-bit value.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.05.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.19.06 Beta</version>
+
+				<desc>12-24-14:
+
+Added trigger at end of video program and 1.5 second delay after trigger at start of program before starting movement.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.19.06.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.20 Beta</version>
+
+				<desc>01-06-15:
+
+Fixed divide by 0 error causing problems at the beginning of acceleration phases and end of deceleration phases.
+
+Greatly increased ISR computation speed, resulting in far fewer communications errors.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.20.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.21 Beta</version>
+
+				<desc>01-08-15:
+
+Removed USB serial debug outputs.
+
+Slowed down motor attachment check speed.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.21.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.22 Beta</version>
+
+				<desc>01-16-15:
+
+External intervalometer mode can be enabled and disabled by pressing the e-stop button three times while the motors are stopped and no program is running.
+
+Added self-diagnostic routine, general query command 255. This will trigger the camera twice, auto-detect motors, indicate which motors were found, and then run all motors ean each direction.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.22.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.23 Beta</version>
+
+				<desc>01-20-15:
+
+Shot counter now resets to 0 upon starting a new program. When the "Fire Camera" button is pressed in the joystick screen of the app, this increases the shot count, so it needs to be reset before starting a program.
+
+Added general command 254, which enables/disables various USB debug output messages. See command list for details.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.23.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.24 Beta</version>
+
+				<desc>01-30-15:
+
+USB debug flags added, set via general command 254. See command list for details.
+
+Motor command 118 added. Checks whether motor can achieve speed required by current program parameters.
+
+General command 129. Checks whether all motors can achieve speeds required by current program parameters.
+
+These two latter commands allow the program validity to be checked without altering the motors' microstep settings, as was previously the case.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.24.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.25 Beta</version>
+
+				<desc>02-09-15:
+
+Added motor commands 25 and 119. These set and query the motor lead-out, respectively.
+
+Lead-in and lead-out for continuous time lapse mode changed from shots to milliseconds.
+
+Setting the lead-in, travel shots, and lead-out in SMS mode will automatically recalculate max shots, so there is now no need to set it directly.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.25.hex</file>
+			</update>
+
+			<update>
+
+				<version>0.26 Beta</version>
+
+				<desc>02-11-15:
+
+Fixed bug with general command 129. It was returning unexpected validation values; this is now corrected.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.26.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.27 Beta</version>
+
+				<desc>02-12-15:
+
+Motor sleep states are now stored in EEPROM and restored after power-cycling.
+
+Added general command 130, which returns the sleep state of all motors, indicated by boolean state of bits 0, 1, 2 of the returned byte.
+
+Fixed bug that prevented changing ping-pong mode state.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.27.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.28 Beta</version>
+
+				<desc>02-25-15:
+
+Added general commands 50 and 150, which sets adn queries "Graffik Mode". This enableds Graffik-specific operation of certain functions.
+
+Fixed bug that caused controller to run in one-shot mode even when ping-pong mode was selected.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.28.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.29 Beta</version>
+
+				<desc>03-19-15:
+
+Added DragonFrame support. To enter DF mode, when no motors are running, hold down the NMX button for 3 seconds. The blue LEDs will flash to alert you that you are now in DF mode. To exit DF mode, powercycle the device.
+
+Improved button responsiveness while detecting repeated presses to enter external intervalometer mode.
+
+Fixed bug that prevented exiting external intervalometer mode.
+
+Extensive addition of USB debugging output messages. (Needs to be enabled via serial command)
+
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.29.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.30 Beta</version>
+
+				<desc>03-25-15:
+
+Added general command 30. This reverses all motor start/stop points.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.30.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.31 Beta</version>
+
+				<desc>03-31-15:
+
+Added broadcast command 5. This enables Graffik mode and sets the current response node to USB.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.31.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.32 Beta</version>
+
+				<desc>04-02-15:
+
+Motors change to 8th microstepping and enable sleep mode before entering DragonFrame mode for enhanced performance under DF control.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.32.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.33 Beta</version>
+
+				<desc>04-07-15:
+
+Corrected fixed point responses. Dividing by 100 should now five the correct two decimal precision numbers.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.33.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.34 Beta</version>
+
+				<desc>04-16-15:
+
+Linear easing now works correctly, sleep states are now saved when entering DragonFrame mode.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.34.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.35 Beta</version>
+
+				<desc>04-21-15:
+
+Lead-in / lead-out serial input now handled properly.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.35.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.36 Beta</version>
+
+				<desc>04-27-15:
+
+Restoring sleep state when entering DF mode was causing connectivity issues. This has been corrected.
+
+Connecting to the NMX from the mobile app no longer stops a program started from Graffik.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.36.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.37 Beta</version>
+
+				<desc>05-06-15:
+
+Added "app mode" flag to indicate an active connection with the mobile app.
+
+Fixed easing query bug.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.37.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.38 Beta</version>
+
+				<desc>06-05-15:
+
+External intervalometer mode now accepts input from tip or ring aux inputs.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.38.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.40 Beta</version>
+
+				<desc>06-12-15:
+
+Fixed bug that caused lead-in on slide motor to affect other axes.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.40.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.41 Beta</version>
+
+				<desc>08-03-15:
+
+Camera "keep-alive" added. When enabled, the camera will continue shooting indefinitely at the end of a program.
+The program must be ended by manually pressing the e-stop button on the NMX.
+
+Stop and start points now reset to 0 when the controller is powercycled.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.41.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.42 Beta</version>
+
+				<desc>08-06-15:
+
+Debug LED now blinks during pre-program delay.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.42.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.43 Beta</version>
+
+				<desc>08-06-15:
+
+Bug fix to camera "keep alive" status indicator.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.43.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.46 Beta</version>
+
+				<desc>12-21-15:
+
+Added 3-point move functionality.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.46.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.47 Beta</version>
+
+				<desc>1-15-16:
+
+Improved USB debug messaging, better memory management.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.47.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.49 Beta</version>
+
+				<desc>2-24-16:
+
+Added USB reset on e-stop triple click. Ping-pong mode in for TL modes and key frame programs. Added improved run status query, 0.140. Added "avoid offset" query, 4.113.
+
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.49-fixed.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.50 Beta</version>
+
+				<desc>2-26-16:
+
+Fixed broken intervaolometer mode toggle on e-stop triple click. Watchdog no longer times out during joystick moves with long decelerations.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.50.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.51 Beta</version>
+
+				<desc>3-3-16:
+
+Fixed general command 0.140 (new run status query).
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.51.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.52 Beta</version>
+
+				<desc>3-7-16:
+
+Fixed USB reset on triple click (reset must come after setting intervalometer mode). Current shots and run time commands now report totals for all passes during ping-pong mode.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.52.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.53 Beta</version>
+
+				<desc>3-18-16:
+
+Various status reporting bug fixes. Allowing new status query during joystick mode. Fixed 2-point end of program bug. Arbitrary end point--End limit is not actually used, just stored.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.53.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.54 Beta</version>
+
+				<desc>3-28-16:
+
+Added command 1-3.130 -- This command checks whether the the specified motor can achieve the maximum velocity necessary for the currently set 2-point program.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.54.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.55 Beta</version>
+
+				<desc>3-30-16:
+
+Fixed unreliable camera test mode.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.55.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.56 Beta</version>
+
+				<desc>4-8-16:
+
+Fixed ping-pong timing issue. Added saving of motor units.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/0.56.hex</file>
+
+			</update>
+
+
+		</updates>
+
+	</device>
+
+	<device id="4">
+
+		<name>Development Firmware - NMX</name>
+
+		<desc>Development firmware for the NMX controller. These are not stable releases.</desc>
+
+		<uploadParams>-C%c;-v;-pat90usb1287;-cavr109;-D;-P%p;-b57600;-Uflash:w:%f:i</uploadParams>
+
+		<updates>
+
+			<update>
+
+				<version>0.0.001 Key Frame Test</version>
+
+				<desc>Test of key frame functionality</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/key_frame_test_0.01.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.002 Key Frame Test</version>
+
+				<desc>Added some more KF query commands</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/key_frame_test_0.02.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.003 Key Frame Test</version>
+
+				<desc>11-3-15:
+
+Added continuous video time command 5.17
+
+Abscissas for SMS mode now raw key frame numbers (instead of x1000 multiplied)
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/key_frame_test_0.03.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.004 Key Frame Test</version>
+
+				<desc>11-4-15:
+
+Fixed microstep issues.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/key_frame_test_0.04.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.005 Key Frame Test</version>
+
+				<desc>11-10-15:
+
+Fixed KF percent complete query.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx/key_frame_test_0.05.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.006</version>
+
+				<desc>12-10-15:
+
+Rollback to 0.004, but with negative runaway bug fix and no limit saving.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.006.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.007</version>
+
+				<desc>12-15-15:
+
+Merged in some old changes. Needs to be tested for stability.
+
+</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.007.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.007.48</version>
+
+				<desc>2-5-16:
+
+Added USB reset feature. Added serial commands for setting and getting intervalometer mode (camera commands 13 and 112).
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.48.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.0.007.1 Ping-pong Flag Test</version>
+
+				<desc>2-12-16:
+
+Added ping-pong flag for running state query.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/ping_pong_test.hex</file>
+
+			</update>
+
+
+			<update>
+
+				<version>0.0.008</version>
+
+				<desc>2-19-16:
+
+Added enhanched status reporting.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.008.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.53 Test</version>
+
+				<desc>3-8-16:
+
+Various status reporting bug fixes.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.53.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.53.2 Test</version>
+
+				<desc>3-10-16:
+
+Allowing new status query during joystick mode
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.53.2.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>0.53.3 Test</version>
+
+				<desc>3-17-16:
+
+Fixed 2-point end of program bug.
+
+				</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_dev/0.53.3.hex</file>
+
+			</update>
+
+		</updates>
+
+	</device>
+
+	<device id="5">
+
+		<name>NanoMoco DIY 1 Axis</name>
+
+		<desc>nanoMoCo Stepper Driver/Controller</desc>
+		<uploadParams>-C%c;-v;-patmega328p;-carduino;-D;-P%p;-Uflash:w:%f:i</uploadParams>
+		<updates>
+
+			<update>
+
+				<version>1.07 Beta</version>
+
+				<desc>First Public Beta Release, Required for use with Graffik 1.024</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/nmx_legacy/1.07.hex</file>
+
+			</update>
+
+
+		</updates>
+
+	</device>
+
+	<device id="5">
+
+		<name>MX3 Motion Controller</name>
+
+		<desc>MX3 3-Axis Motion Controller</desc>
+
+		<uploadParams>-C%c;-v;-pat90usb1287;-cavr109;-D;-P%p;-b57600;-Uflash:w:%f:i</uploadParams>
+
+		<updates>
+
+			<update>
+
+				<version>1.10.2</version>
+
+				<desc>Fixed shots/hr estimate resetting bug. Fixed MUP functionality. Added dynamic updating of dist/hr when shots/hr is adjusted.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.10.2.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.10.1</version>
+
+				<desc>Fixed value bounding bugs in shots and distance estimator tools. Fixed memory reset bug.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.10.1.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.10</version>
+
+				<desc>Added EZ mode. Added dynamic voltage compensation to maintain motor speed. Improved speed / distance calculation accuracy. Added units indicators. Added distance/hr and shots/hr estimators. Added setting of speed by percent power. Changed nomenclature for "Rising" and "Falling" to "Ending" and "Beginning". Changed nomenclature of "Cold Mode" to "NVD Auto-Off". Added pause function for aux I/O. Added setting of each speed decimal place. All motors are enabled by default after factory reset.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.10.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.09</version>
+
+				<desc>Added a motor ramping to prevent tripping the battery when starting the program and during direction changes. Added I/O mode that allows the user to stop the motors but have the camera continue shooting.  </desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.09.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.08</version>
+
+				<desc>Added timer, fixed ramp and lead in issues, fixed I/O debouncing, reduced the problem of tripping the battery when reversing direction.  </desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.08.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.06</version>
+
+				<desc>Change the manual move to allow for a hold to move option and changed the speed increments. Fixed the errors occuring with the Aux I/O. Change the root menu so that if the user is currently on a motor screen and hits select they will jump to the root menu of that motor instead of the main root menu.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.06.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.05</version>
+
+				<desc>Added VFD dimming menu. Fixed flickers in cursor on various screens. Added menu wrapping in both directions. Now saves motor speed/distance settings. Added time delay in motor direction reversely to prevent over drawing power from battery pack.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.05.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.04</version>
+
+				<desc>Fixed flicker in VFD screen. Fix camera exposure time so it's updated in the interval time. </desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.04.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.03</version>
+
+				<desc>Fixed Ramping Bug. Changed how cold weather mod works.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.03.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.02</version>
+
+				<desc>Save States Added.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.02.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.01</version>
+
+				<desc>SMS Bug Fix.</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.01.hex</file>
+
+			</update>
+
+			<update>
+
+				<version>1.0</version>
+
+				<desc>First Production Release</desc>
+
+				<file>http://download.dynamicperception.com/dpwu/mx3/1.0.hex</file>
+
+			</update>
+
+		</updates>
+
+	</device>
+
+ </devices>
+
+
+
+</updateindex>
