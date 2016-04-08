@@ -130,6 +130,12 @@ void kf_startProgram(boolean isBouncePass){
 		kf_shutterDone = false;
 		kf_forceShotInProgress = false;
 		camera_fired = 0;
+
+		// Reset ping pong vals, if necessary
+		if (!isBouncePass){
+			ping_pong_shots = 0;
+			ping_pong_time = 0;
+		}
 				
 		// Prep the movement and camera times
 		kf_getMaxMoveTime();
@@ -207,6 +213,10 @@ void kf_pauseProgram(){
 }
 
 void kf_stopProgram(){
+	kf_stopProgram(false);
+}
+
+void kf_stopProgram(boolean savePingPongVals){
 
 	debug.funct("STOPPING KF PROGRAM");
 	
@@ -220,9 +230,14 @@ void kf_stopProgram(){
 
 	// Turn off the key frame program flag
 	kf_running = false;
-	kf_paused = false;
-	ping_pong_flag = false;
+	kf_paused = false;	
 	still_shooting_flag = false;
+
+	if (!savePingPongVals){
+		ping_pong_flag = false;
+		kf_ping_pong_time = 0;
+		ping_pong_shots = 0;
+	}
 
 	// If it's a video move, trigger the camera once to stop the recording
 	if (Motors::planType() == CONT_VID)
@@ -282,14 +297,15 @@ void kf_updateProgram(){
 			joystickSet(false);
 		}
 		else{
-			debug.serln("Stopping kf program");
-			// The shot count and run time are reset when starting a new program, 
-			// so add the shots and them to separate counters for serial reporting
-			kf_ping_pong_time += kf_run_time;
-			ping_pong_shots += camera_fired;			
-			kf_stopProgram();
+			debug.serln("Stopping kf program");									
 			// If ping-pong mode is active, reverse and start a new program
 			if (pingPongMode()){
+				// The shot count and run time are reset when starting a new program, 
+				// so add the shots and them to separate counters for serial reporting
+				// and indicate to the stop function that they should not be reset
+				kf_ping_pong_time += kf_run_time;
+				ping_pong_shots += camera_fired;
+				kf_stopProgram(true);
 				debug.serln("Starting ping-pong phase");
 				ping_pong_flag = true;
 				debug.serln("Reversing key points");
@@ -298,6 +314,7 @@ void kf_updateProgram(){
 				kf_startProgram(true);			
 			}
 			else{
+				kf_stopProgram();
 				program_complete = true;
 			}
 		}		
