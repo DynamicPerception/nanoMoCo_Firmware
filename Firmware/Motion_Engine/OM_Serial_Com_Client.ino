@@ -1456,6 +1456,17 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		break;
 	}
 
+	//Command 40 sets the unit code for this motor. Final output units are not used in firmware, so
+	//this is just a reference value for use by master devices in computing travel distance.
+	case 40:
+	{
+		int unitCode = Node.ntoi(input_serial_buffer);
+		msg = "Setting units: ";
+		debugMessage(subaddr, command, MSG, unitCode);
+		thisMotor.units(unitCode);
+		break;
+	}
+
 	// Command 50 sets the stop-motion flag
 	case 50: 
 	{
@@ -1716,6 +1727,16 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, valid);
 		break;
 	}
+	//Command 121 returns the unit code for the given motor
+	case 121:
+	{
+		int units = thisMotor.units();
+		msg = "Unit code: ";
+		debugMessage(subaddr, command, MSG, units);
+		response(true, units);
+		break;
+	}
+
 
     //Error    
     default: 

@@ -439,6 +439,7 @@ void setup() {
 		motor[i].easing(OM_MOT_QUAD);
 		motor[i].startPos(0);
 		motor[i].stopPos(0);
+		motor[i].units(INCH);
 		// Set the slide motor to 4th stepping and pan/tilt motors to 16th
 		if (i == 0)
 			motor[i].ms(4);
