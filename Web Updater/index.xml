@@ -198,6 +198,20 @@ Fixed ping-pong timing issue. Added saving of motor units.
 
 			</update>
 
+      <update>
+
+        <version>0.57 Beta</version>
+
+        <desc>4-11-16:
+
+Added saving feature for gearbox and platform ratio values
+
+        </desc>
+
+        <file>http://download.dynamicperception.com/dpwu/nmx/0.57.hex</file>
+
+      </update>
+
 
 		</updates>
 
