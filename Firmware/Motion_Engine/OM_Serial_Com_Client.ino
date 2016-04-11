@@ -1466,6 +1466,24 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		thisMotor.units(unitCode);
 		break;
 	}
+	//Command 41 sets the gearbox ratio for this motor.
+	case 41:
+	{
+		float ratio = Node.ntof(input_serial_buffer);
+		msg = "Setting gearbox ratio: ";
+		debugMessage(subaddr, command, MSG, ratio);
+		thisMotor.gboxRatio(ratio);
+		break;
+	}
+	//Command 42 sets the platform ratio for this motor. 
+	case 42:
+	{
+		float ratio = Node.ntof(input_serial_buffer);
+		msg = "Setting platform ratio: ";
+		debugMessage(subaddr, command, MSG, ratio);
+		thisMotor.platRatio(ratio);
+		break;
+	}
 
 	// Command 50 sets the stop-motion flag
 	case 50: 
@@ -1736,7 +1754,24 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		response(true, units);
 		break;
 	}
-
+	//Command 122 returns the gearbox ratio for the given motor
+	case 122:
+	{
+		float ratio = thisMotor.gboxRatio();
+		msg = "Gearbox ratio: ";
+		debugMessage(subaddr, command, MSG, ratio);
+		response(true, (unsigned long)(ratio * 1e6));
+		break;
+	}
+	//Command 123 returns the platform ratio for the given motor
+	case 123:
+	{
+		float ratio = thisMotor.platRatio();
+		msg = "Platform ratio: ";
+		debugMessage(subaddr, command, MSG, ratio);
+		response(true, (unsigned long)(ratio * 1e6));
+		break;
+	}
 
     //Error    
     default: 
