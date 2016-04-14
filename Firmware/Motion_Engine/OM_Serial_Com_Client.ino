@@ -1464,6 +1464,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting units: ";
 		debugMessage(subaddr, command, MSG, unitCode);
 		thisMotor.units(unitCode);
+		response(true, unitCode);
 		break;
 	}
 	//Command 41 sets the gearbox ratio for this motor.
@@ -1473,6 +1474,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting gearbox ratio: ";
 		debugMessage(subaddr, command, MSG, ratio);
 		thisMotor.gboxRatio(ratio);
+		response(true, (unsigned long)(ratio * 1e6));
 		break;
 	}
 	//Command 42 sets the platform ratio for this motor. 
@@ -1482,6 +1484,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting platform ratio: ";
 		debugMessage(subaddr, command, MSG, ratio);
 		thisMotor.platRatio(ratio);
+		response(true, (unsigned long)(ratio * 1e6));
 		break;
 	}
 
