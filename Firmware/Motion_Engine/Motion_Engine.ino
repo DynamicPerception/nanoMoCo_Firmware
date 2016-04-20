@@ -115,7 +115,7 @@ byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSer
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
 const byte START_FLASH_CNT			= 5;				// # of flashes of debug led at startup
-const byte FLASH_DELAY				= 250;				// Time between flashes in milliseconds
+const byte FLASH_DELAY				= 100;				// Time between flashes in milliseconds
 const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be held low to do a factory reset
 uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
@@ -896,9 +896,9 @@ void flasher(byte pin, int count) {
     
    for(int i = 0; i < count; i++) {
       digitalWrite(pin, HIGH);
-      delay(250);
+	  delay(FLASH_DELAY);
       digitalWrite(pin, LOW);
-      delay(250); 
+	  delay(FLASH_DELAY);
    }
    
 }
