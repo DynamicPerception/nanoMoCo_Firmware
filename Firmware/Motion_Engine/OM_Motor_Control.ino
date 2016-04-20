@@ -158,9 +158,8 @@ void takeUpBacklash(boolean kf_move){
 			// Indicate that a brief pause is necessary after starting the motors
 			wait_required = true;
 
-			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-			/*if (!graffikMode())
-				motor[i].ms(4);*/
+			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible						
+			motor[i].ms(4);
 			
 			motor[i].contSpeed(mot_max_speed);
 						
@@ -184,8 +183,7 @@ void takeUpBacklash(boolean kf_move){
 
 	// Re-set all the motors to their proper microstep settings
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		/*if (!graffikMode())
-			msAutoSet(i);*/
+		motor[i].restoreLastMs();
 
 		// Print debug info if proper flag is set
 		debug.funct("Microsteps: ");

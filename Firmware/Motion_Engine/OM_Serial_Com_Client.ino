@@ -456,7 +456,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 		// send a motor home
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			motor[i].contSpeed(mot_max_speed);
+			motor[i].ms(4);			
 			motor[i].home();
+			motor[i].setSending(true);
 		}
 		startISR();
 		response(true);
@@ -1160,8 +1162,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		thisMotor.contSpeed(mot_max_speed);
 
 		// send a motor home
+		thisMotor.ms(4);		
 		thisMotor.home();
 		startISR();
+		thisMotor.setSending(true);
 		response(true);
 		break;
 	}
@@ -1774,6 +1778,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		debugMessage(subaddr, command, MSG, ratio);
 		response(true, (unsigned long)(ratio * 1e6));
 		break;
+	}
+	//Command 124 returns whether the motor is currently completing a "send to" command
+	case 124:
+	{
+		uint8_t sending = thisMotor.isSending() ? 1 : 0;
+		msg = "Is sending?: ";
+		debugMessage(subaddr, command, MSG, sending);
+		response(true, sending);
 	}
 
     //Error    

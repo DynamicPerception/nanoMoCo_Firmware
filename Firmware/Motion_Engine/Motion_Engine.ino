@@ -584,6 +584,13 @@ void loop() {
 	   kf_updateProgram();	   
    }
 
+   // Check if any motors are being sent and restore their old microstep settings when they stop
+   for (int i = 0; i < MOTOR_COUNT; i++){
+	   if (motor[i].isSending() && !motor[i].running()){
+		   motor[i].setSending(false);
+		   motor[i].restoreLastMs();
+	   }
+   }
 }
 
 /*
