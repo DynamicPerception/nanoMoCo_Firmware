@@ -95,8 +95,16 @@ const int EE_STOP_2  = EE_START_2 + 4;		// Motor 2 program stop position (long i
 const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
 const int EE_SLEEP_2 = EE_MS_2    + 1;		// Motor 0 sleep state (byte)
 
+const int EE_LOAD_POS		 = EE_SLEEP_2 + 1;			// Whether to load the motors' current positions after power cycle (byte)
+const int EE_LOAD_START_STOP = EE_LOAD_POS + 1;			// Whether to load the motors' start/stop positions after power cycle (byte)
+const int EE_LOAD_END		 = EE_LOAD_START_STOP + 1;	// Whether to load the motors' end positions after power cycle (byte)
+
 const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
 
+// Variables that are loaded from EEPROM that determine whether the motors' various positions should be restored
+uint8_t ee_load_curPos = false;
+uint8_t ee_load_endPos = false;
+uint8_t ee_load_startStop = false;
 
 /***************************************
 
@@ -229,6 +237,9 @@ unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in st
 uint8_t ISR_On = false;
 char byteFired = 0;				// Byte used to toggle the step pin for each motor within the ISR
 
+// This is used because setting the end position in the motor library causes the NMX communications to lock up.
+// That really ought to be looked into...
+long endPos[] = { 0, 0, 0 };
 
 /***************************************
 
