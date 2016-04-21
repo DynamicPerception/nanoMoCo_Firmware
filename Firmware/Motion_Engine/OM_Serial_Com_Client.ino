@@ -1475,7 +1475,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 30 sets the motor's stop position to its current position
 	case 30:
 	{
-		msg = "Stting stop here";
+		msg = "Setting stop here";
 		debugMessage(subaddr, command, MSG);
 		thisMotor.stopPos(thisMotor.currentPos());
 		response(true);
@@ -1680,8 +1680,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 106:
 	{
 		msg = "Current pos: ";
-		debugMessage(subaddr, command, MSG, thisMotor.currentPos());
-		response(true, thisMotor.currentPos());
+		long curPos = thisMotor.currentPos();
+		/* 
+		 *	If the motor is being sent, it has automatically switched to 4th stepping without
+		 *  informing the master device, so it should adjust the position response durint this
+		 *  time to be consistent with its last known microstep settting.
+		 */
+		curPos = thisMotor.isSending() ? (thisMotor.lastMs() / thisMotor.ms()) * curPos : curPos;
+		debugMessage(subaddr, command, MSG, curPos);
+		response(true, curPos);
 		break;
 	}
 

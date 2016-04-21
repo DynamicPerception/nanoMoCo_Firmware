@@ -86,8 +86,11 @@ void sendTo(uint8_t p_motor, long p_pos){
 void sendTo(uint8_t p_motor, long p_pos, boolean kf_move){
 	
 	// When not in Graffik Mode (i.e. App mode), use the lowest microsteps	
-	if (!kf_move)
-		motor[p_motor].ms(4);			
+	if (!kf_move){
+		motor[p_motor].ms(4);
+		// Adjust the send location to match new microsteps
+		p_pos *= ((float)motor[p_motor].ms() / (float)motor[p_motor].lastMs());
+	}
 
 	// Move at the maximum motor speed
 	debug.funct("Sending motor ");
