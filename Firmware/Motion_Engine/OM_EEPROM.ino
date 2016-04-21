@@ -77,9 +77,6 @@ void eepromWrite() {
   
   write(EE_ADDR, device_address);
   write(EE_NAME, *device_name, 10);
-  write(EE_LOAD_POS, ee_load_curPos);
-  write(EE_LOAD_START_STOP, ee_load_startStop);
-  write(EE_LOAD_END, ee_load_endPos);
 
 	byte tempMS = 0;
 	bool tempSleep = false;
@@ -94,7 +91,7 @@ void eepromWrite() {
 		tempPos		= motor[i].currentPos();
 		tempStart	= motor[i].startPos();
 		tempStop	= motor[i].stopPos();
-		tempEnd		= motor[i].endPos();
+		tempEnd		= endPos[i];
 		
 		write(EE_MS_0		+ EE_MOTOR_MEMORY_SPACE * i, tempMS);
 		write(EE_SLEEP_0	+ EE_MOTOR_MEMORY_SPACE * i, tempSleep);
