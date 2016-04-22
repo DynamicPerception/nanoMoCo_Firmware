@@ -707,6 +707,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break; 
 	}
 
+	//Command 33 requests that any motor backlash be taken up
+	case 33:
+	{	
+		takeUpBacklash();
+		msg = "Taking up motor backlash";
+		debugMessage(GEN, command, MSG);
+		response(true);
+		break;
+	}
+
 	//Command 50 sets Graffik Mode on or off
 	case 50:
 	{
