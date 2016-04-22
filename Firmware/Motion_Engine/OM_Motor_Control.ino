@@ -176,8 +176,9 @@ void takeUpBacklash(boolean kf_move){
 	// Can't wait when it's a keyframe move. For some reason this causes the controller to lock	
 	if (wait_required && !kf_move) {
 		unsigned long time = millis();
-		while (millis() - time < MILLIS_PER_SECOND){
-			// Wait a second for backlash takeup to finish
+		const int BACKLASH_WAIT = 300;
+		while (millis() - time < BACKLASH_WAIT){
+			// Wait for backlash takeup to finish
 		}
 	}
 
