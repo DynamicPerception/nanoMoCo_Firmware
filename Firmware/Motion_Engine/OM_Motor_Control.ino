@@ -556,8 +556,8 @@ void setJoystickSpeed(int p_motor, float p_speed){
 	if (abs(old_speed) < 1 && abs(new_speed) > 1 || ((old_speed / abs(old_speed)) != (new_speed / abs(new_speed)) && abs(new_speed) > 1)){
 		byte dir;
 		if (new_speed > 1)
-			dir = 1;
-		else
+			dir = 1;		
+		else if (new_speed < 1)
 			dir = 0;
 
 		motor[p_motor].continuous(true);
