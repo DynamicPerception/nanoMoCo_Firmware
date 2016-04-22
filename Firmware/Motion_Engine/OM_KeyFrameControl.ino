@@ -143,10 +143,6 @@ void kf_startProgram(boolean isBouncePass){
 		if (!isBouncePass)
 			clearShotCounter();
 
-		// Take up any motor backlash		
-		takeUpBacklash();			
-				
-
 		// SMS Moves
 		if (Motors::planType() == SMS){
 			// Convert from "frames" to real milliseconds, based upon the camera interval						
