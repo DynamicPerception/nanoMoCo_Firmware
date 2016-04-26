@@ -181,10 +181,7 @@ void kf_startProgram(boolean isBouncePass){
 	// Turn on the key frame program flag and turn the paused flag off
 	kf_running = true;
 	kf_paused = false;
-
-	// If it's a video move, trigger the camera once to start the recording
-	if (Motors::planType() == CONT_VID)
-		Camera.expose();
+	kf_just_started = true;	
 }
 
 void kf_pauseProgram(){
@@ -262,6 +259,19 @@ void kf_updateProgram(){
 	while (micros() - start_wait < time_delay){
 		// Wait for the delay to finish
 	}
+
+	// Don't do anything else until the start delay is done
+	if (kf_run_time < start_delay)
+		return;
+
+	// If this is the beginning of the program, just after the start delay...
+	if (kf_just_started){
+		// ...trigger the camera once to start the recording if it's a video move.
+		if (Motors::planType() == CONT_VID)
+			Camera.expose();
+		kf_just_started = false;
+	}
+
 	
 	// Continuous move update (don't update in keep-alive phase)
 	if (Motors::planType() != SMS && !still_shooting_flag){
@@ -278,7 +288,7 @@ void kf_updateProgram(){
 	}
 
 	// Check to see if the program is done
-	if (kf_run_time > kf_getMaxCamTime()){
+	if (kf_run_time > kf_getMaxCamTime() + start_delay){
 		// Make sure the motors are stopped, but let the program continue running
 		if (keep_camera_alive){
 			debug.serln("Starting keep alive phase");
@@ -330,14 +340,14 @@ void kf_updateContSpeed(){
 			// Set the approriate speed, but don't touch motors that don't have any key frames
 			if (kf[i].getKFCount() > 0){
 				float speed;
-				if (kf_run_time > thisAxisMaxTime)
+				if (kf_run_time > thisAxisMaxTime + start_delay)
 					speed = 0;
 				else{
 					// If the time is before the first key frame or after the last, it's a lead-in/out and speed should be 0
-					if (kf_run_time < kf[i].getXN(0) || kf_run_time > kf[i].getXN(kf[i].getKFCount() - 1))
+					if (kf_run_time < kf[i].getXN(0) + start_delay || kf_run_time > kf[i].getXN(kf[i].getKFCount() - 1) + start_delay)
 						speed = 0;
 					else
-						speed = kf[i].vel((float)kf_run_time) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
+						speed = kf[i].vel((float)kf_run_time - start_delay) * MILLIS_PER_SECOND; // Convert from steps/millisecond to steps/sec
 				}					
 				setJoystickSpeed(i, speed);
 			}
@@ -349,7 +359,7 @@ void kf_updateContSpeed(){
 void kf_updateSMS(){
 	
 	// If we're not ready for a move (i.e. the camera is busy or we just finished one), don't do anything
-	if (!kf_okForSmsMove || kf_run_time > kf_getMaxMoveTime()){
+	if (!kf_okForSmsMove || kf_run_time > kf_getMaxMoveTime() + start_delay){
 		return;
 	}
 
@@ -618,7 +628,7 @@ int kf_getRunState(){
 
 
 long kf_getRunTime(){
-	return kf_run_time + kf_ping_pong_time;
+	return kf_run_time + kf_ping_pong_time + start_delay;
 }
 
 
@@ -640,9 +650,9 @@ int kf_getPercentDone(){
 	int ret;
 	
 	if (Motors::planType() == CONT_VID)
-		ret = ((float)kf_run_time / kf_getMaxMoveTime()) * PERCENT_CONVERT;
+		ret = ((float)kf_run_time / (kf_getMaxMoveTime() + start_delay)) * PERCENT_CONVERT;
 	else
-		ret = ((float)kf_run_time / kf_getMaxCamTime()) * PERCENT_CONVERT;
+		ret = ((float)kf_run_time / (kf_getMaxCamTime() + start_delay)) * PERCENT_CONVERT;
 
 	return ret;
 }
