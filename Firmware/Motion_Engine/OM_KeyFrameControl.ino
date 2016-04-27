@@ -628,15 +628,15 @@ int kf_getRunState(){
 
 
 long kf_getRunTime(){
-	return kf_run_time + kf_ping_pong_time + start_delay;
+	return kf_run_time + kf_ping_pong_time;
 }
 
 
-long kf_getMaxTime(){
+long kf_getMaxProgramTime(){
 	if (Motors::planType() == CONT_VID)
-		return kf_getMaxMoveTime();
+		return kf_getMaxMoveTime() + start_delay;
 	else
-		return kf_getMaxCamTime();
+		return kf_getMaxCamTime() + start_delay;
 }
 
 

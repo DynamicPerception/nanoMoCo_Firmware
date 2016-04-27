@@ -2474,9 +2474,9 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	// Command 122 returns the maximum key frame program running time
 	case 122:
 	{
-		msg = "Max program time: ";
-		debugMessage(KF, command, MSG, kf_getMaxTime());
-		response(true, kf_getMaxTime());
+		msg = "Max program time (incl. start delay): ";
+		debugMessage(KF, command, MSG, kf_getMaxProgramTime());
+		response(true, kf_getMaxProgramTime());
 		break;
 	}
 
