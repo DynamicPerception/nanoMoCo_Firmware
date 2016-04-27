@@ -84,8 +84,6 @@ to respond to
 
   */
 
-long endPos[] = { 0, 0, 0 };
-
 char buffer[30];
 const PROGMEM char DIV[] = ": ";
 const PROGMEM char BUF0[] = " buf[0]: ";
@@ -456,7 +454,9 @@ void serMain(byte command, byte* input_serial_buffer) {
 		// send a motor home
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			motor[i].contSpeed(mot_max_speed);
+			motor[i].ms(4);			
 			motor[i].home();
+			motor[i].setSending(true);
 		}
 		startISR();
 		response(true);
@@ -667,11 +667,54 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 29 swaps all motors' start and stop positions
 	case 29:
 	{
-			   msg = "Setting Graffik mode: ";
-			   debugMessage(GEN, command, MSG, graffikMode());
-			   reverseStartStop();
-			   response(true);
-			   break;
+		msg = "Setting Graffik mode: ";
+		debugMessage(GEN, command, MSG, graffikMode());
+		reverseStartStop();
+		response(true);
+		break;
+	}
+
+	//Command 30 sets whether the current position should be saved after a power cycle
+	case 30:
+	{
+		msg = "Setting cur pos restore: ";
+		ee_load_curPos = input_serial_buffer[0];
+		OMEEPROM::write(EE_LOAD_POS, ee_load_curPos);
+		debugMessage(GEN, command, MSG, ee_load_curPos);		
+		response(true, ee_load_curPos);
+		break;
+	}
+
+	//Command 31 sets whether the start and stop points should be saved after a power cycle	
+	case 31:
+	{
+		msg = "Setting start/stop pos restore: ";
+		ee_load_startStop = input_serial_buffer[0];
+		OMEEPROM::write(EE_LOAD_START_STOP, ee_load_startStop);
+		debugMessage(GEN, command, MSG, ee_load_startStop);
+		response(true, ee_load_startStop);
+		break;
+	}
+
+	//Command 32 sets whether the end position should be saved after a power cycle
+	case 32:
+	{		
+		msg = "Setting end pos restore: ";
+		ee_load_endPos = input_serial_buffer[0];
+		OMEEPROM::write(EE_LOAD_END, ee_load_endPos);
+		debugMessage(GEN, command, MSG, ee_load_endPos);
+		response(true, ee_load_endPos);
+		break; 
+	}
+
+	//Command 33 requests that any motor backlash be taken up
+	case 33:
+	{	
+		takeUpBacklash();
+		msg = "Taking up motor backlash";
+		debugMessage(GEN, command, MSG);
+		response(true);
+		break;
 	}
 
 	//Command 50 sets Graffik Mode on or off
@@ -929,7 +972,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 126 returns whether the current program has completed
 	case 126:
 	{
-		boolean complete = programComplete();
+		uint8_t complete = programComplete() ? 1 : 0;
 		msg = "Is program complete?: ";
 		debugMessage(GEN, command, MSG, complete);		
 		response(true, complete);
@@ -962,7 +1005,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 129 checks whether all the motors can achieve the required speed to complete program based on currently set parameters
 	case 129:
 	{
-		boolean isValid = validateProgram();
+		uint8_t isValid = validateProgram() ? 1 : 0;
 		msg = "Program valid?: ";
 		debugMessage(GEN, command, MSG, isValid);
 		response(true, isValid);
@@ -976,6 +1019,33 @@ void serMain(byte command, byte* input_serial_buffer) {
 		msg = "All motor sleep states: ";
 		debugMessage(GEN, command, MSG, motorSleep());
 		response(true, motorSleep());
+		break;
+	}
+
+	//Command 131 returns whether the current position should be saved after a power cycle
+	case 131:
+	{
+		msg = "Cur pos restore: ";			   
+		debugMessage(GEN, command, MSG, ee_load_curPos);
+		response(true, ee_load_curPos);
+		break;
+	}
+
+	//Command 132 returns whether the start and stop points should be saved after a power cycle	
+	case 132:
+	{
+		msg = "Start/stop pos restore: ";
+		debugMessage(GEN, command, MSG, ee_load_startStop);
+		response(true, ee_load_startStop);
+		break;
+	}
+
+	//Command 133 returns whether the end position should be saved after a power cycle
+	case 133:
+	{
+		msg = "End pos restore: ";
+		debugMessage(GEN, command, MSG, ee_load_endPos);
+		response(true, ee_load_endPos);
 		break;
 	}
 
@@ -1160,8 +1230,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		thisMotor.contSpeed(mot_max_speed);
 
 		// send a motor home
+		thisMotor.ms(4);		
 		thisMotor.home();
 		startISR();
+		thisMotor.setSending(true);
 		response(true);
 		break;
 	}
@@ -1413,7 +1485,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 30 sets the motor's stop position to its current position
 	case 30:
 	{
-		msg = "Stting stop here";
+		msg = "Setting stop here";
 		debugMessage(subaddr, command, MSG);
 		thisMotor.stopPos(thisMotor.currentPos());
 		response(true);
@@ -1464,6 +1536,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting units: ";
 		debugMessage(subaddr, command, MSG, unitCode);
 		thisMotor.units(unitCode);
+		response(true, unitCode);
 		break;
 	}
 	//Command 41 sets the gearbox ratio for this motor.
@@ -1473,6 +1546,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting gearbox ratio: ";
 		debugMessage(subaddr, command, MSG, ratio);
 		thisMotor.gboxRatio(ratio);
+		response(true, (unsigned long)(ratio * 1e6));
 		break;
 	}
 	//Command 42 sets the platform ratio for this motor. 
@@ -1482,6 +1556,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting platform ratio: ";
 		debugMessage(subaddr, command, MSG, ratio);
 		thisMotor.platRatio(ratio);
+		response(true, (unsigned long)(ratio * 1e6));
 		break;
 	}
 
@@ -1615,8 +1690,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	case 106:
 	{
 		msg = "Current pos: ";
-		debugMessage(subaddr, command, MSG, thisMotor.currentPos());
-		response(true, thisMotor.currentPos());
+		long curPos = thisMotor.currentPos();
+		/* 
+		 *	If the motor is being sent, it has automatically switched to 4th stepping without
+		 *  informing the master device, so it should adjust the position response durint this
+		 *  time to be consistent with its last known microstep settting.
+		 */
+		curPos = thisMotor.isSending() ? (thisMotor.lastMs() / thisMotor.ms()) * curPos : curPos;
+		debugMessage(subaddr, command, MSG, curPos);
+		response(true, curPos);
 		break;
 	}
 
@@ -1722,7 +1804,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	//Command 118 returns whether the specified motor can achieve the speed required by the currently set program parameters
 	case 118:
 	{
-		boolean valid = validateProgram(subaddr - 1, false);
+		uint8_t valid = validateProgram(subaddr - 1, false) ? 1 : 0;
 		msg = "Is program valid? : ";
 		debugMessage(subaddr, command, MSG, valid);		
 		response(true, valid);
@@ -1771,6 +1853,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		debugMessage(subaddr, command, MSG, ratio);
 		response(true, (unsigned long)(ratio * 1e6));
 		break;
+	}
+	//Command 124 returns whether the motor is currently completing a "send to" command
+	case 124:
+	{
+		uint8_t sending = thisMotor.isSending() ? 1 : 0;
+		msg = "Is sending?: ";
+		debugMessage(subaddr, command, MSG, sending);
+		response(true, sending);
 	}
 
     //Error    

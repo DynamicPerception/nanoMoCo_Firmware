@@ -213,6 +213,36 @@ Added saving feature for gearbox and platform ratio values
       </update>
 
 
+      <update>
+
+
+
+        <version>0.58 Beta</version>
+
+
+
+        <desc>4-14-16:
+
+
+
+Fixed missing responses for motor units, gbox ratio, and platform ratio setting commands.
+
+
+
+        </desc>
+
+
+
+        <file>http://download.dynamicperception.com/dpwu/nmx/0.58.hex</file>
+
+
+
+      </update>
+
+
+
+
+
 		</updates>
 
 	</device>

@@ -158,9 +158,8 @@ void takeUpBacklash(boolean kf_move){
 			// Indicate that a brief pause is necessary after starting the motors
 			wait_required = true;
 
-			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible
-			/*if (!graffikMode())
-				motor[i].ms(4);*/
+			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible						
+			motor[i].ms(4);
 			
 			motor[i].contSpeed(mot_max_speed);
 						
@@ -177,15 +176,15 @@ void takeUpBacklash(boolean kf_move){
 	// Can't wait when it's a keyframe move. For some reason this causes the controller to lock	
 	if (wait_required && !kf_move) {
 		unsigned long time = millis();
-		while (millis() - time < MILLIS_PER_SECOND){
-			// Wait a second for backlash takeup to finish
+		const int BACKLASH_WAIT = 300;
+		while (millis() - time < BACKLASH_WAIT){
+			// Wait for backlash takeup to finish
 		}
 	}
 
 	// Re-set all the motors to their proper microstep settings
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		/*if (!graffikMode())
-			msAutoSet(i);*/
+		motor[i].restoreLastMs();
 
 		// Print debug info if proper flag is set
 		debug.funct("Microsteps: ");
@@ -558,8 +557,8 @@ void setJoystickSpeed(int p_motor, float p_speed){
 	if (abs(old_speed) < 1 && abs(new_speed) > 1 || ((old_speed / abs(old_speed)) != (new_speed / abs(new_speed)) && abs(new_speed) > 1)){
 		byte dir;
 		if (new_speed > 1)
-			dir = 1;
-		else
+			dir = 1;		
+		else if (new_speed < 1)
 			dir = 0;
 
 		motor[p_motor].continuous(true);

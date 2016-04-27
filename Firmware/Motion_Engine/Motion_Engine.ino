@@ -95,8 +95,16 @@ const int EE_STOP_2  = EE_START_2 + 4;		// Motor 2 program stop position (long i
 const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
 const int EE_SLEEP_2 = EE_MS_2    + 1;		// Motor 0 sleep state (byte)
 
+const int EE_LOAD_POS		 = EE_SLEEP_2 + 1;			// Whether to load the motors' current positions after power cycle (byte)
+const int EE_LOAD_START_STOP = EE_LOAD_POS + 1;			// Whether to load the motors' start/stop positions after power cycle (byte)
+const int EE_LOAD_END		 = EE_LOAD_START_STOP + 1;	// Whether to load the motors' end positions after power cycle (byte)
+
 const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
 
+// Variables that are loaded from EEPROM that determine whether the motors' various positions should be restored
+uint8_t ee_load_curPos = false;
+uint8_t ee_load_endPos = false;
+uint8_t ee_load_startStop = false;
 
 /***************************************
 
@@ -110,12 +118,12 @@ const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage fo
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 57;				// Serial API version
+const int SERIAL_VERSION			= 58;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
 const byte START_FLASH_CNT			= 5;				// # of flashes of debug led at startup
-const byte FLASH_DELAY				= 250;				// Time between flashes in milliseconds
+const byte FLASH_DELAY				= 100;				// Time between flashes in milliseconds
 const unsigned int START_RST_TM		= 5000;				// # of milliseconds PBT must be held low to do a factory reset
 uint8_t debug_led_enable			= false;			// Debug led state
 uint8_t timing_master				= true;				// Do we generate timing for all devices on the network? i.e. -are we the timing master?
@@ -229,6 +237,9 @@ unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in st
 uint8_t ISR_On = false;
 char byteFired = 0;				// Byte used to toggle the step pin for each motor within the ISR
 
+// This is used because setting the end position in the motor library causes the NMX communications to lock up.
+// That really ought to be looked into...
+long endPos[] = { 0, 0, 0 };
 
 /***************************************
 
@@ -306,6 +317,7 @@ unsigned long kf_pause_start;
 unsigned long kf_this_pause;
 unsigned long kf_pause_time;
 unsigned long kf_last_shot_tm;
+boolean kf_just_started = true;
 boolean kf_running = false;
 boolean kf_paused = false;
 
@@ -584,6 +596,13 @@ void loop() {
 	   kf_updateProgram();	   
    }
 
+   // Check if any motors are being sent and restore their old microstep settings when they stop
+   for (int i = 0; i < MOTOR_COUNT; i++){
+	   if (motor[i].isSending() && !motor[i].running()){
+		   motor[i].setSending(false);
+		   motor[i].restoreLastMs();
+	   }
+   }
 }
 
 /*
@@ -845,10 +864,11 @@ unsigned long totalProgramTime() {
 			// Overwrite longest_time if the last checked motor is longer
 			if (motor_time > longest_time)
 				longest_time = motor_time;
-			// Add the program delay
-			longest_time += start_delay;
 		}
 	}
+
+	// Add the program delay
+	longest_time += start_delay;
 
 	return(longest_time);
 }
@@ -889,9 +909,9 @@ void flasher(byte pin, int count) {
     
    for(int i = 0; i < count; i++) {
       digitalWrite(pin, HIGH);
-      delay(250);
+	  delay(FLASH_DELAY);
       digitalWrite(pin, LOW);
-      delay(250); 
+	  delay(FLASH_DELAY);
    }
    
 }
