@@ -864,10 +864,11 @@ unsigned long totalProgramTime() {
 			// Overwrite longest_time if the last checked motor is longer
 			if (motor_time > longest_time)
 				longest_time = motor_time;
-			// Add the program delay
-			longest_time += start_delay;
 		}
 	}
+
+	// Add the program delay
+	longest_time += start_delay;
 
 	return(longest_time);
 }
