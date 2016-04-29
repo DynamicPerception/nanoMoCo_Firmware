@@ -2466,8 +2466,9 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 	case 122:
 	{
 		msg = "Max program time (incl. start delay): ";
-		debugMessage(KF, command, MSG, kf_getMaxProgramTime());
-		response(true, kf_getMaxProgramTime());
+		long maxProgTime = kf_getMaxProgramTime();
+		debugMessage(KF, command, MSG, maxProgTime);
+		response(true, maxProgTime);
 		break;
 	}
 

@@ -261,8 +261,13 @@ void kf_updateProgram(){
 	}
 
 	// Don't do anything else until the start delay is done
-	if (kf_run_time < start_delay)
+	if (kf_run_time < start_delay){
+		delay_flag = true;
 		return;
+	}
+
+	delay_flag = false;
+		
 
 	// If this is the beginning of the program, just after the start delay...
 	if (kf_just_started){
@@ -580,25 +585,26 @@ float kf_MaxSMSSpeed(int axis){
 }
 
 long kf_getMaxMoveTime(){
-	
-	static long move_time = 0;
-	
-	// Only calculate a new value when not running so as to not waste cycles during a program
-	if (!kf_running){
-		// SMS and cont. TL mode 
-		if (Motors::planType() != CONT_VID){			
-			move_time = Camera.getMaxShots() * Camera.intervalTime();
-			debug.funct("Getting TL move time: ");			
-		}
-		// Continuous video mode
-		else{			
-			move_time = KeyFrames::getContVidTime();			
-			debug.funct("Getting vid move time: ");			
-		}		
-		debug.funct(move_time);
-		debug.functln("ms");		
-	}
 
+	long move_time = 0;	
+	
+	// SMS and cont. TL mode 
+	if (Motors::planType() != CONT_VID){			
+		move_time = Camera.getMaxShots() * Camera.intervalTime();
+		if (!kf_running)
+			debug.funct("Getting TL move time: ");			
+	}
+	// Continuous video mode
+	else{			
+		move_time = KeyFrames::getContVidTime();			
+		if (!kf_running)
+			debug.funct("Getting vid move time: ");			
+	}		
+	if (!kf_running){
+		debug.funct(move_time);
+		debug.functln("ms");
+	}
+	
 	return move_time;
 }
 
