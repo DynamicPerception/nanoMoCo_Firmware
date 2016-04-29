@@ -724,6 +724,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		appMode(input_serial_buffer[0]);
 		msg = "Setting app mode: ";
 		debugMessage(GEN, command, MSG, appMode());
+		response(true);
 		break;
 	}
 
