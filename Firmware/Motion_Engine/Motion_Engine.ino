@@ -200,7 +200,6 @@ unsigned int  camera_fired		= 0;
 uint8_t		  camera_test_mode	= false;
 uint8_t		  fps				= 1;
 boolean		  keep_camera_alive	= false;
-boolean		  intervalometer_mode = false;
 
 
 /***************************************
@@ -745,7 +744,7 @@ void setIntervalometerMode(boolean enabled){
 }
 
 boolean getIntervalometerMode(){
-	return intervalometer_mode;
+	return external_intervalometer;
 }
 
 byte getRunStatus(){
