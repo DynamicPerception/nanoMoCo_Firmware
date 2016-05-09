@@ -571,7 +571,8 @@ void loop() {
 			Engine.state(ST_CLEAR);
      
 		// If the start delay is done then check current engine state and handle appropriately
-		if (run_time >= start_delay){
+		// Skip the delay if the ping_pong_flag is set
+		if (run_time >= start_delay || ping_pong_flag){
 			// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
 			if (external_intervalometer)
 				debugOn();

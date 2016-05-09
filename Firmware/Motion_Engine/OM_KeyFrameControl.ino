@@ -260,8 +260,8 @@ void kf_updateProgram(){
 		// Wait for the delay to finish
 	}
 
-	// Don't do anything else until the start delay is done
-	if (kf_run_time < start_delay){
+	// Don't do anything else until the start delay is done (but skip if on a ping-pong pass)
+	if (kf_run_time < start_delay && !ping_pong_flag){
 		delay_flag = true;
 		return;
 	}
