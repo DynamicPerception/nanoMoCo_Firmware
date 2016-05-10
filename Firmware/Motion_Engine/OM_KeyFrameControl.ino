@@ -238,6 +238,12 @@ void kf_stopProgram(boolean savePingPongVals){
 }
 
 void kf_updateProgram(){
+	unsigned long cur_time = millis();
+	static unsigned long last_blink;
+	const int BLINK_DELAY = 500;
+	if (kf_run_time == 0){
+		last_blink = cur_time;
+	}
 
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
@@ -263,8 +269,18 @@ void kf_updateProgram(){
 	// Don't do anything else until the start delay is done (but skip if on a ping-pong pass)
 	if (kf_run_time < start_delay && !ping_pong_flag){
 		delay_flag = true;
+		if (cur_time - last_blink > BLINK_DELAY){
+			debugToggle();
+			last_blink = cur_time;
+		}
 		return;
 	}
+
+	// Set proper post-delay debug LED status
+	if (external_intervalometer)
+		debugOn();
+	else
+		debugOff();
 
 	delay_flag = false;
 		
