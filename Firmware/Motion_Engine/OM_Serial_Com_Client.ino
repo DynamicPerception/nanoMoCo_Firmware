@@ -320,6 +320,18 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 		response(true);
 	}
 
+	case OM_BCAST_KF_START:
+		kf_startProgram();
+		break;
+
+	case OM_BCAST_KF_STOP:
+		kf_stopProgram();
+		break;
+
+	case OM_BCAST_KF_PAUSE:
+		kf_pauseProgram();
+		break;
+
     default:
       break;
   }
