@@ -293,7 +293,11 @@ void kf_updateProgram(){
 	}
 
 	// Check to see if the program is done
-	if (kf_run_time > kf_getMaxCamTime() + start_delay){
+	long totalTime = kf_getMaxCamTime();
+	// Only wait for the start delay on the first pass
+	if (!ping_pong_flag)
+		totalTime += start_delay;
+	if (kf_run_time > totalTime){
 		// Make sure the motors are stopped, but let the program continue running
 		if (keep_camera_alive){
 			debug.serln("Starting keep alive phase");
