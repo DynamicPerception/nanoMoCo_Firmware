@@ -542,55 +542,8 @@ void loop() {
 	  
 	// If a classic-style program is running   
    if( running ) {
-
-		// update program run time
-		unsigned long cur_time = millis();  
-		static unsigned long last_blink;
-		const int BLINK_DELAY = 500;
-		if (run_time == 0){
-			last_blink = cur_time;
-		}
-		run_time += cur_time - start_time;
-		start_time = cur_time;
-
-		// Saving the run time to last_run_time makes it accessible even after the program as ended and run_time has been reset
-		if (run_time != 0)
-			last_run_time = run_time;
-
-		// Got an external stop somewhere that wasn't a command?
-		if( force_stop == true )
-			stopProgram();
-       
-		// Hit max runtime? Done!
-		if( ComMgr.master() && max_time > 0 && run_time > max_time )
-			stopProgram();
-       
-		// If we're the slave and a interrupt has been triggered by the master, set to clear to fire mode (for multi-node sync)
-		if( ComMgr.master() == false && ComMgr.slaveClear() == true ) 
-			Engine.state(ST_CLEAR);
-     
-		// If the start delay is done then check current engine state and handle appropriately
-		// Skip the delay if the ping_pong_flag is set
-		if (run_time >= start_delay || ping_pong_flag){
-			// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
-			if (external_intervalometer)
-				debugOn();
-			else
-				debugOff();
-			// Proceed with the program
-			Engine.checkCycle();
-			delay_flag = false;
-		}
-		// Otherwise, set the delay flag true and toggle the debug LED if necessary
-		else if (run_time < start_delay){
-			delay_flag = true;
-			if (cur_time - last_blink > BLINK_DELAY){
-				debugToggle();
-				last_blink = cur_time;
-			}
-		}
+	   updateLegacyProgram();
    }
-
    // If a key frame program is running
    else if (kf_running){
 	   kf_updateProgram();	   
@@ -603,6 +556,55 @@ void loop() {
 		   motor[i].restoreLastMs();
 	   }
    }
+}
+
+void updateLegacyProgram(){
+	// update program run time
+	unsigned long cur_time = millis();
+	static unsigned long last_blink;
+	const int BLINK_DELAY = 500;
+	if (run_time == 0){
+		last_blink = cur_time;
+	}
+	run_time += cur_time - start_time;
+	start_time = cur_time;
+
+	// Saving the run time to last_run_time makes it accessible even after the program as ended and run_time has been reset
+	if (run_time != 0)
+		last_run_time = run_time;
+
+	// Got an external stop somewhere that wasn't a command?
+	if (force_stop == true)
+		stopProgram();
+
+	// Hit max runtime? Done!
+	if (ComMgr.master() && max_time > 0 && run_time > max_time)
+		stopProgram();
+
+	// If we're the slave and a interrupt has been triggered by the master, set to clear to fire mode (for multi-node sync)
+	if (ComMgr.master() == false && ComMgr.slaveClear() == true)
+		Engine.state(ST_CLEAR);
+
+	// If the start delay is done then check current engine state and handle appropriately
+	// Skip the delay if the ping_pong_flag is set
+	if (run_time >= start_delay || ping_pong_flag){		
+		// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
+		if (external_intervalometer)
+			debugOn();
+		else
+			debugOff();
+		// Proceed with the program
+		Engine.checkCycle();
+		delay_flag = false;
+	}
+	// Otherwise, set the delay flag true and toggle the debug LED if necessary
+	else if (run_time < start_delay){
+		delay_flag = true;
+		if (cur_time - last_blink > BLINK_DELAY){
+			debugToggle();
+			last_blink = cur_time;
+		}
+	}
 }
 
 /*
