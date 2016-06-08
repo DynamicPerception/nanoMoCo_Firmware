@@ -332,6 +332,10 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
 		kf_pauseProgram();
 		break;
 
+	case OM_BCAST_GET_ADDRESS:
+		response(true, Node.address());
+		break;
+
     default:
       break;
   }
