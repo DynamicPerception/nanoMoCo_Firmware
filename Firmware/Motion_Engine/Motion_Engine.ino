@@ -33,6 +33,7 @@ See dynamicperception.com for more information
 
 
 
+#include "OMMoCoPrint.h"
 #include "Debug.h"
 #include <MsTimer2.h>
 #include <TimerOne.h>
@@ -322,15 +323,6 @@ boolean kf_paused = false;
 
 /***************************************
 
-	Debugging Vars and Objects
-
-****************************************/
-
-boolean debug_LED = false;
-DebugClass debug = DebugClass();
-
-/***************************************
-
 	     Object Initialization
 
 ****************************************/
@@ -356,6 +348,16 @@ const byte ST_RUN   = 3;	// ST_RUN   - motor is currently running
 const byte ST_EXP   = 4;	// ST_EXP   - clear to expose camera (or not...)
 const byte ST_WAIT  = 5;	// ST_WAIT  - in camera delay
 const byte ST_ALTP  = 6;	// ST_ALTP  - check for alt output post
+
+/***************************************
+
+Debugging Vars and Objects
+
+****************************************/
+
+boolean debug_LED = false;
+OMMoCoPrintClass mocoPrint = OMMoCoPrintClass(&Node);
+DebugClass debug = DebugClass(&mocoPrint);
 
 
 /* 
