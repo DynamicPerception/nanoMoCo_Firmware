@@ -51,12 +51,6 @@ byte setDebugOutput(byte p_setting) {
 		setting |= p_setting;
 	debug.setState(setting);
 
-	USBSerial.print("Requested setting change: ");
-	USBSerial.println(p_setting, BIN);
-	USBSerial.print("Debug flags: ");
-	USBSerial.println(setting, BIN);
-	USBSerial.println("");
-
 	// Set debug states for libraries
 	bool motor_debug = false;
 	bool camera_debug = false;

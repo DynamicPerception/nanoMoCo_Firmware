@@ -683,8 +683,8 @@ void serMain(byte command, byte* input_serial_buffer) {
 	//Command 29 swaps all motors' start and stop positions
 	case 29:
 	{
-		msg = "Setting Graffik mode: ";
-		debugMessage(GEN, command, MSG, graffikMode());
+		msg = "Reversing start/stop points";
+		debugMessage(GEN, command, MSG);
 		reverseStartStop();
 		response(true);
 		break;
@@ -1086,7 +1086,25 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 
-	//Command 254 sets the USB debug reporting state
+	//*****************DEBUG COMMANDS********************
+
+	//Command 252 sets the MoCoBus debug enable state
+	case 252:
+	{
+		byte setting = input_serial_buffer[0];		
+		response(true, debug.setMoco(setting));
+		break;
+	}
+
+	//Command 253 sets the USB debug enable state
+	case 253:
+	{
+		byte setting = input_serial_buffer[0];
+		response(true, debug.setUSB(setting));
+		break;
+	}
+
+	//Command 254 sets the debug reporting state
 	case 254:
 	{
 		byte setting = input_serial_buffer[0];
@@ -1128,7 +1146,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 	{
 		motorSleep((subaddr - 1), input_serial_buffer[0]);
 		msg = "Setting sleep: ";
-		debugMessage(subaddr, command, MSG, motorSleep(subaddr-1));
+		debugMessage(subaddr, command, MSG, motorSleep(subaddr-1));				
 		response(true);
 		break;
 	}

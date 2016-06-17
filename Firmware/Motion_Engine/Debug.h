@@ -9,14 +9,19 @@
 	#include "WProgram.h"
 #endif
 
+#include "OMMoCoPrint.h"
+
 class DebugClass
 {
  private:
 	 void init();
-	 static byte  usb_debug;	// Byte holding debug output flags
+	 byte m_debug_flag;	// Byte holding debug output flags
+	 bool m_usb;
+	 bool m_moco;
+	 OMMoCoPrintClass *m_mocoPrint;
 
  public:
-	DebugClass();		
+	DebugClass(OMMoCoPrintClass *c_mocoPrint);		
 	const static byte DB_COM_OUT	= B00000001;	// Debug flag -- toggles output of received serial commands
 	const static byte DB_STEPS		= B00000010;	// Debug flag -- toggles output of motor step information 
 	const static byte DB_MOTOR		= B00000100;	// Debug flag -- toggles output of general motor information 
@@ -24,83 +29,134 @@ class DebugClass
 	const static byte DB_FUNCT		= B00010000;	// Debug flag -- toggles output of debug messages within most functions
 	const static byte DB_CONFIRM	= B00100000;	// Debug flag -- toggles output of success and failure messages in response to serial commands
 
-	void setState(byte state);
+	void setState(byte state);		
 	byte getState();
+
+	bool setUSB(bool enabled);
+	bool getUSB();
+
+	bool setMoco(bool enabled);
+	bool getMoco();
 
 	template <typename T>
 	void ser(T data){
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_GEN_SER){
+			if (m_usb)
+				USBSerial.print(data);
+			if (m_moco)
+				m_mocoPrint->print(data);
+		}
 	}
 
 	template <typename T>
 	void serln(T data){
-		if (usb_debug & DB_GEN_SER)
-			USBSerial.println(data);
+		if (m_debug_flag & DB_GEN_SER){
+			if (m_usb)
+				USBSerial.println(data);
+			if (m_moco)
+				m_mocoPrint->println(data);
+		}
 	}
 
 	template <typename T>
 	void funct(T data){
-		if (usb_debug & DB_FUNCT)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_FUNCT){
+			if (m_usb)
+				USBSerial.print(data);
+			if (m_moco)
+				m_mocoPrint->print(data);
+		}
 	}
 
 	template <typename T>
 	void functln(T data){
-		if (usb_debug & DB_FUNCT)
-			USBSerial.println(data);
+		if (m_debug_flag & DB_FUNCT){
+			if (m_usb)
+				USBSerial.println(data);
+			if (m_moco)
+				m_mocoPrint->println(data);
+		}
 	}
 
 	template <typename T>
 	void com(T data){
-		if (usb_debug & DB_COM_OUT)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_COM_OUT){
+			if (m_usb)
+				USBSerial.print(data);
+			if (m_moco)
+				m_mocoPrint->print(data);
+		}
 	}
 
 	template <typename T>
 	void comln(T data){
-		if (usb_debug & DB_COM_OUT)
-			USBSerial.println(data);
+		if (m_debug_flag & DB_COM_OUT){
+			if (m_usb)
+				USBSerial.println(data);
+			if (m_moco)
+				m_mocoPrint->println(data);
+		}
 	}
 
 	template <typename T>
 	void com(T data, int base){
-		if (usb_debug & DB_COM_OUT)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_COM_OUT){
+			if (m_usb)
+				USBSerial.print(data, base);
+			if (m_moco)
+				m_mocoPrint->print(data, base);
+		}
 	}
 
 	template <typename T>
 	void comln(T data, int base){
-		if (usb_debug & DB_COM_OUT)
-			USBSerial.println(data, base);
+		if (m_debug_flag & DB_COM_OUT){
+			if (m_usb)
+				USBSerial.println(data, base);
+			if (m_moco)
+				m_mocoPrint->println(data, base);
+		}
 	}
 
 	template <typename T>
 	void confirm(T data){
-		if (usb_debug & DB_CONFIRM)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_CONFIRM){
+			if (m_usb)
+				USBSerial.print(data);
+			if (m_moco)
+				m_mocoPrint->print(data);
+		}
 	}
 
 	template <typename T>
 	void confirmln(T data){
-		if (usb_debug & DB_CONFIRM)
-			USBSerial.println(data);
+		if (m_debug_flag & DB_CONFIRM){
+			if (m_usb)
+				USBSerial.println(data);
+			if (m_moco)
+				m_mocoPrint->println(data);
+		}
 	}
 
 	template <typename T>
 	void steps(T data){
-		if (usb_debug & DB_STEPS)
-			USBSerial.print(data);
+		if (m_debug_flag & DB_STEPS){
+			if (m_usb)
+				USBSerial.print(data);
+			if (m_moco)
+				m_mocoPrint->print(data);
+		}
 	}
 
 	template <typename T>
 	void stepsln(T data){
-		if (usb_debug & DB_STEPS)
-			USBSerial.println(data);
+		if (m_debug_flag & DB_STEPS){
+			if (m_usb)
+				USBSerial.println(data);
+			if (m_moco)
+				m_mocoPrint->println(data);
+		}
 	}
 };
-
-extern DebugClass Debug;
-
 #endif
 
