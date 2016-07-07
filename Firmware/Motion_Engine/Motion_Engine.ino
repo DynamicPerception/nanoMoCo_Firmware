@@ -54,6 +54,9 @@ See dynamicperception.com for more information
 #include <OMMoCoNode.h>
 #include <OMEEPROM.h>
 
+#include "ArduinoLUFA.h"
+#include "PS3ControllerHost.h"
+#include "USBControllerMode.h"
 
 /***************************************
 
@@ -302,6 +305,14 @@ uint8_t watchdog_active = false;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
 
+/***************************************
+
+	  PS3 Controller Variables
+
+****************************************/
+// USB Controller Mode
+USBControllerMode USBCtrlrMode;
+
 
 /***************************************
 
@@ -370,6 +381,8 @@ DebugClass debug = DebugClass(&mocoPrint);
 
 
 void setup() {
+        // initialize the USB host
+        ArduinoLUFA::init();
 	
 	// Start USB serial communications
 	USBSerial.begin(19200);
@@ -479,6 +492,9 @@ void setup() {
 
 	// Ensure that the axis array is set
 	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
+
+        // Leaving this here for now, remove before merging
+        debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_STEPS | DebugClass::DB_MOTOR | DebugClass::DB_GEN_SER | DebugClass::DB_COM_OUT );
 }
 
 
@@ -558,6 +574,9 @@ void loop() {
 		   motor[i].restoreLastMs();
 	   }
    }
+
+   // Do controller per frame processing
+   USBCtrlrMode.PerFrameTask();
 }
 
 void updateLegacyProgram(){
