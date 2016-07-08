@@ -64,6 +64,7 @@ void USBControllerMode::PerFrameTask( void )
   }
   else if (PS3CtrlrHost.status() == STAT_CONNECTED && prevStatus == STAT_NOTCONNECTED)
   {
+    PS3CtrlrHost.SetLED(1,true);
     debug.functln("Ps3Conn");
   }
   
