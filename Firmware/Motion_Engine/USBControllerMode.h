@@ -28,13 +28,24 @@ See dynamicperception.com for more information
  @brief Core USBControllerMode.h Header File
  */
  
+
+enum USBControllerMode_State_t 
+{
+  USBCONTROLLERMODE_STATE_Setting,
+  USBCONTROLLERMODE_STATE_MoveToStart,
+  USBCONTROLLERMODE_STATE_Running,
+};
+
  class USBControllerMode {
    private:
-   float CreateDeadzone( float value );
+     float CreateDeadzone( float value );
+     USBControllerMode_State_t state;
    
    public:
      USBControllerMode( void );
-     void PerFrameTask(void);
+     void StartMove( void );
+     void init( void );
+     void CtrlrTask(void);
  };
 
 #ifndef _USBCONTROLLERMODE_H_

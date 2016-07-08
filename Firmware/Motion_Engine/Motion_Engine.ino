@@ -381,8 +381,8 @@ DebugClass debug = DebugClass(&mocoPrint);
 
 
 void setup() {
-        // initialize the USB host
-        ArduinoLUFA::init();
+        // Initialize USB Controller Mode
+        USBCtrlrMode.init();
 	
 	// Start USB serial communications
 	USBSerial.begin(19200);
@@ -544,10 +544,11 @@ void loop() {
 
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog_active && (millis() - commandTime > WATCHDOG_MAX_TIME)){
+              //  debug.functln("stop all");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			if (motor[i].running()){
 				stopAllMotors();
-				break;
+				break; 
 			}
 		}
 	}	
@@ -576,7 +577,7 @@ void loop() {
    }
 
    // Do controller per frame processing
-   USBCtrlrMode.PerFrameTask();
+   USBCtrlrMode.CtrlrTask();
 }
 
 void updateLegacyProgram(){
