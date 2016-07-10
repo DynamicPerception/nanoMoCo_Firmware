@@ -2,7 +2,7 @@
 
 B. Wiggins / Dynamic Perception LLC
 
-Based on the excellent work by Dean Camera for his LUFA project 
+Based on the excellent work by Dean Camera for his LUFA project
 and bluetooth robot project.
 
 Shared under the MIT License
@@ -28,11 +28,8 @@ Shared under the MIT License
 #define PS3CONTROLLER_PID           0x0268
 
 static bool isPS3Controller;
-static HID_ReportInfo_t myHIDReportInfo;
 static uint32_t digitalButtonStates;
-static uint8_t LEDStates;
-//static uint8_t BigActuator;
-//static bool SmallActuator;
+static HID_ReportInfo_t HIDReportInfo;
 
 /** LUFA HID Class driver interface configuration and state information. This structure is
  *  passed to all HID Class driver functions, so that multiple instances of the same class
@@ -53,13 +50,18 @@ USB_ClassInfo_HID_Host_t PS3Controller_HID_Interface
     },
     /* .HIDInterfaceProtocol   = */ HID_CSCP_NonBootProtocol,
 
-    &myHIDReportInfo,
+    &HIDReportInfo,
   },
 };
 
+void PS3ControllerHost::init( void )
+{
+  isConnected=false;
+}
+
 static uint8_t PS3ControllerReport[64];
 void PS3ControllerHost::USBTask(void)
-{ 
+{
   if ((USB_HostState != HOST_STATE_Configured) || !(PS3Controller_HID_Interface.State.IsActive))
     return;
 
@@ -76,23 +78,23 @@ void PS3ControllerHost::USBTask(void)
     leftStick[1] = PS3ControllerReport[7];
     rightStick[0] = PS3ControllerReport[8];
     rightStick[1] = PS3ControllerReport[9];
-
+/*
     // Copy pressure sensitive data
     for (int i = 0; i < NUMBER_OF_BUTTONS; i++)
     {
       analogButtons[i] = PS3ControllerReport[13 + i];
     }
 
- /*   // Copy accelerometer data, these are 10-bit
-    uint16_t *accelPtr;
-    accelPtr = (uint16_t *) &PS3ControllerReport[40];
-    accelX = *accelPtr;
-    accelPtr = (uint16_t *) &PS3ControllerReport[42];
-    accelY = *accelPtr;
-    accelPtr = (uint16_t *) &PS3ControllerReport[44];
-    accelZ = *accelPtr;
-    accelPtr = (uint16_t *) &PS3ControllerReport[46];
-    accelGyro = *accelPtr;*/
+       // Copy accelerometer data, these are 10-bit
+       uint16_t *accelPtr;
+       accelPtr = (uint16_t *) &PS3ControllerReport[40];
+       accelX = *accelPtr;
+       accelPtr = (uint16_t *) &PS3ControllerReport[42];
+       accelY = *accelPtr;
+       accelPtr = (uint16_t *) &PS3ControllerReport[44];
+       accelZ = *accelPtr;
+       accelPtr = (uint16_t *) &PS3ControllerReport[46];
+       accelGyro = *accelPtr;*/
   }
 
   HID_Host_USBTask(&PS3Controller_HID_Interface);
@@ -102,141 +104,142 @@ PS3ControllerHost::PS3ControllerHost() {
 
 }
 
-bool PS3ControllerHost::IsConnected(void)
+void PS3ControllerHost::ResetControllerState( void )
 {
-  if(status() == STAT_CONNECTED)
-    return(true);
-  else
-    return(false);
+  BigActuator = 0;
+  BigActuatorDuration = 0;
+  SmallActuator = false;
+  SmallActuatorDuration = 0;
 }
 
 PS3Controller_ButtonStates_t PS3ControllerHost::GetButtonState( PS3Controller_ButtonUsages_t button )
 {
-  bool curButtonOn = (curDigitalButtons & (1 << button-1)) > 0;
-  bool prevButtonOn = (prevDigitalButtons & (1 << button-1)) > 0;
+  bool curButtonOn = (curDigitalButtons & (1 << button - 1)) > 0;
+  bool prevButtonOn = (prevDigitalButtons & (1 << button - 1)) > 0;
 
-  // set previous state for latching  
-  if(curButtonOn == true )
-  {
-    prevDigitalButtons |= 1 << (button-1);
-  }
+  // set previous state for latching
+  if (curButtonOn == true )
+    prevDigitalButtons |= 1 << (button - 1);
   else
-  {
-    prevDigitalButtons &= ~(1 << (button-1));
-  }
-  
-  if(curButtonOn==true && prevButtonOn==true)
-  {
-     return(PS3CONTROLLER_STATE_On); 
-  }
-  else if(curButtonOn==true && prevButtonOn==false)
-  {
-    return(PS3CONTROLLER_STATE_Down);
-  }
-  else if(curButtonOn==false && prevButtonOn==true)
-  {
-    return(PS3CONTROLLER_STATE_Up);
-  }
-  else // curButtonOff && prevButtoOff
-  {
-    return(PS3CONTROLLER_STATE_Off);
-  }
-}
+    prevDigitalButtons &= ~(1 << (button - 1));
 
+  if (curButtonOn == true && prevButtonOn == true)
+    return (PS3CONTROLLER_STATE_On);
+  else if (curButtonOn == true && prevButtonOn == false)
+    return (PS3CONTROLLER_STATE_Down);
+  else if (curButtonOn == false && prevButtonOn == true)
+    return (PS3CONTROLLER_STATE_Up);
+  else // curButtonOff && prevButtoOff
+    return (PS3CONTROLLER_STATE_Off);
+}
+/*
 PS3Controller_ButtonStates_t PS3ControllerHost::PeekButtonState( PS3Controller_ButtonUsages_t button )
 {
-  bool curButtonOn = (curDigitalButtons & (1 << button-1)) > 0;
-  bool prevButtonOn = (prevDigitalButtons & (1 << button-1)) > 0;
-  
-  if(curButtonOn==true && prevButtonOn==true)
+  bool curButtonOn = (curDigitalButtons & (1 << button - 1)) > 0;
+  bool prevButtonOn = (prevDigitalButtons & (1 << button - 1)) > 0;
+
+  if (curButtonOn == true && prevButtonOn == true)
   {
-     return(PS3CONTROLLER_STATE_On); 
+    return (PS3CONTROLLER_STATE_On);
   }
-  else if(curButtonOn==true && prevButtonOn==false)
+  else if (curButtonOn == true && prevButtonOn == false)
   {
-    return(PS3CONTROLLER_STATE_Down);
+    return (PS3CONTROLLER_STATE_Down);
   }
-  else if(curButtonOn==false && prevButtonOn==true)
+  else if (curButtonOn == false && prevButtonOn == true)
   {
-    return(PS3CONTROLLER_STATE_Up);
+    return (PS3CONTROLLER_STATE_Up);
   }
   else // curButtonOff && prevButtoOff
   {
-    return(PS3CONTROLLER_STATE_Off);
+    return (PS3CONTROLLER_STATE_Off);
   }
 }
-
+*/
+/*
 uint8_t PS3ControllerHost::GetButtonPressure( PS3Controller_ButtonUsages_t button )
 {
-  return(analogButtons[button-1]);
+  return (analogButtons[button - 1]);
 }
-
+*/
 uint8_t PS3ControllerHost::GetLeftStickX() {
-  return(leftStick[0]);
+  return (leftStick[0]);
 }
 
 uint8_t PS3ControllerHost::GetLeftStickY() {
-   return(leftStick[1]);
+  return (leftStick[1]);
 }
 
 uint8_t PS3ControllerHost::GetRightStickX() {
-   return(rightStick[0]);
+  return (rightStick[0]);
 }
 
 uint8_t PS3ControllerHost::GetRightStickY() {
-  return(rightStick[1]);
+  return (rightStick[1]);
 }
 
 static uint8_t LEDRUMReport [] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                         0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
-                         0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
-                         0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
-                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                                  0x00, 0x02, 0xff, 0x27, 0x10, 0x00, 0x32, 0xff,
+                                  0x27, 0x10, 0x00, 0x32, 0xff, 0x27, 0x10, 0x00,
+                                  0x32, 0xff, 0x27, 0x10, 0x00, 0x32, 0x00, 0x00,
+                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+                                 };
+                                 
 void PS3ControllerHost::SetLED( uint8_t LEDNum, bool state )
 {
-   if(state == true)
-   {
+  if (state == true)
     LEDStates |= 1 << (LEDNum);
-   }
-   else
-   {
-     LEDStates &= ~(1 << (LEDNum));
-   }
-   
-   LEDRUMReport[9] = LEDStates;
-   
-   HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
-}
-/*
-void PS3ControllerHost::SetBigActuator( uint8_t value )
-{
-     BigActuator =  value;
-     LEDRUMReport[1] = 0xfe;
-     LEDRUMReport[2] = SmallActuator;
-     LEDRUMReport[3] = BigActuator;
-     LEDRUMReport[4] = 0xfe;
+  else
+    LEDStates &= ~(1 << (LEDNum));
 
-     // The same packet controls LED settings so make sure they stay the same
-   LEDRUMReport[9] = LEDStates;
-   
-   HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
+  LEDRUMReport[9] = LEDStates;
+
+  HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
 }
 
-void PS3ControllerHost::SetSmallActuator( bool state )
+void PS3ControllerHost::SetBigActuator( uint8_t rumbleValue, uint8_t rumbleDuration )
 {
-  SmallActuator = state;
-  LEDRUMReport[1] = 0xfe;
-  LEDRUMReport[2] = SmallActuator;
-  LEDRUMReport[3] = BigActuator;
-  LEDRUMReport[4] = 0xfe;
+  BigActuator =  rumbleValue;
+  BigActuatorDuration = rumbleDuration;
+
+  LEDRUMReport[1] = SmallActuatorDuration;
   
-     // The same packet controls LED settings so make sure they stay the same
-   LEDRUMReport[9] = LEDStates;
-   
-   HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
+  if(SmallActuator == true)
+    LEDRUMReport[2] = 0xff;
+  else
+    LEDRUMReport[2] = 0x00;
+    
+  LEDRUMReport[3] = BigActuatorDuration;
+  LEDRUMReport[4] = BigActuator;
+
+  // The same packet controls LED settings so make sure they stay the same
+  LEDRUMReport[9] = LEDStates;
+
+  HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
 }
-*/
+
+void PS3ControllerHost::SetSmallActuator( bool rumbleState, uint8_t rumbleDuration )
+{
+  SmallActuator = rumbleState;
+  SmallActuatorDuration = rumbleDuration;
+
+  LEDRUMReport[1] = SmallActuatorDuration;
+ 
+  if(SmallActuator == true)
+    LEDRUMReport[2] = 0xff;
+  else
+    LEDRUMReport[2] = 0x00;
+    
+  LEDRUMReport[3] = BigActuatorDuration;
+  LEDRUMReport[4] = BigActuator;
+
+  // The same packet controls LED settings so make sure they stay the same
+  LEDRUMReport[9] = LEDStates;
+  
+  HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
+}
+
 // create an object, we'll need it below
 PS3ControllerHost PS3CtrlrHost = PS3ControllerHost();
 
@@ -245,15 +248,13 @@ PS3ControllerHost PS3CtrlrHost = PS3ControllerHost();
  *  starts the library USB task to begin the enumeration and USB management process.
  */
 void EVENT_USB_Host_DeviceAttached(void) {
-  PS3CtrlrHost.error(ERROR_NONE);
 }
 
 /** Event handler for the USB_DeviceUnattached event. This indicates that a device has been removed from the host, and
  *  stops the library USB task management process.
  */
 void EVENT_USB_Host_DeviceUnattached(void) {
-  PS3CtrlrHost.status(STAT_NOTCONNECTED);
-  PS3CtrlrHost.error(ERROR_NONE);
+  PS3CtrlrHost.isConnected=false;
 }
 
 /** Event handler for the USB_DeviceEnumerationComplete event. This indicates that a device has been successfully
@@ -268,14 +269,12 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
 
   if (USB_Host_GetDeviceDescriptor(&DeviceDescriptor) != HOST_SENDCONTROL_Successful)
   {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_DEV);
+    // Hard fail
     return;
   }
 
   if (USB_Host_GetDeviceConfigDescriptor(1, &ConfigDescriptorSize, ConfigDescriptorData, sizeof(ConfigDescriptorData)) != HOST_GETCONFIG_Successful) {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_CFGDESC);
+    // Hard fail
     return;
   }
 
@@ -286,40 +285,36 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     isPS3Controller = false;
 
   if (HID_Host_ConfigurePipes(&PS3Controller_HID_Interface, ConfigDescriptorSize, ConfigDescriptorData) != HID_ENUMERROR_NoError) {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_DEV);
+    // Hard fail
     return;
   }
-  
+
   if (USB_Host_SetDeviceConfiguration(1) != HOST_SENDCONTROL_Successful) {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_SETCFG);
+    // Hard fail
     return;
   }
 
   if (!PS3Controller_HID_Interface.State.IsActive)
     return;
 
-  
+
   uint8_t ret;
   ret = HID_Host_SetReportProtocol(&PS3Controller_HID_Interface);
   if (ret != HOST_SENDCONTROL_Successful )
   {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_HARD);
+    // Hard fail
     return;
   }
 
-  if (!(myHIDReportInfo.TotalReportItems))
+  if (!(HIDReportInfo.TotalReportItems))
   {
-    PS3CtrlrHost.status(STAT_ERROR);
-    PS3CtrlrHost.error(ERROR_HARD);
+    // Hard fail
     return;
   }
 
   if (isPS3Controller)
   {
-// Code from Dean's PS3 Controller driver to send the bluetooth address to the PS3 controller for pairing (we should implement something similar)
+    // Code from Dean's PS3 Controller driver to send the bluetooth address to the PS3 controller for pairing (we should implement something similar)
 #ifdef PS3BLUETOOTH
     /* Read out the latest inserted bluetooth adapter address stored in EEPROM */
     BDADDR_t TempAddress;
@@ -335,31 +330,28 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0xF4, HID_REPORT_ITEM_Feature, PS3StartReportingRequest, sizeof(PS3StartReportingRequest));
   }
 
-  if(isPS3Controller)
+  if (isPS3Controller)
   {
-    LEDStates = 0;
-  //  BigActuator=0;
-   // SmallActuator = false;
-    PS3CtrlrHost.status(STAT_CONNECTED);
+    PS3CtrlrHost.ResetControllerState();
+    PS3CtrlrHost.isConnected=true;
   }
 }
 
 
 /** Event handler for the USB_HostError event. This indicates that a hardware error occurred while in host mode. */
 void EVENT_USB_Host_HostError(const uint8_t p_err) {
-  // TODO: Figure out if there is a way to fix this or if the PS3 controller just draws too much power for OTG 
+  // TODO: Figure out if there is a way to fix this or if the PS3 controller just draws too much power for OTG
   // HOST_ERROR_VBusVoltageDip is the only possible error
   USB_Disable();
-  PS3CtrlrHost.status(STAT_ERROR);
-  PS3CtrlrHost.error(ERROR_HARD);
+  
+  // Hard fail
 }
 
 /** Event handler for the USB_DeviceEnumerationFailed event. This indicates that a problem occurred while
  *  enumerating an attached USB device.
  */
 void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t p_err, const uint8_t p_suberr) {
-  PS3CtrlrHost.status(STAT_ERROR);
-  PS3CtrlrHost.error(ERROR_HARD);
+  // Hard fail
 }
 
 
@@ -395,12 +387,13 @@ bool CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* const CurrentItem)
       /* Map button usages to functions suitable for a PS3 Controller */
       switch (CurrentItem->Attributes.Usage.Usage)
       {
-        // Just to keep the HID driver happy
+          // Just to keep the HID driver happy
         case PS3CONTROLLER_BUTTON_PS:
           return true;
       }
-    } 
+    }
   }
   return false;
 }
+
 

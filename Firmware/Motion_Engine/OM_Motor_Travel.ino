@@ -33,8 +33,16 @@ See dynamicperception.com for more information
 
  
  */
+
  
- 
+bool areMotorsRunning() {
+  for (byte i = 0; i < MOTOR_COUNT; i++) {
+    if(motor[i].running())
+      return(true);
+  }
+  return(false);
+}
+
 void sendAllToStart() {
 
 	// If any of the motors are currently running, don't start the motors moving
@@ -46,6 +54,20 @@ void sendAllToStart() {
 
 	for (byte i = 0; i < MOTOR_COUNT; i++) {
 		sendToStart(i);
+	}
+}
+
+void sendAllToStop() {
+
+	// If any of the motors are currently running, don't start the motors moving
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		if (motor[i].running()) {
+			return;
+		}
+	}
+
+	for (byte i = 0; i < MOTOR_COUNT; i++) {
+		sendToStop(i);
 	}
 }
 

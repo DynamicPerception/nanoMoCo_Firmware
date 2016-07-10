@@ -10,7 +10,7 @@
 
  New Code License:
 
- Copyright 2013 C.A. Church / Dynamic Perception LLC
+ Copyright 2016 B. Wiggins / Dynamic Perception LLC
 
  Permission to use, copy, modify, distribute, and sell this
  software and its documentation for any purpose is hereby granted
@@ -80,8 +80,6 @@
 #include <avr/power.h>
 #include <avr/interrupt.h>
 
-#include "../ArduinoLUFA/ArduinoLUFA.h"
-
 
 #if ! defined(USB_CAN_BE_BOTH) || ! defined(USB_CAN_BE_HOST)
 #error The current board does not support host mode
@@ -126,8 +124,8 @@ enum PS3Controller_ButtonStates_t
 enum PS3Controller_ButtonUsages_t
 {
   PS3CONTROLLER_BUTTON_Select   = 1,
-  PS3CONTROLLER_BUTTON_LAnalog  = 2,
-  PS3CONTROLLER_BUTTON_RAnalog  = 3,
+  PS3CONTROLLER_BUTTON_L3       = 2,
+  PS3CONTROLLER_BUTTON_R3       = 3,
   PS3CONTROLLER_BUTTON_Start    = 4,
   PS3CONTROLLER_BUTTON_Up       = 5,
   PS3CONTROLLER_BUTTON_Right    = 6,
@@ -144,32 +142,40 @@ enum PS3Controller_ButtonUsages_t
   PS3CONTROLLER_BUTTON_PS       = 17,
 };
 
-class PS3ControllerHost : public ArduinoLUFA {
+class PS3ControllerHost {
 
   public:
-
+    bool isConnected;
     // ctors
     PS3ControllerHost();
     void USBTask(void);
-    bool IsConnected(void);
     PS3Controller_ButtonStates_t GetButtonState( PS3Controller_ButtonUsages_t button );  // Get button state and set latching info
-    PS3Controller_ButtonStates_t PeekButtonState( PS3Controller_ButtonUsages_t button ); // Get button state without setting latching info
-    uint8_t GetButtonPressure( PS3Controller_ButtonUsages_t button );
+    //PS3Controller_ButtonStates_t PeekButtonState( PS3Controller_ButtonUsages_t button ); // Get button state without setting latching info
+    //uint8_t GetButtonPressure( PS3Controller_ButtonUsages_t button );
     uint8_t GetLeftStickX();
     uint8_t GetLeftStickY();
     uint8_t GetRightStickX();
     uint8_t GetRightStickY();
     void SetLED( uint8_t LEDNum, bool state ); // Set LED: 1-4 true/false
-  //  void SetBigActuator( uint8_t value ); // 0-255
-   // void SetSmallActuator( bool state ); // 0-1
+    void SetBigActuator( uint8_t rumbleValue,  uint8_t rumbleDuration ); // 0-255
+    void SetSmallActuator( bool rumbleState, uint8_t rumbleDuration ); // 0-1
+    void init( void );
+    void ResetControllerState( void );
+
 
   private:
     uint32_t curDigitalButtons;
     uint32_t prevDigitalButtons;
-    uint8_t analogButtons[17];
+    //uint8_t analogButtons[17];
     uint8_t leftStick[2];
     uint8_t rightStick[2];
-    uint16_t accelX, accelY, accelZ, accelGyro;
+         uint8_t LEDStates;
+    uint8_t BigActuator;
+    uint8_t BigActuatorDuration;
+    bool SmallActuator;
+    uint8_t SmallActuatorDuration;
+
+    //uint16_t accelX, accelY, accelZ, accelGyro;
 };
 
 extern PS3ControllerHost PS3CtrlrHost;
