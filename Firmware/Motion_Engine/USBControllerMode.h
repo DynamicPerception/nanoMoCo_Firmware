@@ -58,6 +58,7 @@ enum USBControllerMode_State_t
 {
   USBCONTROLLERMODE_STATE_Setting,
   USBCONTROLLERMODE_STATE_Wait,
+  USBCONTROLLERMODE_STATE_WaitToStart,
 };
 
  class USBControllerMode {
@@ -70,8 +71,8 @@ enum USBControllerMode_State_t
      float prevRightXVelocity;
      float prevRightYVelocity;
      
-     uint8_t moveTimeMinutes;
-     uint8_t moveTimeHours;
+     unsigned long moveTimeMinutes;
+     unsigned long moveTimeHours;
       
      // LED state information for UI Feedback     
      LEDPulseState_t LEDPulseState;
@@ -83,6 +84,7 @@ enum USBControllerMode_State_t
 
      void StateSetting( void );
      void StateWait( void );
+     void StateWaitToStart( void );
      
      float CreateDeadzone( float value );
      void IteratePulses( void );
@@ -97,11 +99,11 @@ enum USBControllerMode_State_t
      // UI Indicator functions
      void LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
      void ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
-     void LEDPulseStop( void );
+     void LEDPulseStop( uint8_t LEDNum );
      void ActuatorPulseStop( void );
      
      // User Input functions
-     //bool MonitorButton( PS3Controller_ButtonUsages_t button, unsigned long *storeMs );
+     bool MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue );
  };
 
 #ifndef _USBCONTROLLERMODE_H_

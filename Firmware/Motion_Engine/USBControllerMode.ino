@@ -39,6 +39,8 @@ void USBControllerMode::init(void)
 
   LEDPulseState.isOn = false;
   actuatorPulseState.isOn = false;
+  moveTimeMinutes = 1;
+  moveTimeHours = 0;
 
   state = USBCONTROLLERMODE_STATE_Setting;
 }
@@ -52,32 +54,51 @@ float USBControllerMode::CreateDeadzone( float value )
 }
 
 
-#define UI_TICK_RATE (1000)
-/*
-bool USBControllerMode::MonitorButton( PS3Controller_ButtonUsages_t button, unsigned long *storeMs )
+#define UI_TICK_RATE     (1000)
+#define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select) 
+
+bool USBControllerMode::MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue )
 {
   uint8_t buttonState;
+  static uint8_t isMonitoring = false;
+  static uint8_t curButtonMonitoring = 0;
+  static unsigned long buttonTimer;
+
   buttonState = PS3CtrlrHost.GetButtonState( button );
 
-  switch (buttonState)
+  // Only allow one button to be monitored
+  if (isMonitoring == false || button == curButtonMonitoring)
   {
-    case PS3CONTROLLER_STATE_Down:
-      buttonTimers[button - 1] = millis();
-      ActuatorPulse( 1, 255, UI_TICK_RATE / 2, UI_TICK_RATE / 2, 255);
-      LEDPulse( 4, UI_TICK_RATE / 2, UI_TICK_RATE / 2, 255);
-      break;
-    case PS3CONTROLLER_STATE_Up:
-      ActuatorPulseStop( 1 );
-      LEDPulseStop( 4 );
-      *storeMs = millis() - buttonTimers[button - 1];
-      return (true);
-      break;
-    case PS3CONTROLLER_STATE_Off:
-      return (false);
-      break;
+    switch (buttonState)
+    {
+      case PS3CONTROLLER_STATE_Down:
+        curButtonMonitoring = button;
+        isMonitoring = true;
+
+        buttonTimer = millis();
+        ActuatorPulse( 1, 255, 200, 800, 255);
+        // LEDPulse( 4, 100, 900, 255);
+        break;
+      case PS3CONTROLLER_STATE_Up:  
+        ActuatorPulseStop();
+        isMonitoring = false;
+        // Check for button query
+        buttonState=PS3CtrlrHost.GetButtonState( modifierButton );
+        if(buttonState == PS3CONTROLLER_STATE_Down || buttonState == PS3CONTROLLER_STATE_On)
+        {
+          // Pulse actuators 
+          ActuatorPulse( 1, 255, 200, 800, queryValue);
+          return(false);
+        }
+        //LEDPulseStop(4);
+        *storeMs = millis() - buttonTimer;
+        return (true);
+    }
   }
+  return (false);
 }
-*/
+
+
 void USBControllerMode::StateSetting( void )
 {
   if (PS3CtrlrHost.isConnected)
@@ -139,24 +160,16 @@ void USBControllerMode::StateSetting( void )
       sprintf(szTemp, "FREEMEM: %d", freeMem);
       debug.functln(szTemp);
     }
-
-    /*   unsigned long buttonTime;
-       if(MonitorButton( PS3CONTROLLER_BUTTON_R1, &buttonTime ))
-       {
-         moveTimeMinutes = (uint8_t) (buttonTime/UI_TICK_RATE);
-         //char szTemp[16];
-         //sprintf(szTemp, "Minutes: %d", moveTimeMinutes);
-         //debug.functln(szTemp);
-       }
-
-       if(MonitorButton( PS3CONTROLLER_BUTTON_R2, &buttonTime ))
-       {
-         moveTimeHours = (uint8_t) (buttonTime/UI_TICK_RATE);
-         //char szTemp[16];
-         //sprintf(szTemp, "Hours: %d", moveTimeHours);
-         //debug.functln(szTemp);
-       }
-      */
+    
+    // Check for modifiers to play back value or record value by holding down button
+    unsigned long buttonTime;
+    if(MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R1, &buttonTime, moveTimeMinutes ))
+      moveTimeMinutes = (buttonTime / UI_TICK_RATE);      
+    if(MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R2, &buttonTime, moveTimeHours ))
+      moveTimeHours = (buttonTime / UI_TICK_RATE);  
+     
+    if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Start) == PS3CONTROLLER_STATE_Down)
+      StartMove();
   }
   else
   {
@@ -196,22 +209,66 @@ void USBControllerMode::StateWait( void )
   }
 }
 
-void USBControllerMode::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
+void USBControllerMode::StateWaitToStart( void )
 {
-  LEDPulseState.isOn = true;
-  LEDPulseState.LEDNum = LEDNum;
-  LEDPulseState.pulsesLeft = nTimes;
-  LEDPulseState.onTime = LEDPulseState.onTimeLeft = onMS;
-  LEDPulseState.offTime = offMS;
-  LEDPulseState.offTimeLeft = 0;
-  LEDPulseState.prevUpdateTime = millis();
-  PS3CtrlrHost.SetLED(LEDPulseState.LEDNum, true);
+  static unsigned long prevTime = 0;
+  uint8_t buttonState;
+  float new_speed;
+
+  if (!areMotorsRunning())
+  {
+    // Start the move
+    for (uint8_t i = 0; i < MOTOR_COUNT ; i++)
+    {
+      unsigned long newTime = (60*moveTimeMinutes + 60*60*moveTimeHours)*1000;
+      
+      motor[i].enable(true);
+      motor[i].continuous(true);
+      
+      byte dir;
+      if ((motor[i].stopPos() - motor[i].startPos()) > 0)
+        dir = 1;
+      else 
+        dir = 0;
+      
+      motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f*moveTimeMinutes + 60.0f*60.0f*moveTimeHours)));
+      motor[i].move(dir, abs(motor[i].stopPos() - motor[i].startPos()), newTime,0,0);
+      startISR();
+    }
+
+    state = USBCONTROLLERMODE_STATE_Wait;
+    return;
+  }
+
+  buttonState = PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_L3);
+  if ( buttonState == PS3CONTROLLER_STATE_Down)
+    prevTime = millis();
+
+  if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - prevTime) > KILL_TIMER_TIME))
+  {
+    stopAllMotors();
+    state = USBCONTROLLERMODE_STATE_Setting;
+  }
 }
 
-void USBControllerMode::LEDPulseStop( void )
+
+void USBControllerMode::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
 {
-  LEDPulseState.isOn = false;
-  PS3CtrlrHost.SetLED(LEDPulseState.LEDNum, false);
+  /* LEDPulseState.isOn = true;
+   LEDPulseState.LEDNum = LEDNum;
+   LEDPulseState.pulsesLeft = nTimes;
+   LEDPulseState.offTime = LEDPulseState.offTimeLeft = offMS;
+   LEDPulseState.onTime = onMS;
+   LEDPulseState.onTimeLeft = 0;
+   LEDPulseState.prevUpdateTime = millis();
+  // PS3CtrlrHost.SetLED(LEDPulseState.LEDNum, true);*/
+  PS3CtrlrHost.SetLEDPulse( LEDNum, onMS, offMS, nTimes );
+}
+
+void USBControllerMode::LEDPulseStop( uint8_t LEDNum )
+{
+  //  LEDPulseState.isOn = false;
+  PS3CtrlrHost.SetLED(LEDNum, false);
 }
 
 void USBControllerMode::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
@@ -220,16 +277,10 @@ void USBControllerMode::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16
   actuatorPulseState.ActNum = ActNum;
   actuatorPulseState.intensity = intensity;
   actuatorPulseState.pulsesLeft = nTimes;
-  actuatorPulseState.onTime = actuatorPulseState.onTimeLeft = onMS;
-  actuatorPulseState.offTime = offMS;
-  actuatorPulseState.offTimeLeft = 0;
+  actuatorPulseState.offTime = actuatorPulseState.offTimeLeft = offMS;
+  actuatorPulseState.onTime = onMS;
+  actuatorPulseState.onTimeLeft = 0;
   actuatorPulseState.prevUpdateTime = millis();
-
-  if (actuatorPulseState.ActNum == 0)
-    PS3CtrlrHost.SetSmallActuator(true, 0xFE);
-
-  if (actuatorPulseState.ActNum == 1)
-    PS3CtrlrHost.SetBigActuator(actuatorPulseState.intensity, 0xFE);
 }
 
 void USBControllerMode::ActuatorPulseStop( void )
@@ -247,50 +298,68 @@ void USBControllerMode::IteratePulses( void )
 {
   unsigned long timeElapsed;
   uint8_t i;
-
-
-  if (LEDPulseState.isOn)
-  {
-    timeElapsed = (millis() - LEDPulseState.prevUpdateTime);
-    if ( LEDPulseState.onTimeLeft > 0 )
+  /*
+    if (LEDPulseState.isOn)
     {
-      if (timeElapsed >= LEDPulseState.onTimeLeft)
+      timeElapsed = (millis() - LEDPulseState.prevUpdateTime);
+      if ( LEDPulseState.offTimeLeft > 0 )
       {
-        LEDPulseState.onTimeLeft = 0;
-        LEDPulseState.offTimeLeft = LEDPulseState.offTime;
-        PS3CtrlrHost.SetLED(LEDPulseState.LEDNum + 1, false);
-      }
-      else
-        LEDPulseState.onTimeLeft -= timeElapsed;
-    }
-    else if (LEDPulseState.offTimeLeft > 0 )
-    {
-      if (timeElapsed >= LEDPulseState.offTimeLeft)
-      {
-        LEDPulseState.pulsesLeft--;
-        if (LEDPulseState.pulsesLeft == 0)
-          LEDPulseState.isOn = false;
-        else
+        if (timeElapsed >= LEDPulseState.offTimeLeft)
         {
-          PS3CtrlrHost.SetLED( LEDPulseState.LEDNum + 1, true);
+          LEDPulseState.offTimeLeft = 0;
           LEDPulseState.onTimeLeft = LEDPulseState.onTime;
+          PS3CtrlrHost.SetLED(LEDPulseState.LEDNum + 1, true);
         }
+        else
+          LEDPulseState.offTimeLeft -= timeElapsed;
       }
-      else
-        LEDPulseState.offTimeLeft -= timeElapsed;
+      else if (LEDPulseState.onTimeLeft > 0 )
+      {
+        if (timeElapsed >= LEDPulseState.onTimeLeft)
+        {
+          LEDPulseState.pulsesLeft--;
+          if (LEDPulseState.pulsesLeft == 0)
+            LEDPulseState.isOn = false;
+          else
+          {
+            PS3CtrlrHost.SetLED( LEDPulseState.LEDNum + 1, false);
+            LEDPulseState.offTimeLeft = LEDPulseState.offTime;
+          }
+        }
+        else
+          LEDPulseState.onTimeLeft -= timeElapsed;
+      }
+      LEDPulseState.prevUpdateTime = millis();
     }
-    LEDPulseState.prevUpdateTime = millis();
-  }
-
+  */
   if (actuatorPulseState.isOn)
   {
     timeElapsed = (millis() - actuatorPulseState.prevUpdateTime);
-    if ( actuatorPulseState.onTimeLeft > 0 )
+    if ( actuatorPulseState.offTimeLeft > 0 )
+    {
+      if (timeElapsed >= actuatorPulseState.offTimeLeft)
+      {
+        actuatorPulseState.offTimeLeft = 0;
+        actuatorPulseState.onTimeLeft = actuatorPulseState.onTime;
+        if (actuatorPulseState.ActNum == 0)
+          PS3CtrlrHost.SetSmallActuator( true, 0xFE);
+        else
+          PS3CtrlrHost.SetBigActuator(actuatorPulseState.intensity, 0xFE);
+      }
+      else
+        actuatorPulseState.offTimeLeft -= timeElapsed;
+    }
+    else if (actuatorPulseState.onTimeLeft > 0 )
     {
       if (timeElapsed >= actuatorPulseState.onTimeLeft)
       {
-        actuatorPulseState.onTimeLeft = 0;
-        actuatorPulseState.offTimeLeft = actuatorPulseState.offTime;
+        actuatorPulseState.pulsesLeft--;
+        if (actuatorPulseState.pulsesLeft == 0)
+          actuatorPulseState.isOn = false;
+        else
+        {
+          actuatorPulseState.offTimeLeft = actuatorPulseState.offTime;
+        }
         if (actuatorPulseState.ActNum == 0)
           PS3CtrlrHost.SetSmallActuator( false, 0xFE);
         else
@@ -298,25 +367,6 @@ void USBControllerMode::IteratePulses( void )
       }
       else
         actuatorPulseState.onTimeLeft -= timeElapsed;
-    }
-    else if (actuatorPulseState.offTimeLeft > 0 )
-    {
-      if (timeElapsed >= actuatorPulseState.offTimeLeft)
-      {
-        actuatorPulseState.pulsesLeft--;
-        if (actuatorPulseState.pulsesLeft == 0)
-          actuatorPulseState.isOn = false;
-        else
-        {
-          actuatorPulseState.onTimeLeft = actuatorPulseState.onTime;
-          if (actuatorPulseState.ActNum == 0)
-            PS3CtrlrHost.SetSmallActuator( true, 0xFE);
-          else
-            PS3CtrlrHost.SetBigActuator(actuatorPulseState.intensity, 0xFE);
-        }
-      }
-      else
-        actuatorPulseState.offTimeLeft -= timeElapsed;
     }
 
     actuatorPulseState.prevUpdateTime = millis();
@@ -338,16 +388,8 @@ void USBControllerMode::CtrlrTask( void )
   PS3CtrlrHost.USBTask();
   USB_USBTask();
 
-  // Display connect/Disconnects
-  if (PS3CtrlrHost.isConnected == false && prevStatus == true)
-  {
-    //debug.functln("Ps3Disc");
-  }
-  else if (PS3CtrlrHost.isConnected == true && prevStatus ==false)
-  {
+  if (PS3CtrlrHost.isConnected == true && prevStatus == false)
     PS3CtrlrHost.SetLED(1, true);
-    //debug.functln("Ps3Conn");
-  }
 
   prevStatus = PS3CtrlrHost.isConnected;
 
@@ -360,6 +402,9 @@ void USBControllerMode::CtrlrTask( void )
     case USBCONTROLLERMODE_STATE_Wait:
       StateWait();
       break;
+    case USBCONTROLLERMODE_STATE_WaitToStart:
+      StateWaitToStart();
+      break;
   }
   IteratePulses();
 }
@@ -367,8 +412,8 @@ void USBControllerMode::CtrlrTask( void )
 void USBControllerMode::StartMove( void )
 {
   // Go to start of move
-  for (uint8_t i = 0 ; i < MOTOR_COUNT ; i++)
-    sendToStart(i);
+  sendAllToStart();
+  state = USBCONTROLLERMODE_STATE_WaitToStart;
 }
 
 

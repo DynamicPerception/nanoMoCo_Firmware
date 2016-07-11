@@ -59,7 +59,6 @@ void PS3ControllerHost::init( void )
   isConnected=false;
 }
 
-static uint8_t PS3ControllerReport[64];
 void PS3ControllerHost::USBTask(void)
 {
   if ((USB_HostState != HOST_STATE_Configured) || !(PS3Controller_HID_Interface.State.IsActive))
@@ -67,18 +66,18 @@ void PS3ControllerHost::USBTask(void)
 
   if (HID_Host_IsReportReceived(&PS3Controller_HID_Interface))
   {
-    HID_Host_ReceiveReport(&PS3Controller_HID_Interface, PS3ControllerReport);
+    HID_Host_ReceiveReport(&PS3Controller_HID_Interface, inputReportBuf);
 
     // Copy digital button data
-    uint32_t *buttonPtr = (uint32_t *) &PS3ControllerReport[2];
+    uint32_t *buttonPtr = (uint32_t *) &inputReportBuf[2];
     curDigitalButtons = *buttonPtr;
-
-    // Copy analog stick data
-    leftStick[0] = PS3ControllerReport[6];
-    leftStick[1] = PS3ControllerReport[7];
-    rightStick[0] = PS3ControllerReport[8];
-    rightStick[1] = PS3ControllerReport[9];
 /*
+    // Copy analog stick data
+    leftStick[0] = inputReportBuf[6];
+    leftStick[1] = inputReportBuf[7];
+    rightStick[0] = inputReportBuf[8];
+    rightStick[1] = inputReportBuf[9];
+
     // Copy pressure sensitive data
     for (int i = 0; i < NUMBER_OF_BUTTONS; i++)
     {
@@ -132,7 +131,7 @@ PS3Controller_ButtonStates_t PS3ControllerHost::GetButtonState( PS3Controller_Bu
   else // curButtonOff && prevButtoOff
     return (PS3CONTROLLER_STATE_Off);
 }
-/*
+
 PS3Controller_ButtonStates_t PS3ControllerHost::PeekButtonState( PS3Controller_ButtonUsages_t button )
 {
   bool curButtonOn = (curDigitalButtons & (1 << button - 1)) > 0;
@@ -155,27 +154,26 @@ PS3Controller_ButtonStates_t PS3ControllerHost::PeekButtonState( PS3Controller_B
     return (PS3CONTROLLER_STATE_Off);
   }
 }
-*/
-/*
+
 uint8_t PS3ControllerHost::GetButtonPressure( PS3Controller_ButtonUsages_t button )
 {
-  return (analogButtons[button - 1]);
+  return(inputReportBuf[button + 12]);
 }
-*/
+
 uint8_t PS3ControllerHost::GetLeftStickX() {
-  return (leftStick[0]);
+  return (inputReportBuf[6]);
 }
 
 uint8_t PS3ControllerHost::GetLeftStickY() {
-  return (leftStick[1]);
+  return (inputReportBuf[7]);
 }
 
 uint8_t PS3ControllerHost::GetRightStickX() {
-  return (rightStick[0]);
+  return (inputReportBuf[8]);
 }
 
 uint8_t PS3ControllerHost::GetRightStickY() {
-  return (rightStick[1]);
+  return (inputReportBuf[9]);
 }
 
 static uint8_t LEDRUMReport [] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -185,16 +183,35 @@ static uint8_t LEDRUMReport [] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
                                  };
-                                 
+                             
+void PS3ControllerHost::SetLEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
+{
+  LEDStates |= 1 << (LEDNum);
+
+  LEDRUMReport[9] = LEDStates;
+  
+  LEDRUMReport[10+(LEDNum-1)*5] = 0xFE;                 // Total time enabled 
+  LEDRUMReport[10+((LEDNum-1)*5)+1] = (onMS+offMS)/100;  // Duty cycle in deciseconds
+  LEDRUMReport[10+((LEDNum-1)*5)+2] = 0xFF;             // Enabled
+  LEDRUMReport[10+((LEDNum-1)*5)+3] = 255.0f*((float) offMS/((float) (onMS+offMS)));  // Duty off (percentage of duty cycle normalized to 0-255)
+  LEDRUMReport[10+((LEDNum-1)*5)+4] = 255.0f*((float) onMS/((float) (onMS+offMS)));   // Duty on (percentage of duty cycle normalized to 0-255)
+  
+  //char szTemp[32];
+  //sprintf(szTemp, "%d %d %d %d %d", LEDRUMReport[10+(LEDNum-1)*5], LEDRUMReport[10+((LEDNum-1)*5)+1],LEDRUMReport[10+((LEDNum-1)*5)+2],LEDRUMReport[10+((LEDNum-1)*5)+3],LEDRUMReport[10+((LEDNum-1)*5)+4]);
+  //debug.functln(szTemp);
+  HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
+}
+
 void PS3ControllerHost::SetLED( uint8_t LEDNum, bool state )
 {
   if (state == true)
     LEDStates |= 1 << (LEDNum);
   else
     LEDStates &= ~(1 << (LEDNum));
-
+    
   LEDRUMReport[9] = LEDStates;
-
+  //LEDRUMReport[10+((LEDNum-1)*5)+2]=0;
+  
   HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0x01, HID_REPORT_ITEM_Out, LEDRUMReport, sizeof(LEDRUMReport));
 }
 
@@ -202,17 +219,17 @@ void PS3ControllerHost::SetBigActuator( uint8_t rumbleValue, uint8_t rumbleDurat
 {
   BigActuator =  rumbleValue;
   BigActuatorDuration = rumbleDuration;
-
+      
   LEDRUMReport[1] = SmallActuatorDuration;
   
   if(SmallActuator == true)
     LEDRUMReport[2] = 0xff;
   else
     LEDRUMReport[2] = 0x00;
-    
+  
   LEDRUMReport[3] = BigActuatorDuration;
   LEDRUMReport[4] = BigActuator;
-
+  
   // The same packet controls LED settings so make sure they stay the same
   LEDRUMReport[9] = LEDStates;
 

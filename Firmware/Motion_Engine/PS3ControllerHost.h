@@ -150,8 +150,6 @@ class PS3ControllerHost {
     PS3ControllerHost();
     void USBTask(void);
     PS3Controller_ButtonStates_t GetButtonState( PS3Controller_ButtonUsages_t button );  // Get button state and set latching info
-    //PS3Controller_ButtonStates_t PeekButtonState( PS3Controller_ButtonUsages_t button ); // Get button state without setting latching info
-    //uint8_t GetButtonPressure( PS3Controller_ButtonUsages_t button );
     uint8_t GetLeftStickX();
     uint8_t GetLeftStickY();
     uint8_t GetRightStickX();
@@ -159,22 +157,26 @@ class PS3ControllerHost {
     void SetLED( uint8_t LEDNum, bool state ); // Set LED: 1-4 true/false
     void SetBigActuator( uint8_t rumbleValue,  uint8_t rumbleDuration ); // 0-255
     void SetSmallActuator( bool rumbleState, uint8_t rumbleDuration ); // 0-1
+    void SetLEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
     void init( void );
     void ResetControllerState( void );
-
+    
+    // Remove features we aren't using to save memory
+    PS3Controller_ButtonStates_t PeekButtonState( PS3Controller_ButtonUsages_t button ); // Get button state without setting latching info
+    uint8_t GetButtonPressure( PS3Controller_ButtonUsages_t button );
 
   private:
     uint32_t curDigitalButtons;
     uint32_t prevDigitalButtons;
-    //uint8_t analogButtons[17];
-    uint8_t leftStick[2];
-    uint8_t rightStick[2];
-         uint8_t LEDStates;
+    uint8_t LEDStates;
     uint8_t BigActuator;
     uint8_t BigActuatorDuration;
     bool SmallActuator;
     uint8_t SmallActuatorDuration;
-
+    uint8_t inputReportBuf[64];
+    
+    
+    // Remove features we aren't using to save memory
     //uint16_t accelX, accelY, accelZ, accelGyro;
 };
 
