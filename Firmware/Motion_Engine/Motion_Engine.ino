@@ -56,7 +56,7 @@ See dynamicperception.com for more information
 
 //#include "ArduinoLUFA.h"
 #include "PS3ControllerHost.h"
-#include "USBControllerMode.h"
+#include "USBControllerUI.h"
 
 /***************************************
 
@@ -305,13 +305,6 @@ uint8_t watchdog_active = false;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
 
-/***************************************
-
-	  PS3 Controller Variables
-
-****************************************/
-// USB Controller Mode
-USBControllerMode USBCtrlrMode;
 
 
 /***************************************
@@ -382,7 +375,7 @@ DebugClass debug = DebugClass(&mocoPrint);
 
 void setup() {
         // Initialize USB Controller Mode
-        USBCtrlrMode.init();
+        USBCtrlrUI.init();
 	
 	// Start USB serial communications
 	USBSerial.begin(19200);
@@ -577,7 +570,7 @@ void loop() {
    }
 
    // Do controller per frame processing
-   USBCtrlrMode.CtrlrTask();
+   USBCtrlrUI.UITask();
 }
 
 void updateLegacyProgram(){

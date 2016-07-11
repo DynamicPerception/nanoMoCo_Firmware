@@ -72,18 +72,6 @@ void PS3ControllerHost::USBTask(void)
     uint32_t *buttonPtr = (uint32_t *) &inputReportBuf[2];
     curDigitalButtons = *buttonPtr;
 /*
-    // Copy analog stick data
-    leftStick[0] = inputReportBuf[6];
-    leftStick[1] = inputReportBuf[7];
-    rightStick[0] = inputReportBuf[8];
-    rightStick[1] = inputReportBuf[9];
-
-    // Copy pressure sensitive data
-    for (int i = 0; i < NUMBER_OF_BUTTONS; i++)
-    {
-      analogButtons[i] = PS3ControllerReport[13 + i];
-    }
-
        // Copy accelerometer data, these are 10-bit
        uint16_t *accelPtr;
        accelPtr = (uint16_t *) &PS3ControllerReport[40];

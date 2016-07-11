@@ -1,6 +1,6 @@
 /*
 
-ControllerMode
+ControllerUI
 
 See dynamicperception.com for more information
 
@@ -23,12 +23,23 @@ See dynamicperception.com for more information
 */
 #include "PS3ControllerHost.h"
 
-#define DEADZONE (10.0)
-USBControllerMode::USBControllerMode(void)
+USBControllerUI USBCtrlrUI;
+
+#define UI_DEADZONE (10.0)
+#define UI_TICK_RATE     (1000)
+#define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select) 
+#define KILL_TIMER_TIME (1000)
+
+USBControllerUI::USBControllerUI(void)
 {
 }
 
-void USBControllerMode::init(void)
+/** Initialize
+
+  Initialize USBController UI
+
+*/
+void USBControllerUI::init(void)
 {
   PS3CtrlrHost.init();
   prevStatus = false;
@@ -42,64 +53,56 @@ void USBControllerMode::init(void)
   moveTimeMinutes = 1;
   moveTimeHours = 0;
 
-  state = USBCONTROLLERMODE_STATE_Setting;
+  state = USBCONTROLLERUI_STATE_Setting;
 }
 
-float USBControllerMode::CreateDeadzone( float value )
+/** UI Task
+
+  Perform per frame tasks for UI
+
+*/
+void USBControllerUI::UITask( void )
 {
-  if (abs(value - 0x80) <= DEADZONE)
-    return (0x80);
-  else
-    return (value);
-}
+  unsigned long prevTime;
 
-
-#define UI_TICK_RATE     (1000)
-#define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select) 
-
-bool USBControllerMode::MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue )
-{
-  uint8_t buttonState;
-  static uint8_t isMonitoring = false;
-  static uint8_t curButtonMonitoring = 0;
-  static unsigned long buttonTimer;
-
-  buttonState = PS3CtrlrHost.GetButtonState( button );
-
-  // Only allow one button to be monitored
-  if (isMonitoring == false || button == curButtonMonitoring)
+  if (millis() - prevTime < 10)
   {
-    switch (buttonState)
-    {
-      case PS3CONTROLLER_STATE_Down:
-        curButtonMonitoring = button;
-        isMonitoring = true;
-
-        buttonTimer = millis();
-        ActuatorPulse( 1, 255, 200, 800, 255);
-        // LEDPulse( 4, 100, 900, 255);
-        break;
-      case PS3CONTROLLER_STATE_Up:  
-        ActuatorPulseStop();
-        isMonitoring = false;
-        // Check for button query
-        buttonState=PS3CtrlrHost.GetButtonState( modifierButton );
-        if(buttonState == PS3CONTROLLER_STATE_Down || buttonState == PS3CONTROLLER_STATE_On)
-        {
-          // Pulse actuators 
-          ActuatorPulse( 1, 255, 200, 800, queryValue);
-          return(false);
-        }
-        //LEDPulseStop(4);
-        *storeMs = millis() - buttonTimer;
-        return (true);
-    }
+    return;
   }
-  return (false);
+  prevTime = millis();
+
+  // Per frame driver processing
+  PS3CtrlrHost.USBTask();
+  USB_USBTask();
+
+  if (PS3CtrlrHost.isConnected == true && prevStatus == false)
+    PS3CtrlrHost.SetLED(1, true);
+
+  prevStatus = PS3CtrlrHost.isConnected;
+
+  // Run USB Controller State machine
+  switch (state)
+  {
+    case USBCONTROLLERUI_STATE_Setting:
+      StateSetting();
+      break;
+    case USBCONTROLLERUI_STATE_Wait:
+      StateWait();
+      break;
+    case USBCONTROLLERUI_STATE_WaitToStart:
+      StateWaitToStart();
+      break;
+  }
+  IteratePulses();
 }
 
+/** Setting State
 
-void USBControllerMode::StateSetting( void )
+  In this UI state, information regarding the move can be input including 
+  start/stop points and timers.
+
+*/
+void USBControllerUI::StateSetting( void )
 {
   if (PS3CtrlrHost.isConnected)
   {
@@ -144,13 +147,13 @@ void USBControllerMode::StateSetting( void )
     {
       // Go to start of move
       sendAllToStart();
-      state = USBCONTROLLERMODE_STATE_Wait;
+      state = USBCONTROLLERUI_STATE_Wait;
     }
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Circle) == PS3CONTROLLER_STATE_Down)
     {
       // Go to end of move
       sendAllToStop();
-      state = USBCONTROLLERMODE_STATE_Wait;
+      state = USBCONTROLLERUI_STATE_Wait;
     }
 
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_R3) == PS3CONTROLLER_STATE_Down)
@@ -185,16 +188,19 @@ void USBControllerMode::StateSetting( void )
   }
 }
 
-#define KILL_TIMER_TIME (1000)
+/** Waiting state
 
-void USBControllerMode::StateWait( void )
+  We wait for motors to finish running in this state
+
+*/
+void USBControllerUI::StateWait( void )
 {
   static unsigned long prevTime = 0;
   uint8_t buttonState;
 
   if (!areMotorsRunning())
   {
-    state = USBCONTROLLERMODE_STATE_Setting;
+    state = USBCONTROLLERUI_STATE_Setting;
     return;
   }
 
@@ -205,11 +211,17 @@ void USBControllerMode::StateWait( void )
   if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - prevTime) > KILL_TIMER_TIME))
   {
     stopAllMotors();
-    state = USBCONTROLLERMODE_STATE_Setting;
+    state = USBCONTROLLERUI_STATE_Setting;
   }
 }
 
-void USBControllerMode::StateWaitToStart( void )
+/** Waiting to start
+
+  Wait for motors to finish moving to start of move then
+  start the move
+
+*/
+void USBControllerUI::StateWaitToStart( void )
 {
   static unsigned long prevTime = 0;
   uint8_t buttonState;
@@ -236,7 +248,7 @@ void USBControllerMode::StateWaitToStart( void )
       startISR();
     }
 
-    state = USBCONTROLLERMODE_STATE_Wait;
+    state = USBCONTROLLERUI_STATE_Wait;
     return;
   }
 
@@ -247,12 +259,97 @@ void USBControllerMode::StateWaitToStart( void )
   if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - prevTime) > KILL_TIMER_TIME))
   {
     stopAllMotors();
-    state = USBCONTROLLERMODE_STATE_Setting;
+    state = USBCONTROLLERUI_STATE_Setting;
   }
 }
 
+/** Create Deadzone
 
-void USBControllerMode::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
+  Create a deadzone so that the motors don't drift when sticks are idle
+  
+  value: input stick axis
+  
+  return: output stick axis with deadzone zero'd
+
+*/
+float USBControllerUI::CreateDeadzone( float value )
+{
+  if (abs(value - 0x80) <= UI_DEADZONE)
+    return (0x80);
+  else
+    return (value);
+}
+
+/** Monitor button
+
+  UI function for setting and querying various timers that are mapped
+  to buttons on the USB controller.  If the user holds down a button
+  and then let's go, it will return the number of seconds the button
+  was held down while ticking an actuator every second.  If the user 
+  holds down the modifier button before pressing the button, the controller 
+  will vibrate queryValue number of times.
+  
+  modifierButton: button used to query the mapped button
+  button: the mapped button
+  storeMs: place to store the number of seconds when func returns true
+  queryValue: number of ticks to vibrate when modifier is down
+  
+  return: true when user let's go of button without modifier
+          false otherwise
+
+*/
+bool USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue )
+{
+  uint8_t buttonState;
+  static uint8_t isMonitoring = false;
+  static uint8_t curButtonMonitoring = 0;
+  static unsigned long buttonTimer;
+
+  buttonState = PS3CtrlrHost.GetButtonState( button );
+
+  // Only allow one button to be monitored
+  if (isMonitoring == false || button == curButtonMonitoring)
+  {
+    switch (buttonState)
+    {
+      case PS3CONTROLLER_STATE_Down:
+        curButtonMonitoring = button;
+        isMonitoring = true;
+
+        buttonTimer = millis();
+        ActuatorPulse( 1, 255, 200, 800, 255);
+        // LEDPulse( 4, 100, 900, 255);
+        break;
+      case PS3CONTROLLER_STATE_Up:  
+        ActuatorPulseStop();
+        isMonitoring = false;
+        // Check for button query
+        buttonState=PS3CtrlrHost.GetButtonState( modifierButton );
+        if(buttonState == PS3CONTROLLER_STATE_Down || buttonState == PS3CONTROLLER_STATE_On)
+        {
+          // Pulse actuators 
+          ActuatorPulse( 1, 255, 200, 800, queryValue);
+          return(false);
+        }
+        //LEDPulseStop(4);
+        *storeMs = millis() - buttonTimer;
+        return (true);
+    }
+  }
+  return (false);
+}
+
+/** LED Pulse
+
+  Pulse an LED.
+  
+  LEDNum: 1-4
+  onMS: MS to keep LED on
+  offMS: MS to keep LED off
+  nTimes: Number of times to pulse
+
+*/
+void USBControllerUI::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
 {
   /* LEDPulseState.isOn = true;
    LEDPulseState.LEDNum = LEDNum;
@@ -265,13 +362,30 @@ void USBControllerMode::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS,
   PS3CtrlrHost.SetLEDPulse( LEDNum, onMS, offMS, nTimes );
 }
 
-void USBControllerMode::LEDPulseStop( uint8_t LEDNum )
+/** LED Pulse Stop
+
+  Stop pulsing this LED
+  
+  LEDNum: 1-4
+
+*/
+void USBControllerUI::LEDPulseStop( uint8_t LEDNum )
 {
   //  LEDPulseState.isOn = false;
   PS3CtrlrHost.SetLED(LEDNum, false);
 }
 
-void USBControllerMode::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
+/** Actuator Pulse
+
+  Pulse an actuator.
+  
+  ActNum: 0-1
+  onMS: MS to keep actuator on
+  offMS: MS to keep actuator off
+  nTimes: Number of times to pulse
+
+*/
+void USBControllerUI::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
 {
   actuatorPulseState.isOn = true;
   actuatorPulseState.ActNum = ActNum;
@@ -283,7 +397,12 @@ void USBControllerMode::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16
   actuatorPulseState.prevUpdateTime = millis();
 }
 
-void USBControllerMode::ActuatorPulseStop( void )
+/** Actuator Pulse Stop
+
+  Stop pulsing actuators
+
+*/
+void USBControllerUI::ActuatorPulseStop( void )
 {
   actuatorPulseState.isOn = false;
   if (actuatorPulseState.ActNum == 0)
@@ -293,45 +412,16 @@ void USBControllerMode::ActuatorPulseStop( void )
     PS3CtrlrHost.SetBigActuator(0, 0x00);
 }
 
-// Only pulsing one button/LED at a time is supported
-void USBControllerMode::IteratePulses( void )
+/** Iterate Pulses
+
+  Tick pulsing states one frame forward
+
+*/
+void USBControllerUI::IteratePulses( void )
 {
   unsigned long timeElapsed;
   uint8_t i;
-  /*
-    if (LEDPulseState.isOn)
-    {
-      timeElapsed = (millis() - LEDPulseState.prevUpdateTime);
-      if ( LEDPulseState.offTimeLeft > 0 )
-      {
-        if (timeElapsed >= LEDPulseState.offTimeLeft)
-        {
-          LEDPulseState.offTimeLeft = 0;
-          LEDPulseState.onTimeLeft = LEDPulseState.onTime;
-          PS3CtrlrHost.SetLED(LEDPulseState.LEDNum + 1, true);
-        }
-        else
-          LEDPulseState.offTimeLeft -= timeElapsed;
-      }
-      else if (LEDPulseState.onTimeLeft > 0 )
-      {
-        if (timeElapsed >= LEDPulseState.onTimeLeft)
-        {
-          LEDPulseState.pulsesLeft--;
-          if (LEDPulseState.pulsesLeft == 0)
-            LEDPulseState.isOn = false;
-          else
-          {
-            PS3CtrlrHost.SetLED( LEDPulseState.LEDNum + 1, false);
-            LEDPulseState.offTimeLeft = LEDPulseState.offTime;
-          }
-        }
-        else
-          LEDPulseState.onTimeLeft -= timeElapsed;
-      }
-      LEDPulseState.prevUpdateTime = millis();
-    }
-  */
+
   if (actuatorPulseState.isOn)
   {
     timeElapsed = (millis() - actuatorPulseState.prevUpdateTime);
@@ -373,47 +463,16 @@ void USBControllerMode::IteratePulses( void )
   }
 }
 
+/** Start Move
 
-void USBControllerMode::CtrlrTask( void )
-{
-  unsigned long prevTime;
+  Move all motors to start position and start motor move states.
 
-  if (millis() - prevTime < 10)
-  {
-    return;
-  }
-  prevTime = millis();
-
-  // Per frame driver processing
-  PS3CtrlrHost.USBTask();
-  USB_USBTask();
-
-  if (PS3CtrlrHost.isConnected == true && prevStatus == false)
-    PS3CtrlrHost.SetLED(1, true);
-
-  prevStatus = PS3CtrlrHost.isConnected;
-
-  // Run USB Controller State machine
-  switch (state)
-  {
-    case USBCONTROLLERMODE_STATE_Setting:
-      StateSetting();
-      break;
-    case USBCONTROLLERMODE_STATE_Wait:
-      StateWait();
-      break;
-    case USBCONTROLLERMODE_STATE_WaitToStart:
-      StateWaitToStart();
-      break;
-  }
-  IteratePulses();
-}
-
-void USBControllerMode::StartMove( void )
+*/
+void USBControllerUI::StartMove( void )
 {
   // Go to start of move
   sendAllToStart();
-  state = USBCONTROLLERMODE_STATE_WaitToStart;
+  state = USBCONTROLLERUI_STATE_WaitToStart;
 }
 
 
