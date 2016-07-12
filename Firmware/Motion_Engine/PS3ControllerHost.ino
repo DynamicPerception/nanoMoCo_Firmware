@@ -27,7 +27,6 @@ Shared under the MIT License
 /** Device Product ID value for the PS3 Controller. */
 #define PS3CONTROLLER_PID           0x0268
 
-static bool isPS3Controller;
 static uint32_t digitalButtonStates;
 static HID_ReportInfo_t HIDReportInfo;
 
@@ -284,10 +283,8 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
   }
 
   // Check if this is a PS3 Controller
-  if (DeviceDescriptor.VendorID == PS3CONTROLLER_VID && DeviceDescriptor.ProductID == PS3CONTROLLER_PID)
-    isPS3Controller = true;
-  else
-    isPS3Controller = false;
+  if (!(DeviceDescriptor.VendorID == PS3CONTROLLER_VID && DeviceDescriptor.ProductID == PS3CONTROLLER_PID))
+   return;
 
   if (HID_Host_ConfigurePipes(&PS3Controller_HID_Interface, ConfigDescriptorSize, ConfigDescriptorData) != HID_ENUMERROR_NoError) {
     // Hard fail
@@ -317,8 +314,6 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     return;
   }
 
-  if (isPS3Controller)
-  {
     // Code from Dean's PS3 Controller driver to send the bluetooth address to the PS3 controller for pairing (we should implement something similar)
 #ifdef PS3BLUETOOTH
     /* Read out the latest inserted bluetooth adapter address stored in EEPROM */
@@ -333,13 +328,9 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     /* Instruct the PS3 controller to send reports via the HID data IN endpoint */
     uint8_t PS3StartReportingRequest[] = {0x42, 0x0C, 0x00, 0x00};
     HID_Host_SendReportByID(&PS3Controller_HID_Interface, 0xF4, HID_REPORT_ITEM_Feature, PS3StartReportingRequest, sizeof(PS3StartReportingRequest));
-  }
 
-  if (isPS3Controller)
-  {
     PS3CtrlrHost.ResetControllerState();
     PS3CtrlrHost.isConnected=true;
-  }
 }
 
 
@@ -385,8 +376,7 @@ bool CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* const CurrentItem)
     }
   }
 
-  if (isPS3Controller)
-  {
+
     if (CurrentItem->Attributes.Usage.Page == USAGE_PAGE_BUTTON)
     {
       /* Map button usages to functions suitable for a PS3 Controller */
@@ -397,7 +387,6 @@ bool CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* const CurrentItem)
           return true;
       }
     }
-  }
   return false;
 }
 

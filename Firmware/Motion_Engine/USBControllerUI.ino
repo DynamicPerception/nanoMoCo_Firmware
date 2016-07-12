@@ -26,8 +26,8 @@ See dynamicperception.com for more information
 USBControllerUI USBCtrlrUI;
 
 #define UI_DEADZONE (10.0)
-#define UI_TICK_RATE     (1000)
-#define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select) 
+#define UI_TICK_RATE     (700)
+#define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select)
 #define KILL_TIMER_TIME (1000)
 
 USBControllerUI::USBControllerUI(void)
@@ -52,6 +52,8 @@ void USBControllerUI::init(void)
   actuatorPulseState.isOn = false;
   moveTimeMinutes = 1;
   moveTimeHours = 0;
+  accelTime = 0;
+  decelTime = 0;
 
   state = USBCONTROLLERUI_STATE_Setting;
 }
@@ -98,7 +100,7 @@ void USBControllerUI::UITask( void )
 
 /** Setting State
 
-  In this UI state, information regarding the move can be input including 
+  In this UI state, information regarding the move can be input including
   start/stop points and timers.
 
 */
@@ -128,7 +130,6 @@ void USBControllerUI::StateSetting( void )
     // Map DPAD Left/Right to Start/Stop points
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Left) == PS3CONTROLLER_STATE_Down)
     {
-      //PS3CtrlrHost.SetBigActuator(255,128);
       ActuatorPulse( 0, 255, 150, 100, 1);
       motor[0].startPos(motor[0].currentPos());  // Set start point on axis 0
       motor[1].startPos(motor[1].currentPos());  // Set start point on axis 1
@@ -136,7 +137,6 @@ void USBControllerUI::StateSetting( void )
     }
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Right) == PS3CONTROLLER_STATE_Down)
     {
-      //LEDPulse( 4, 500, 250, 10);
       ActuatorPulse( 0, 255, 150, 100, 2);
       motor[0].stopPos(motor[0].currentPos());  // Set stop point on axis 0
       motor[1].stopPos(motor[1].currentPos());  // Set stop point on axis 1
@@ -163,14 +163,19 @@ void USBControllerUI::StateSetting( void )
       sprintf(szTemp, "FREEMEM: %d", freeMem);
       debug.functln(szTemp);
     }
-    
+
     // Check for modifiers to play back value or record value by holding down button
     unsigned long buttonTime;
-    if(MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R1, &buttonTime, moveTimeMinutes ))
-      moveTimeMinutes = (buttonTime / UI_TICK_RATE);      
-    if(MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R2, &buttonTime, moveTimeHours ))
-      moveTimeHours = (buttonTime / UI_TICK_RATE);  
-     
+    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R1, &buttonTime, moveTimeMinutes ))
+      moveTimeMinutes = (buttonTime / UI_TICK_RATE);
+    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R2, &buttonTime, moveTimeHours ))
+      moveTimeHours = (buttonTime / UI_TICK_RATE);
+
+    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_L1, &buttonTime, accelTime ))
+      accelTime = (buttonTime / UI_TICK_RATE);
+    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_L2, &buttonTime, decelTime ))
+      decelTime = (buttonTime / UI_TICK_RATE);
+
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Start) == PS3CONTROLLER_STATE_Down)
       StartMove();
   }
@@ -232,19 +237,33 @@ void USBControllerUI::StateWaitToStart( void )
     // Start the move
     for (uint8_t i = 0; i < MOTOR_COUNT ; i++)
     {
-      unsigned long newTime = (60*moveTimeMinutes + 60*60*moveTimeHours)*1000;
-      
+      unsigned long newTime = (60 * moveTimeMinutes + 60 * 60 * moveTimeHours) * 1000;
+
       motor[i].enable(true);
       motor[i].continuous(true);
-      
+
       byte dir;
       if ((motor[i].stopPos() - motor[i].startPos()) > 0)
         dir = 1;
-      else 
+      else
         dir = 0;
-      
-      motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f*moveTimeMinutes + 60.0f*60.0f*moveTimeHours)));
-      motor[i].move(dir, abs(motor[i].stopPos() - motor[i].startPos()), newTime,0,0);
+
+      // Discard accel/decl if user input amount exceeding 100%
+      unsigned long accelTimeMS;
+      unsigned long decelTimeMS;
+      if (decelTime + accelTime > 100)
+      {
+        accelTimeMS = 0;
+        decelTime = 0;
+      }
+      else
+      {
+        accelTimeMS = (((float) accelTime) / 100.0f) * newTime;
+        decelTimeMS = (((float) decelTime) / 100.0f) * newTime;
+      }
+
+      motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f * moveTimeMinutes + 60.0f * 60.0f * moveTimeHours)));
+      motor[i].move(dir, abs(motor[i].stopPos() - motor[i].startPos()), newTime, accelTimeMS, decelTimeMS);
       startISR();
     }
 
@@ -266,9 +285,9 @@ void USBControllerUI::StateWaitToStart( void )
 /** Create Deadzone
 
   Create a deadzone so that the motors don't drift when sticks are idle
-  
+
   value: input stick axis
-  
+
   return: output stick axis with deadzone zero'd
 
 */
@@ -285,15 +304,15 @@ float USBControllerUI::CreateDeadzone( float value )
   UI function for setting and querying various timers that are mapped
   to buttons on the USB controller.  If the user holds down a button
   and then let's go, it will return the number of seconds the button
-  was held down while ticking an actuator every second.  If the user 
-  holds down the modifier button before pressing the button, the controller 
+  was held down while ticking an actuator every second.  If the user
+  holds down the modifier button before pressing the button, the controller
   will vibrate queryValue number of times.
-  
+
   modifierButton: button used to query the mapped button
   button: the mapped button
   storeMs: place to store the number of seconds when func returns true
   queryValue: number of ticks to vibrate when modifier is down
-  
+
   return: true when user let's go of button without modifier
           false otherwise
 
@@ -301,37 +320,40 @@ float USBControllerUI::CreateDeadzone( float value )
 bool USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue )
 {
   uint8_t buttonState;
+  uint8_t modifierButtonState;
+  static bool isQuery = false;
   static uint8_t isMonitoring = false;
   static uint8_t curButtonMonitoring = 0;
   static unsigned long buttonTimer;
 
   buttonState = PS3CtrlrHost.GetButtonState( button );
+  modifierButtonState = PS3CtrlrHost.GetButtonState( modifierButton );
 
   // Only allow one button to be monitored
   if (isMonitoring == false || button == curButtonMonitoring)
   {
-    switch (buttonState)
+    if(buttonState == PS3CONTROLLER_STATE_Down && modifierButtonState == PS3CONTROLLER_STATE_Off)
     {
-      case PS3CONTROLLER_STATE_Down:
-        curButtonMonitoring = button;
-        isMonitoring = true;
-
-        buttonTimer = millis();
-        ActuatorPulse( 1, 255, 200, 800, 255);
-        // LEDPulse( 4, 100, 900, 255);
-        break;
-      case PS3CONTROLLER_STATE_Up:  
+      curButtonMonitoring = button;
+      isMonitoring = true;
+      buttonTimer = millis();
+      ActuatorPulse( 0, 255, UI_TICK_RATE * 0.15, UI_TICK_RATE * 0.85, 255);
+    }
+    else if (buttonState == PS3CONTROLLER_STATE_Down && ((modifierButtonState == PS3CONTROLLER_STATE_Down) || (modifierButtonState == PS3CONTROLLER_STATE_On)))
+    {
+          ActuatorPulse( 0, 255, UI_TICK_RATE * 0.15, UI_TICK_RATE * 0.85, queryValue);
+          isQuery = true;
+          return (false);
+    }
+    else if (buttonState == PS3CONTROLLER_STATE_Up && isQuery == true)
+    {
+      isQuery = false;
+      return(false);
+    }
+    else if (buttonState == PS3CONTROLLER_STATE_Up && isQuery == false)
+    {
         ActuatorPulseStop();
         isMonitoring = false;
-        // Check for button query
-        buttonState=PS3CtrlrHost.GetButtonState( modifierButton );
-        if(buttonState == PS3CONTROLLER_STATE_Down || buttonState == PS3CONTROLLER_STATE_On)
-        {
-          // Pulse actuators 
-          ActuatorPulse( 1, 255, 200, 800, queryValue);
-          return(false);
-        }
-        //LEDPulseStop(4);
         *storeMs = millis() - buttonTimer;
         return (true);
     }
@@ -342,7 +364,7 @@ bool USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton
 /** LED Pulse
 
   Pulse an LED.
-  
+
   LEDNum: 1-4
   onMS: MS to keep LED on
   offMS: MS to keep LED off
@@ -365,7 +387,7 @@ void USBControllerUI::LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, u
 /** LED Pulse Stop
 
   Stop pulsing this LED
-  
+
   LEDNum: 1-4
 
 */
@@ -378,7 +400,7 @@ void USBControllerUI::LEDPulseStop( uint8_t LEDNum )
 /** Actuator Pulse
 
   Pulse an actuator.
-  
+
   ActNum: 0-1
   onMS: MS to keep actuator on
   offMS: MS to keep actuator off
@@ -387,14 +409,19 @@ void USBControllerUI::LEDPulseStop( uint8_t LEDNum )
 */
 void USBControllerUI::ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes)
 {
-  actuatorPulseState.isOn = true;
-  actuatorPulseState.ActNum = ActNum;
-  actuatorPulseState.intensity = intensity;
-  actuatorPulseState.pulsesLeft = nTimes;
-  actuatorPulseState.offTime = actuatorPulseState.offTimeLeft = offMS;
-  actuatorPulseState.onTime = onMS;
-  actuatorPulseState.onTimeLeft = 0;
-  actuatorPulseState.prevUpdateTime = millis();
+  if (nTimes == 0)
+    ActuatorPulseStop();
+  else
+  {
+    actuatorPulseState.isOn = true;
+    actuatorPulseState.ActNum = ActNum;
+    actuatorPulseState.intensity = intensity;
+    actuatorPulseState.pulsesLeft = nTimes;
+    actuatorPulseState.offTime = actuatorPulseState.offTimeLeft = offMS;
+    actuatorPulseState.onTime = onMS;
+    actuatorPulseState.onTimeLeft = 0;
+    actuatorPulseState.prevUpdateTime = millis();
+  }
 }
 
 /** Actuator Pulse Stop

@@ -112,6 +112,7 @@
 
 
 #define NUMBER_OF_BUTTONS (17)
+#define REPORT_BUF_SIZE (64)
 
 enum PS3Controller_ButtonStates_t
 {
@@ -173,8 +174,7 @@ class PS3ControllerHost {
     uint8_t BigActuatorDuration;
     bool SmallActuator;
     uint8_t SmallActuatorDuration;
-    uint8_t inputReportBuf[64];
-    
+    uint8_t inputReportBuf[REPORT_BUF_SIZE];
     
     // Remove features we aren't using to save memory
     //uint16_t accelX, accelY, accelZ, accelGyro;

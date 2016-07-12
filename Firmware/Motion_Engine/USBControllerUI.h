@@ -71,9 +71,11 @@ class USBControllerUI {
     float prevRightXVelocity;
     float prevRightYVelocity;
 
-    unsigned long moveTimeMinutes;
-    unsigned long moveTimeHours;
-
+    uint8_t moveTimeMinutes;
+    uint8_t moveTimeHours;
+    uint8_t accelTime;  // Percent of the time of the move that the dolly is accelerating (0-100)
+    uint8_t decelTime;  // Percent of the time of the move that the dolly is decelerating (0-100)
+     
     // LED state information for UI Feedback
     LEDPulseState_t LEDPulseState;
 
@@ -99,13 +101,10 @@ class USBControllerUI {
     // User Input functions
     bool MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue );
 
-
   public:
     USBControllerUI( void );
     void init( void );
     void UITask( void );
-
-
 };
 
 extern USBControllerUI USBCtrlrUI;
