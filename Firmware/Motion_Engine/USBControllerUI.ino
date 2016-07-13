@@ -95,6 +95,7 @@ void USBControllerUI::UITask( void )
       StateWaitToStart();
       break;
   }
+
   IteratePulses();
 }
 
@@ -237,8 +238,8 @@ void USBControllerUI::StateWaitToStart( void )
     // Start the move
     for (uint8_t i = 0; i < MOTOR_COUNT ; i++)
     {
-      unsigned long newTime = (60 * moveTimeMinutes + 60 * 60 * moveTimeHours) * 1000;
-
+      uint64_t newTime = (60 * (uint64_t) moveTimeMinutes + 60 * 60 * (uint64_t)moveTimeHours) * 1000;
+      motor[i].planType( 1 );
       motor[i].enable(true);
       motor[i].continuous(true);
 
@@ -249,20 +250,20 @@ void USBControllerUI::StateWaitToStart( void )
         dir = 0;
 
       // Discard accel/decl if user input amount exceeding 100%
-      unsigned long accelTimeMS;
-      unsigned long decelTimeMS;
+      uint64_t accelTimeMS;
+      uint64_t decelTimeMS;
       if (decelTime + accelTime > 100)
       {
         accelTimeMS = 0;
-        decelTime = 0;
+        decelTimeMS = 0;
       }
       else
       {
-        accelTimeMS = (((float) accelTime) / 100.0f) * newTime;
-        decelTimeMS = (((float) decelTime) / 100.0f) * newTime;
+        accelTimeMS = accelTime * (newTime / 100);
+        decelTimeMS = decelTime * (newTime / 100);
       }
 
-      motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f * moveTimeMinutes + 60.0f * 60.0f * moveTimeHours)));
+      //motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f * moveTimeMinutes + 60.0f * 60.0f * moveTimeHours)));
       motor[i].move(dir, abs(motor[i].stopPos() - motor[i].startPos()), newTime, accelTimeMS, decelTimeMS);
       startISR();
     }
@@ -332,7 +333,7 @@ bool USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton
   // Only allow one button to be monitored
   if (isMonitoring == false || button == curButtonMonitoring)
   {
-    if(buttonState == PS3CONTROLLER_STATE_Down && modifierButtonState == PS3CONTROLLER_STATE_Off)
+    if (buttonState == PS3CONTROLLER_STATE_Down && modifierButtonState == PS3CONTROLLER_STATE_Off)
     {
       curButtonMonitoring = button;
       isMonitoring = true;
@@ -341,21 +342,21 @@ bool USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton
     }
     else if (buttonState == PS3CONTROLLER_STATE_Down && ((modifierButtonState == PS3CONTROLLER_STATE_Down) || (modifierButtonState == PS3CONTROLLER_STATE_On)))
     {
-          ActuatorPulse( 0, 255, UI_TICK_RATE * 0.15, UI_TICK_RATE * 0.85, queryValue);
-          isQuery = true;
-          return (false);
+      ActuatorPulse( 0, 255, UI_TICK_RATE * 0.15, UI_TICK_RATE * 0.85, queryValue);
+      isQuery = true;
+      return (false);
     }
     else if (buttonState == PS3CONTROLLER_STATE_Up && isQuery == true)
     {
       isQuery = false;
-      return(false);
+      return (false);
     }
     else if (buttonState == PS3CONTROLLER_STATE_Up && isQuery == false)
     {
-        ActuatorPulseStop();
-        isMonitoring = false;
-        *storeMs = millis() - buttonTimer;
-        return (true);
+      ActuatorPulseStop();
+      isMonitoring = false;
+      *storeMs = millis() - buttonTimer;
+      return (true);
     }
   }
   return (false);
