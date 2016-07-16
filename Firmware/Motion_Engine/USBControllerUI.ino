@@ -238,7 +238,7 @@ void USBControllerUI::StateWaitToStart( void )
     // Start the move
     for (uint8_t i = 0; i < MOTOR_COUNT ; i++)
     {
-      uint64_t newTime = (60 * (uint64_t) moveTimeMinutes + 60 * 60 * (uint64_t)moveTimeHours) * 1000;
+      unsigned long newTime = (60 * (unsigned long) moveTimeMinutes + 60 * 60 * (unsigned long)moveTimeHours) * 1000;
       motor[i].planType( 1 );
       motor[i].enable(true);
       motor[i].continuous(true);
@@ -250,8 +250,8 @@ void USBControllerUI::StateWaitToStart( void )
         dir = 0;
 
       // Discard accel/decl if user input amount exceeding 100%
-      uint64_t accelTimeMS;
-      uint64_t decelTimeMS;
+      unsigned long accelTimeMS;
+      unsigned long decelTimeMS;
       if (decelTime + accelTime > 100)
       {
         accelTimeMS = 0;
@@ -263,7 +263,7 @@ void USBControllerUI::StateWaitToStart( void )
         decelTimeMS = decelTime * (newTime / 100);
       }
 
-      //motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f * moveTimeMinutes + 60.0f * 60.0f * moveTimeHours)));
+      motor[i].contSpeed( abs(motor[i].stopPos() - motor[i].startPos()) / ((60.0f * moveTimeMinutes + 60.0f * 60.0f * moveTimeHours)));
       motor[i].move(dir, abs(motor[i].stopPos() - motor[i].startPos()), newTime, accelTimeMS, decelTimeMS);
       startISR();
     }
