@@ -54,7 +54,6 @@ See dynamicperception.com for more information
 #include <OMMoCoNode.h>
 #include <OMEEPROM.h>
 
-//#include "ArduinoLUFA.h"
 #include "PS3ControllerHost.h"
 #include "USBControllerUI.h"
 
