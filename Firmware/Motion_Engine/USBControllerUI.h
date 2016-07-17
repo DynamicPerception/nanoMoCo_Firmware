@@ -39,7 +39,7 @@ typedef struct {
   uint16_t offTime;
   uint16_t onTimeLeft;
   uint16_t offTimeLeft;
-  unsigned long prevUpdateTime;
+  uint32_t prevUpdateTime;
 } LEDPulseState_t;
 
 typedef struct {
@@ -51,7 +51,7 @@ typedef struct {
   uint16_t offTime;
   uint16_t onTimeLeft;
   uint16_t offTimeLeft;
-  unsigned long prevUpdateTime;
+  uint32_t prevUpdateTime;
 } ActuatorPulseState_t;
 
 enum USBControllerUI_State_t
@@ -66,6 +66,7 @@ class USBControllerUI {
 
     USBControllerUI_State_t state;
     bool prevStatus;
+    bool isShotRunning;
     float prevLeftXVelocity;
     float prevLeftYVelocity;
     float prevRightXVelocity;
@@ -75,6 +76,17 @@ class USBControllerUI {
     uint8_t moveTimeHours;
     uint8_t accelTime;  // Percent of the time of the move that the dolly is accelerating (0-100)
     uint8_t decelTime;  // Percent of the time of the move that the dolly is decelerating (0-100)
+    uint32_t shotStartTime;
+    uint32_t shotTimeMS;
+    uint8_t isContinuous;
+    uint16_t exposureTimeS;
+    uint16_t exposureWaitS;
+    uint16_t exposureTimeDS;
+    uint16_t exposureWaitDS;
+    uint32_t killTimerStart;
+    
+    float topSpeed;
+    
      
     // LED state information for UI Feedback
     LEDPulseState_t LEDPulseState;
@@ -82,7 +94,7 @@ class USBControllerUI {
     // Actuator state information for UI Feedback
     ActuatorPulseState_t actuatorPulseState;
 
-    //unsigned long buttonTimers[17];
+    //uint32_t buttonTimers[17];
     void StartMove( void );
 
     void StateSetting( void );
@@ -99,7 +111,7 @@ class USBControllerUI {
     void ActuatorPulseStop( void );
 
     // User Input functions
-    bool MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, unsigned long *storeMs, uint16_t queryValue );
+    bool MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
 
   public:
     USBControllerUI( void );
