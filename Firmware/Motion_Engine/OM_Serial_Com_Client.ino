@@ -723,6 +723,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break; 
 	}
 
+	//Command 33 sets the number of controllers running concurrently
+	case 33:
+	{
+		controller_count = input_serial_buffer[0];
+		msg = "Setting controller count: ";				
+		debugMessage(GEN, command, MSG, controller_count);
+		response(true, controller_count);
+		break;
+	}
+
 	//Command 50 sets Graffik Mode on or off
 	case 50:
 	{
@@ -1053,6 +1063,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		msg = "End pos restore: ";
 		debugMessage(GEN, command, MSG, ee_load_endPos);
 		response(true, ee_load_endPos);
+		break;
+	}
+
+	//Command 134 returns the number of controllers running in concurrent mode
+	case 134:
+	{
+		controller_count = input_serial_buffer[0];
+		msg = "Controller count: ";
+		debugMessage(GEN, command, MSG, controller_count);
+		response(true, controller_count);
 		break;
 	}
 

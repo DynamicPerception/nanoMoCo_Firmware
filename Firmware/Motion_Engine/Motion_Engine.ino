@@ -119,7 +119,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 67;				// Serial API version
+const int SERIAL_VERSION			= 68;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -131,7 +131,7 @@ uint8_t timing_master				= true;				// Do we generate timing for all devices on 
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
 bool app_mode						= false;			// Indicates whether the controller is currently communicating with the mobile app
 bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
-
+byte controller_count				= 1;				// Number of controllers running concurrently. This is just a reference value for the app / Graffik
 
 /***************************************
 
