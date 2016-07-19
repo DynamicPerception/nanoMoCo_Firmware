@@ -131,7 +131,7 @@ uint8_t timing_master				= true;				// Do we generate timing for all devices on 
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
 bool app_mode						= false;			// Indicates whether the controller is currently communicating with the mobile app
 bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
-
+byte controller_count				= 1;				// Number of controllers running concurrently. This is just a reference value for the app / Graffik
 
 /***************************************
 
