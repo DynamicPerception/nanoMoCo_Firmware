@@ -1068,8 +1068,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 
 	//Command 134 returns the number of controllers running in concurrent mode
 	case 134:
-	{
-		controller_count = input_serial_buffer[0];
+	{		
 		msg = "Controller count: ";
 		debugMessage(GEN, command, MSG, controller_count);
 		response(true, controller_count);
