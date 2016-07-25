@@ -486,7 +486,7 @@ void setup() {
 	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
 
         // Leaving this here for now, remove before merging
-        debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_STEPS | DebugClass::DB_MOTOR | DebugClass::DB_GEN_SER | DebugClass::DB_COM_OUT );
+        debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
 }
 
 
@@ -1050,27 +1050,27 @@ void motorDebug() {
 		
 
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debug.steps("Current Steps ");
+			debug.steps(F("Current Steps "));
 			debug.steps(motor[i].currentPos());
-			debug.steps(" continious Speed: ");
+			debug.steps(F(" continious Speed: "));
 			debug.steps(motor[i].contSpeed());
-			debug.steps(" backlash: ");
+			debug.steps(F(" backlash: "));
 			debug.steps(motor[i].backlash());
-			debug.steps(" startPos: ");
+			debug.steps(F(" startPos: "));
 			debug.steps(motor[i].startPos());
-			debug.steps(" stopPos: ");
+			debug.steps(F(" stopPos: "));
 			debug.steps(motor[i].stopPos());
-			debug.steps(" endPos: ");
+			debug.steps(F(" endPos: "));
 			debug.steps(motor[i].endPos());
-			debug.steps(" running: ");
+			debug.steps(F(" running: "));
 			debug.steps(motor[i].running());
-			debug.steps(" enable: ");
+			debug.steps(F(" enable: "));
 			debug.steps(motor[i].enable());
-			debug.steps(" Type: ");
+			debug.steps(F(" Type: "));
 			debug.stepsln(Motors::planType());
-			debug.steps(" shots: ");
+			debug.steps(F(" shots: "));
 			debug.steps(camera_fired);
-			debug.steps(" leadIn: ");
+			debug.steps(F(" leadIn: "));
 			debug.stepsln(motor[i].planLeadIn());
 		}
 	}

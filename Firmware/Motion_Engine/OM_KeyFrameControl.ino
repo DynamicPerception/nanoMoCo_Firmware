@@ -37,50 +37,50 @@ boolean kf_forceShotInProgress = false;
 void kf_printKeyFrameData(){
 
 	// General program parameters
-	USBSerial.print("~~~~~~ General Program Params ~~~~~~");
+	USBSerial.print(F("~~~~~~ General Program Params ~~~~~~"));
 	USBSerial.println("");
 
-	USBSerial.print("Max camera time: ");
+	USBSerial.print(F("Max camera time: "));
 	USBSerial.println(kf_getMaxCamTime());
-	USBSerial.print("Max move time: ");
+	USBSerial.print(F("Max move time: "));
 	USBSerial.println(kf_getMaxMoveTime());
-	USBSerial.print("Run status: ");
+	USBSerial.print(F("Run status: "));
 	USBSerial.println(kf_getRunState());
 	
 	if (kf_getRunState != 0){
-		USBSerial.print("Current run time: ");
+		USBSerial.print(F("Current run time: "));
 		USBSerial.println(kf_getRunTime());
-		USBSerial.print("Percent complete: ");
+		USBSerial.print(F("Percent complete: "));
 		USBSerial.println(kf_getPercentDone());		
 	}
-	USBSerial.print("Program mode: ");
+	USBSerial.print(F("Program mode: "));
 	USBSerial.println(Motors::planType());
-	USBSerial.print("Cont. video time: ");
+	USBSerial.print(F("Cont. video time: "));
 	USBSerial.println(KeyFrames::getContVidTime());
 
 	for (byte i = 0; i < KeyFrames::getAxisCount(); i++){
 		// Indicate the current axis
-		USBSerial.print("~~~~~~ AXIS ");
+		USBSerial.print(F("~~~~~~ AXIS "));
 		USBSerial.print(i);
-		USBSerial.println(" ~~~~~~");
+		USBSerial.println(F(" ~~~~~~"));
 		USBSerial.println("");
 
 		// Print abscissas
-		USBSerial.println("*** Abscissas ***");
+		USBSerial.println(F("*** Abscissas ***"));
 		for (byte j = 0; j < kf[i].getKFCount(); j++){
 			USBSerial.println(kf[i].getXN(j));
 		}
 		USBSerial.println("");
 
 		// Print Positions
-		USBSerial.println("*** Positions ***");
+		USBSerial.println(F("*** Positions ***"));
 		for (byte j = 0; j < kf[i].getKFCount(); j++){
 			USBSerial.println(kf[i].getFN(j));
 		}
 		USBSerial.println("");
 
 		// Print velocities
-		USBSerial.println("*** Velocities ***");
+		USBSerial.println(F("*** Velocities ***"));
 		for (byte j = 0; j < kf[i].getKFCount(); j++){
 			USBSerial.println(kf[i].getDN(j));
 		}
@@ -103,9 +103,9 @@ void kf_startProgram(boolean isBouncePass){
 	}
 	// If starting a new program
 	else{
-		debug.funct("Starting new type ");
+		debug.funct(F("Starting new type "));
 		debug.funct((int)Motors::planType());
-		debug.functln(" KF program");		
+		debug.functln(F(" KF program"));		
 
 		// Reset completion flag
 		program_complete = false; 
@@ -186,11 +186,11 @@ void kf_startProgram(boolean isBouncePass){
 
 void kf_pauseProgram(){
 
-	debug.funct("PAUSING KF PROGRAM");
+	debug.funct(F("PAUSING KF PROGRAM"));
 
 	// Stop all motors
 	for (byte i = 0; i < MOTOR_COUNT; i++){	
-		debug.funct("Stopping motor ");
+		debug.funct(F("Stopping motor "));
 		debug.functln(i);	
 		setJoystickSpeed(i, 0);
 	}
@@ -211,7 +211,7 @@ void kf_stopProgram(){
 
 void kf_stopProgram(boolean savePingPongVals){
 
-	debug.funct("STOPPING KF PROGRAM");
+	debug.funct(F("STOPPING KF PROGRAM"));
 	
 	// Make sure all motors are stopped
 	for (byte i = 0; i < MOTOR_COUNT; i++){
@@ -248,7 +248,7 @@ void kf_updateProgram(){
 	// If the program is paused, just keep track of the pause time
 	if (kf_paused){
 		kf_this_pause = millis() - kf_pause_start;
-		debug.funct("Pause length: ");
+		debug.funct(F("Pause length: "));
 		debug.functln(kf_this_pause);		
 		return;
 	}
@@ -316,7 +316,7 @@ void kf_updateProgram(){
 	if (kf_run_time > totalTime){
 		// Make sure the motors are stopped, but let the program continue running
 		if (keep_camera_alive){
-			debug.serln("Starting keep alive phase");
+			debug.serln(F("Starting keep alive phase"));
 			still_shooting_flag = true;
 
 			// Make sure all motors are stopped
@@ -328,7 +328,7 @@ void kf_updateProgram(){
 			joystickSet(false);
 		}
 		else{
-			debug.serln("Stopping kf program");									
+			debug.serln(F("Stopping kf program"));									
 			// If ping-pong mode is active, reverse and start a new program
 			if (pingPongMode()){
 				// The shot count and run time are reset when starting a new program, 
@@ -337,11 +337,11 @@ void kf_updateProgram(){
 				kf_ping_pong_time += kf_run_time;
 				ping_pong_shots += camera_fired;
 				kf_stopProgram(true);
-				debug.serln("Starting ping-pong phase");
+				debug.serln(F("Starting ping-pong phase"));
 				ping_pong_flag = true;
-				debug.serln("Reversing key points");
+				debug.serln(F("Reversing key points"));
 				reverseStartStop();
-				debug.serln("Starting new kf bounce program");
+				debug.serln(F("Starting new kf bounce program"));
 				kf_startProgram(true);			
 			}
 			else{
@@ -389,7 +389,7 @@ void kf_updateSMS(){
 	}
 
 	// Send the motors to their next locations
-	debug.functln("Sending motors to new locations");
+	debug.functln(F("Sending motors to new locations"));
 	for (int i = 0; i < MOTOR_COUNT; i++){		
 
 		// Make sure there is a point to actually query
@@ -398,9 +398,9 @@ void kf_updateSMS(){
 
 		float nextPos = kf[i].pos(kf_curSmsFrame + 1);
 	
-		debug.funct("About to send to location #: ");
+		debug.funct(F("About to send to location #: "));
 		debug.functln(kf_curSmsFrame + 1);
-		debug.funct("Sending to ");
+		debug.funct(F("Sending to "));
 		debug.functln(nextPos);
 		debug.functln("");
 	
@@ -412,8 +412,6 @@ void kf_updateSMS(){
 
 void kf_CameraCheck() {
 
-	const String KF_CAM_CHECK = "kf_CameraCheck() - ";
-
 	int auxPreShotTime = 0;
 
 	// If this is the last shot of a pass during ping-pong mode, skip it
@@ -423,7 +421,7 @@ void kf_CameraCheck() {
 
 	// If in external interval mode, don't do anything if a force shot isn't registered
 	if (altExtInt && !altForceShot && !kf_forceShotInProgress) {		
-		debug.functln(KF_CAM_CHECK + "Skipping shot, waiting for external trigger");		
+		debug.functln(F("kf_CameraCheck() - Skipping shot, waiting for external trigger"));		
 		return;
 	}
 
@@ -458,7 +456,7 @@ void kf_CameraCheck() {
 		if (!kf_auxFired){
 			altBlock = ALT_OUT_BEFORE;
 			altOutStart(ALT_OUT_BEFORE);
-			debug.functln(KF_CAM_CHECK + "Bailing from camera cycle at point 2");
+			debug.functln(F("kf_CameraCheck() - Bailing from camera cycle at point 2"));
 			kf_auxFired = true;
 			return;
 		}
@@ -476,7 +474,7 @@ void kf_CameraCheck() {
 	// Trigger the focus
 	if (!kf_focusDone){
 		if (!kf_focusFired){
-			debug.funct("Time at focus: ");
+			debug.funct(F("Time at focus: "));
 			debug.functln(kf_run_time);			
 			Camera.focus();
 			kf_focusFired = true;
@@ -493,7 +491,7 @@ void kf_CameraCheck() {
 	// Trigger the exposure
 	if (!kf_shutterDone){
 		if (!kf_shutterFired){
-			debug.funct("Time at exposure: ");
+			debug.funct(F("Time at exposure: "));
 			debug.functln(kf_run_time);
 			Camera.expose();
 			kf_shutterFired = true;
@@ -507,7 +505,7 @@ void kf_CameraCheck() {
 		kf_forceShotInProgress = false;
 
 		// One the camera functions are complete, it's okay to make the next SMS move		
-		debug.functln("Shutter done, ready for move");		
+		debug.functln(F("Shutter done, ready for move"));		
 		kf_okForSmsMove = true;
 	}
 
@@ -612,13 +610,13 @@ long kf_getMaxMoveTime(){
 	if (Motors::planType() != CONT_VID){			
 		move_time = Camera.getMaxShots() * Camera.intervalTime();
 		if (!kf_running)
-			debug.funct("Getting TL move time: ");			
+			debug.funct(F("Getting TL move time: "));			
 	}
 	// Continuous video mode
 	else{			
 		move_time = KeyFrames::getContVidTime();			
 		if (!kf_running)
-			debug.funct("Getting vid move time: ");			
+			debug.funct(F("Getting vid move time: "));			
 	}		
 	if (!kf_running){
 		debug.funct(move_time);

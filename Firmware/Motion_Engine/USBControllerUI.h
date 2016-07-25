@@ -32,7 +32,7 @@ See dynamicperception.com for more information
 #define USBCONTROLLERUI_NACTUATORS (2)
 
 typedef struct {
-  bool isOn;
+  uint8_t isOn;
   uint8_t LEDNum;
   uint8_t pulsesLeft;
   uint16_t onTime;
@@ -43,7 +43,7 @@ typedef struct {
 } LEDPulseState_t;
 
 typedef struct {
-  bool isOn;
+  uint8_t isOn;
   uint8_t ActNum;
   uint8_t intensity;
   uint8_t pulsesLeft;
@@ -64,13 +64,13 @@ enum USBControllerUI_State_t
 class USBControllerUI {
   private:
 
-    USBControllerUI_State_t state;
-    bool prevStatus;
-    bool isShotRunning;
-    float prevLeftXVelocity;
-    float prevLeftYVelocity;
-    float prevRightXVelocity;
-    float prevRightYVelocity;
+    USBControllerUI_State_t uiState;
+    uint8_t prevStatus;
+    uint8_t isShotRunning;
+    uint8_t  prevLeftXVelocity;
+    uint8_t  prevLeftYVelocity;
+    uint8_t prevRightXVelocity;
+    uint8_t  prevRightYVelocity;
 
     uint8_t moveTimeMinutes;
     uint8_t moveTimeHours;
@@ -79,39 +79,39 @@ class USBControllerUI {
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
     uint8_t isContinuous;
-    uint16_t exposureTimeS;
-    uint16_t exposureWaitS;
-    uint16_t exposureTimeDS;
-    uint16_t exposureWaitDS;
+    uint8_t exposureTimeS;
+    uint8_t exposureWaitS;
+    uint32_t exposureTimeDS;
+    uint32_t exposureWaitDS;
+    uint8_t focusTimeS;
+    uint32_t focusTimeDS;
     uint32_t killTimerStart;
-    
-    float topSpeed;
-    
      
     // LED state information for UI Feedback
-    LEDPulseState_t LEDPulseState;
+  //  LEDPulseState_t LEDPulseState;
 
     // Actuator state information for UI Feedback
     ActuatorPulseState_t actuatorPulseState;
-
+    
     //uint32_t buttonTimers[17];
     void StartMove( void );
+    void TriggerStartMove( void );
 
-    void StateSetting( void );
-    void StateWait( void );
-    void StateWaitToStart( void );
+    void uiStateSetting( void );
+    void uiStateWait( void );
+    void uiStateWaitToStart( void );
 
-    float CreateDeadzone( float value );
     void IteratePulses( void );
 
     // UI Indicator functions
-    void LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
-    void ActuatorPulse( uint8_t ActNum, uint8_t intensity, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
-    void LEDPulseStop( uint8_t LEDNum );
+    //void LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
+    void ActuatorPulse( uint16_t onMS, uint16_t offMS, uint8_t nTimes);
+  //  void LEDPulseStop( uint8_t LEDNum );
     void ActuatorPulseStop( void );
 
     // User Input functions
-    bool MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
+    uint8_t MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
+    float CreateDeadzone( float value );
 
   public:
     USBControllerUI( void );

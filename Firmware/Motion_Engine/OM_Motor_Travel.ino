@@ -115,7 +115,7 @@ void sendTo(uint8_t p_motor, long p_pos, boolean kf_move){
 	}
 
 	// Move at the maximum motor speed
-	debug.funct("Sending motor ");
+	debug.funct(F("Sending motor "));
 	debug.funct(p_motor);
 	debug.funct(" to position ");
 	debug.functln(p_pos);
