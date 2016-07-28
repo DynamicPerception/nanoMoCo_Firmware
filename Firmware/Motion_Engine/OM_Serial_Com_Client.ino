@@ -2198,6 +2198,27 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
 
 	switch (command){
 
+    // Command 9 indicates a new KF program will be transmitted and frees any allocated memory
+    case 9:
+    {
+        // Only clear the memory if a KF program is not currently running
+        if (!kf_running){
+
+            for (int i = 0; i < MOTOR_COUNT; i++){
+                kf[i].freeMemory();
+            }
+            msg = "Prepping for new KF program";
+            debugMessage(KF, command, MSG);
+            response(true);
+        }
+        else{
+            msg = "KF program running, cannot prep new one";
+            debugMessage(KF, command, MSG);
+            response(false);
+        }
+        break;
+    }
+
 	// Command 10 sets the current axis
 	case 10:
 	{
