@@ -373,8 +373,6 @@ DebugClass debug = DebugClass(&mocoPrint);
 
 
 void setup() {
-        // Initialize USB Controller Mode
-        USBCtrlrUI.init();
 	
 	// Start USB serial communications
 	USBSerial.begin(19200);
@@ -487,6 +485,9 @@ void setup() {
 
         // Leaving this here for now, remove before merging
         debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
+        
+                // Initialize USB Controller Mode
+        USBCtrlrUI.init();
 }
 
 

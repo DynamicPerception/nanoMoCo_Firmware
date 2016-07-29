@@ -318,6 +318,7 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
   }
   PS3CtrlrHost.ResetControllerState();
   PS3CtrlrHost.isConnected = true;
+
   debug.functln("CTRLR CONNECT");
 }
 
