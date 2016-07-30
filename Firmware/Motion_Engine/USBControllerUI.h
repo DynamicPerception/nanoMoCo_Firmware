@@ -27,7 +27,7 @@ See dynamicperception.com for more information
 
  @brief Core USBControllerUI.h Header File
  */
-
+ 
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
 
@@ -95,6 +95,7 @@ class USBControllerUI {
     
     //uint32_t buttonTimers[17];
     void StartMove( void );
+    void StopMove( void );
     void TriggerStartMove( void );
 
     void uiStateSetting( void );
@@ -110,7 +111,7 @@ class USBControllerUI {
     void ActuatorPulseStop( void );
 
     // User Input functions
-    uint8_t MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
+    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
     float CreateDeadzone( float value );
 
   public:
@@ -126,5 +127,6 @@ extern USBControllerUI USBCtrlrUI;
 
 
 #endif // _USBCONTROLLERUI_H_
+
 
 

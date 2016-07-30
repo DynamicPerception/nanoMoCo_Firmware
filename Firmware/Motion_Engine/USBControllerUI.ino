@@ -45,10 +45,10 @@ void USBControllerUI::init(void)
 {
   PS3CtrlrHost.init();
   prevStatus = false;
-  prevLeftXVelocity = 0;
-  prevLeftYVelocity = 0;
-  prevRightXVelocity = 0;
-  prevRightYVelocity = 0;
+  prevLeftXVelocity = 128;
+  prevLeftYVelocity = 128;
+  prevRightXVelocity = 128;
+  prevRightYVelocity = 128;
 
   actuatorPulseState.isOn = false;
   moveTimeMinutes = 1;
@@ -62,17 +62,20 @@ void USBControllerUI::init(void)
   exposureTimeDS = 2;
   exposureWaitDS = 8;
   focusTimeS = 0;
-  focusTimeDS = CAM_DEFAULT_FOCUS;
+  focusTimeDS = 1;
 
-    // Restore full speed microstep setting
-    for(uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
-    {
-      if(i==0)
-        motor[i].ms(4);
-      else
-        motor[i].ms(16);
-    } 
-    
+  for (uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
+  {
+    motor[i].easing(OM_MOT_QUAD);
+    if (i == 0)
+      motor[i].ms(4);
+    else
+      motor[i].ms(16);
+  }
+
+  Camera.exposureFocus(false);
+  Camera.enable = true;
+
   uiState = USBCONTROLLERUI_STATE_Setting;
 }
 
@@ -143,22 +146,38 @@ void USBControllerUI::uiStateSetting( void )
     prevRightXVelocity = rightXVelocity;
     prevRightYVelocity = rightYVelocity;
 
+    uint8_t modifierButtonState;
     uint8_t buttonState;
+
+    modifierButtonState = PS3CtrlrHost.GetButtonState(UI_MODIFIER_QUERY);
 
     // Map DPAD Left/Right to Start/Stop points
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Left) == PS3CONTROLLER_STATE_Down)
     {
-      ActuatorPulse( 150, 100, 1);
-      motor[0].startPos(motor[0].currentPos());  // Set start point on axis 0
-      motor[1].startPos(motor[1].currentPos());  // Set start point on axis 1
-      motor[2].startPos(motor[2].currentPos());  // Set start point on axis 2
+      if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
+      {
+        sendAllToStart();
+      }
+      else
+      {
+        ActuatorPulse( 150, 100, 1);
+        motor[0].startPos(motor[0].currentPos());  // Set start point on axis 0
+        motor[1].startPos(motor[1].currentPos());  // Set start point on axis 1
+        motor[2].startPos(motor[2].currentPos());  // Set start point on axis 2
+      }
     }
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Right) == PS3CONTROLLER_STATE_Down)
-    {
-      ActuatorPulse( 150, 100, 2);
-      motor[0].stopPos(motor[0].currentPos());  // Set stop point on axis 0
-      motor[1].stopPos(motor[1].currentPos());  // Set stop point on axis 1
-      motor[2].stopPos(motor[2].currentPos());  // Set stop point on axis 2
+    { if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
+      {
+        sendAllToStop();
+      }
+      else
+      {
+        ActuatorPulse( 150, 100, 2);
+        motor[0].stopPos(motor[0].currentPos());  // Set stop point on axis 0
+        motor[1].stopPos(motor[1].currentPos());  // Set stop point on axis 1
+        motor[2].stopPos(motor[2].currentPos());  // Set stop point on axis 2
+      }
     }
 
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_R3) == PS3CONTROLLER_STATE_Down)
@@ -172,25 +191,25 @@ void USBControllerUI::uiStateSetting( void )
     uint32_t buttonTime;
 
     // Map moveTimeMinutes/movetimeHours to R1/R2
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R1, &buttonTime, moveTimeMinutes ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_R1, &buttonTime, moveTimeMinutes ))
       moveTimeMinutes = (buttonTime / UI_TICK_RATE);
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_R2, &buttonTime, moveTimeHours ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_R2, &buttonTime, moveTimeHours ))
       moveTimeHours = (buttonTime / UI_TICK_RATE);
 
     // Map DECECL/ACCEL percentage to L1/L2
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_L1, &buttonTime, accelTime ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_L1, &buttonTime, accelTime ))
       accelTime = (buttonTime / UI_TICK_RATE);
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_L2, &buttonTime, decelTime ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_L2, &buttonTime, decelTime ))
       decelTime = (buttonTime / UI_TICK_RATE);
 
     // Map exposureTimeS/exposureTimeDS/exposureWaitS/exposureWaitDS to x/0/square/triangle
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_Cross, &buttonTime, exposureTimeS ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_Cross, &buttonTime, exposureTimeS ))
       exposureTimeS = (buttonTime / UI_TICK_RATE);
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_Circle, &buttonTime, exposureTimeDS ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_Circle, &buttonTime, exposureTimeDS ))
       exposureTimeDS = (buttonTime / UI_TICK_RATE);
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_Square, &buttonTime, exposureWaitS ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_Square, &buttonTime, exposureWaitS ))
       exposureWaitS = (buttonTime / UI_TICK_RATE);
-    if (MonitorButton( UI_MODIFIER_QUERY, PS3CONTROLLER_BUTTON_Triangle, &buttonTime, exposureWaitDS ))
+    if (MonitorButton( modifierButtonState, PS3CONTROLLER_BUTTON_Triangle, &buttonTime, exposureWaitDS ))
       exposureWaitDS = (buttonTime / UI_TICK_RATE);
 
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_PS) == PS3CONTROLLER_STATE_Down)
@@ -208,15 +227,22 @@ void USBControllerUI::uiStateSetting( void )
   }
   else
   {
-    if (prevLeftXVelocity != 0) setJoystickSpeed(0, 0 );
-    if (prevLeftYVelocity != 0) setJoystickSpeed(2, 0 );
-    if (prevRightXVelocity != 0) setJoystickSpeed(1, 0 );
-    if (prevRightYVelocity != 0) setJoystickSpeed(3, 0 );
-
-    prevLeftXVelocity = 0;
-    prevLeftYVelocity = 0;
-    prevRightXVelocity = 0;
-    prevRightYVelocity = 0;
+    if (prevLeftXVelocity != 128) {
+      prevLeftXVelocity = 128;
+      setJoystickSpeed(0, 0 );
+    }
+    if (prevLeftYVelocity != 128) {
+      prevLeftYVelocity = 128;
+      setJoystickSpeed(2, 0 );
+    }
+    if (prevRightXVelocity != 128) {
+      prevRightXVelocity = 128;
+      setJoystickSpeed(1, 0 );
+    }
+    if (prevRightYVelocity != 128) {
+      setJoystickSpeed(3, 0 );
+      prevRightYVelocity = 128;
+    }
   }
 }
 
@@ -237,18 +263,7 @@ void USBControllerUI::uiStateWait( void )
 
   if ((millis() - shotStartTime) >= shotTimeMS)
   {
-    isShotRunning = false;
-    stopProgram(true);
-    
-    // Restore full speed microstep setting
-    for(uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
-    {
-      if(i==0)
-        motor[i].ms(4);
-      else
-        motor[i].ms(16);
-    }   
-
+    StopMove();
     uiState = USBCONTROLLERUI_STATE_Setting;
     return;
   }
@@ -259,19 +274,25 @@ void USBControllerUI::uiStateWait( void )
 
   if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - killTimerStart) > KILL_TIMER_TIME))
   {
-    isShotRunning = false;
-    stopProgram(true);
-    
-    // Restore full speed microstep setting
-    for(uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
-    {
-      if(i==0)
-        motor[i].ms(4);
-      else
-        motor[i].ms(16);
-    } 
+    StopMove();
     uiState = USBCONTROLLERUI_STATE_Setting;
     return;
+  }
+}
+
+void USBControllerUI::StopMove( void )
+{
+  stopProgram(true);
+
+  isShotRunning = false;
+
+  // Restore full speed microstep setting
+  for (uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
+  {
+    if (i == 0)
+      motor[i].ms(4);
+    else
+      motor[i].ms(16);
   }
 }
 
@@ -280,10 +301,8 @@ void USBControllerUI::StartMove( void )
   uint32_t exposureTime = exposureTimeS * 1000 + exposureTimeDS * 100;
   uint32_t focusTime = focusTimeS * 1000 + focusTimeDS * 100;
   uint32_t exposureDelay = exposureWaitS * 1000 + exposureWaitDS * 100;
-  shotTimeMS = (60 * (uint32_t) moveTimeMinutes + 60 * 60 * (uint32_t) moveTimeHours) * 1000;
-  //uint32_t interval = exposureTime+focusTime+exposureDelay;
-
-  // char szTemp[16];
+  shotTimeMS = (60 * (uint32_t) moveTimeMinutes + 60 * 60 * (uint32_t) moveTimeHours);
+  shotTimeMS *= 1000;
 
   Motors::planType(isContinuous);
 
@@ -300,29 +319,24 @@ void USBControllerUI::StartMove( void )
     motor[i].planLeadOut(0);
     motor[i].planAccelLength(accelTime * (shotTimeMS / 100));
     motor[i].planDecelLength( decelTime * (shotTimeMS / 100));
-    //       sprintf(szTemp, "AC: %ld", accelTime * (shotTimeMS / 100) );
-    //    debug.functln(szTemp);
+    motor[i].planType( isContinuous );
     if (!isContinuous)
     {
-      //    sprintf(szTemp, "SMS N: %d", shotTimeMS / (exposureTime + focusTime + exposureDelay));
-      //    debug.functln(szTemp);
       // Set number of shots
-      motor[i].planTravelLength( shotTimeMS / (exposureTime + focusTime + exposureDelay) );
+      uint32_t travelLength = shotTimeMS / (exposureTime + focusTime + exposureDelay);
+      motor[i].planTravelLength( travelLength) ;
       cameraAutoMaxShots();
     }
     else
     {
-      //    sprintf(szTemp, "N: %ld", shotTimeMS);
-      //   debug.functln(szTemp);
       // Set length of shot
       motor[i].planTravelLength( shotTimeMS );
     }
   }
   shotStartTime = millis();
-  if (ComMgr.master() == true) {
-    Engine.state(ST_CLEAR);
-  }
+  
   isShotRunning = true;
+
   startProgramCom();
 }
 
@@ -394,17 +408,15 @@ float USBControllerUI::CreateDeadzone( float value )
           false otherwise
 
 */
-uint8_t USBControllerUI::MonitorButton( PS3Controller_ButtonUsages_t modifierButton, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue )
+uint8_t USBControllerUI::MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue )
 {
   uint8_t buttonState;
-  uint8_t modifierButtonState;
   static uint8_t isQuery = false;
   static uint8_t isMonitoring = false;
   static uint8_t curButtonMonitoring = 0;
   static uint32_t buttonTimer;
 
   buttonState = PS3CtrlrHost.GetButtonState( button );
-  modifierButtonState = PS3CtrlrHost.GetButtonState( modifierButton );
 
   // Only allow one button to be monitored
   if (isMonitoring == false || button == curButtonMonitoring)
@@ -569,6 +581,7 @@ void USBControllerUI::TriggerStartMove( void )
 
   uiState = USBCONTROLLERUI_STATE_WaitToStart;
 }
+
 
 
 

@@ -484,9 +484,9 @@ void setup() {
 	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
 
         // Leaving this here for now, remove before merging
-        debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
+       // debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
         
-                // Initialize USB Controller Mode
+        // Initialize USB Controller Mode
         USBCtrlrUI.init();
 }
 
