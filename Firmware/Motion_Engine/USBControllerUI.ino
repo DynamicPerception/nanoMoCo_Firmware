@@ -62,7 +62,7 @@ void USBControllerUI::init(void)
   exposureTimeDS = 2;
   exposureWaitDS = 8;
   focusTimeS = 0;
-  focusTimeDS = 1;
+  focusTimeDS = 0;
 
   for (uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
   {
@@ -301,6 +301,10 @@ void USBControllerUI::StartMove( void )
   uint32_t exposureTime = exposureTimeS * 1000 + exposureTimeDS * 100;
   uint32_t focusTime = focusTimeS * 1000 + focusTimeDS * 100;
   uint32_t exposureDelay = exposureWaitS * 1000 + exposureWaitDS * 100;
+  float intervalTime = exposureTime + focusTime + exposureDelay;
+  float accelPercentage = accelTime/100.0f;
+  float decelPercentage = accelTime/100.0f;
+  
   shotTimeMS = (60 * (uint32_t) moveTimeMinutes + 60 * 60 * (uint32_t) moveTimeHours);
   shotTimeMS *= 1000;
 
@@ -308,7 +312,7 @@ void USBControllerUI::StartMove( void )
 
   pingPongMode(false);
 
-  Camera.intervalTime(exposureTime + focusTime + exposureDelay);
+  Camera.intervalTime(intervalTime);
   Camera.focusTime( focusTime );
   Camera.triggerTime(exposureTime);
   Camera.delayTime(exposureDelay);
@@ -317,19 +321,23 @@ void USBControllerUI::StartMove( void )
   for (uint8_t i = 0; i < USBCTRLR_MAX_MOTORS; i++) {
     motor[i].planLeadIn(0);
     motor[i].planLeadOut(0);
-    motor[i].planAccelLength(accelTime * (shotTimeMS / 100));
-    motor[i].planDecelLength( decelTime * (shotTimeMS / 100));
     motor[i].planType( isContinuous );
     if (!isContinuous)
     {
-      // Set number of shots
-      uint32_t travelLength = shotTimeMS / (exposureTime + focusTime + exposureDelay);
-      motor[i].planTravelLength( travelLength) ;
+      uint32_t travelLength = shotTimeMS / intervalTime;
+      
+      // Number of Shots
+      motor[i].planAccelLength(accelPercentage*travelLength);
+      motor[i].planDecelLength(decelPercentage*travelLength);
+      
+      motor[i].planTravelLength( travelLength ) ;
       cameraAutoMaxShots();
     }
     else
     {
-      // Set length of shot
+      // Length of time in MS
+      motor[i].planAccelLength( accelPercentage * shotTimeMS );
+      motor[i].planDecelLength( decelPercentage * shotTimeMS );
       motor[i].planTravelLength( shotTimeMS );
     }
   }

@@ -316,6 +316,10 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     // Hard fail
     return;
   }
+  PS3CtrlrHost.LeftStickX = 128;
+  PS3CtrlrHost.LeftStickY = 128;
+  PS3CtrlrHost.RightStickX = 128;
+  PS3CtrlrHost.RightStickY = 128;
   PS3CtrlrHost.ResetControllerState();
   PS3CtrlrHost.isConnected = true;
 
@@ -338,4 +342,5 @@ void EVENT_USB_Host_HostError(const uint8_t p_err) {
 void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t p_err, const uint8_t p_suberr) {
   // Hard fail
 }
+
 
