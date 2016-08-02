@@ -42,6 +42,7 @@ See dynamicperception.com for more information
 #include <MemoryFree.h>
 #include <hermite_spline.h>
 #include <key_frames.h>
+#include <CubicBezier.h>
 
 // openmoco standard libraries
 #include <OMComHandler.h>
