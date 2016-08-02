@@ -219,9 +219,6 @@ const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel ra
 const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction
 const byte MOTOR_COUNT = 3;									// Number of motors possibly attached to controller
 
-// Speed variables
-unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in steps / sec
-
 // plan move types
 #define SMS				0		// Shoot-move-shoot mode
 #define CONT_TL			1		// Continuous time lapse mode

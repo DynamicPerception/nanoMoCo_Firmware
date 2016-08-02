@@ -469,7 +469,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		debugMessage(GEN, command, MSG);
 		// send a motor home
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			motor[i].contSpeed(mot_max_speed);
+            motor[i].contSpeed(motor[i].maxSpeed());
 			motor[i].ms(4);			
 			motor[i].home();
 			motor[i].setSending(true);
@@ -1272,7 +1272,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Sending to home";
 		debugMessage(subaddr, command, MSG);
 
-		thisMotor.contSpeed(mot_max_speed);
+        thisMotor.contSpeed(thisMotor.maxSpeed());
 
 		// send a motor home
 		thisMotor.ms(4);		
@@ -1292,7 +1292,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 		msg = "Sending to end";
 		debugMessage(subaddr, command, MSG);
-		thisMotor.contSpeed(mot_max_speed);
+        thisMotor.contSpeed(thisMotor.maxSpeed());
 
 		thisMotor.moveToEnd();
 		startISR();
@@ -1316,8 +1316,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		// Normal speed change handling
 		else {			
 			// If the requested speed is higher than allowed, just use the highest permissible value
-			if (input_speed > mot_max_speed)
-				input_speed = mot_max_speed;
+            if (input_speed > thisMotor.maxSpeed())
+                input_speed = thisMotor.maxSpeed();
 			thisMotor.contSpeed(input_speed);
 			msg = "Setting cont. speed: ";
 			debugMessage(subaddr, command, MSG, (int)input_speed);
