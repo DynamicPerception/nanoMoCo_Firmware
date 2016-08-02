@@ -161,7 +161,7 @@ void takeUpBacklash(boolean kf_move){
 			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible						
 			motor[i].ms(4);
 			
-			motor[i].contSpeed(mot_max_speed);
+            motor[i].contSpeed(motor[i].maxSpeed());
 						
 			// Determine the direction of the programmed move
 			uint8_t dir = (motor[i].stopPos() - motor[i].startPos()) > 0 ? 1 : 0;
@@ -543,11 +543,11 @@ void setJoystickSpeed(int p_motor, float p_speed){
 	float new_speed = p_speed;
 
 	// Don't allow the speed to be set higher than the maximum
-	if (abs(new_speed) > (float)mot_max_speed) {
+    if (abs(new_speed) > (float)motor[p_motor].maxSpeed()) {
 		if (new_speed < 0.0)
-			new_speed = (float)mot_max_speed * -1.0;
+            new_speed = (float)motor[p_motor].maxSpeed() * -1.0;
 		else
-			new_speed = mot_max_speed;
+            new_speed = motor[p_motor].maxSpeed();
 	}
 
 	// Set speed

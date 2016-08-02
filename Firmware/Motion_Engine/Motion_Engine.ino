@@ -119,7 +119,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 68;				// Serial API version
+const int SERIAL_VERSION			= 69;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -218,9 +218,6 @@ const unsigned int MOT_DEFAULT_MAX_SPD		= 5000;			// Default maximum motor speed
 const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel rate for non-program continuous moves
 const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction
 const byte MOTOR_COUNT = 3;									// Number of motors possibly attached to controller
-
-// Speed variables
-unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in steps / sec
 
 // plan move types
 #define SMS				0		// Shoot-move-shoot mode
