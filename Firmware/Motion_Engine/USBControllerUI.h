@@ -118,6 +118,7 @@ class USBControllerUI {
     USBControllerUI( void );
     void init( void );
     void UITask( void );
+    uint8_t IsShotRunning( void );
 };
 
 extern USBControllerUI USBCtrlrUI;

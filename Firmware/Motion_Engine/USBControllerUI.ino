@@ -26,7 +26,7 @@ See dynamicperception.com for more information
 USBControllerUI USBCtrlrUI;
 
 #define UI_DEADZONE (10.0)
-#define UI_TICK_RATE     (700)
+#define UI_TICK_RATE     (500)
 #define UI_MODIFIER_QUERY   (PS3CONTROLLER_BUTTON_Select)
 #define KILL_TIMER_TIME (2000)
 #define USBCTRLR_MAX_MOTORS (4)
@@ -115,7 +115,12 @@ void USBControllerUI::UITask( void )
   {
     uiStateWaitToStart();
   }
-  IteratePulses();
+  IteratePulses();	 
+}
+
+uint8_t USBControllerUI::IsShotRunning( void )
+{
+  return(isShotRunning);
 }
 
 /** Setting State
@@ -261,9 +266,8 @@ void USBControllerUI::uiStateWait( void )
     return;
   }
 
-  if ((millis() - shotStartTime) >= shotTimeMS)
+  if (!running)
   {
-    StopMove();
     uiState = USBCONTROLLERUI_STATE_Setting;
     return;
   }
@@ -319,18 +323,22 @@ void USBControllerUI::StartMove( void )
 
   // Assign motor parameters
   for (uint8_t i = 0; i < USBCTRLR_MAX_MOTORS; i++) {
+    motor[i].clear();
     motor[i].planLeadIn(0);
     motor[i].planLeadOut(0);
+    motor[i].easing(OM_MOT_QUAD);
     motor[i].planType( isContinuous );
     if (!isContinuous)
     {
       uint32_t travelLength = shotTimeMS / intervalTime;
+      
       
       // Number of Shots
       motor[i].planAccelLength(accelPercentage*travelLength);
       motor[i].planDecelLength(decelPercentage*travelLength);
       
       motor[i].planTravelLength( travelLength ) ;
+      motor[i].planRun();
       cameraAutoMaxShots();
     }
     else
