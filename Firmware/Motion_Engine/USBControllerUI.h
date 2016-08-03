@@ -81,6 +81,8 @@ class USBControllerUI {
     uint8_t isContinuous;
     uint8_t exposureTimeS;
     uint8_t exposureWaitS;
+    uint32_t intervalTimeS;
+    uint32_t intervalTimeDS;
     uint32_t exposureTimeDS;
     uint32_t exposureWaitDS;
     uint8_t focusTimeS;
