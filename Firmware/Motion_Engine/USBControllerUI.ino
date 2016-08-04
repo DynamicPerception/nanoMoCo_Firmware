@@ -297,7 +297,7 @@ void USBControllerUI::uiStateWait( void )
   // Allow user to query the time left using R1/R2
   uint32_t shotTimeLeftMS = shotTimeMS-(millis()- shotStartTime);
   uint8_t timeLeftHours = ((shotTimeLeftMS)/thousand)/(60*60);
-  uint8_t timeLeftMinutes = ((shotTimeLeftMS)-(timeLeftHours*60*60*thousand))/(60*thousand);
+  uint8_t timeLeftMinutes = ((shotTimeLeftMS)/(60*thousand))-(timeLeftHours*60);
   
   // Allow settings to be queried while shot is running
   QueryButton( UI_BUTTON_ShotTimeHours, timeLeftMinutes);
