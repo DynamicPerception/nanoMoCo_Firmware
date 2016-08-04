@@ -47,6 +47,7 @@ typedef struct {
   uint8_t ActNum;
   uint8_t intensity;
   uint8_t pulsesLeft;
+  uint8_t nPulses;
   uint16_t onTime;
   uint16_t offTime;
   uint16_t onTimeLeft;
@@ -74,19 +75,19 @@ class USBControllerUI {
 
     uint8_t moveTimeMinutes;
     uint8_t moveTimeHours;
-    uint32_t accelTime;  // Percent of the time of the move that the dolly is accelerating (0-100)
-    uint32_t decelTime;  // Percent of the time of the move that the dolly is decelerating (0-100)
+    uint8_t accelPercentage;  // Percent of the time of the move that the dolly is accelerating (0-100)
+    uint8_t decelPercentage;  // Percent of the time of the move that the dolly is decelerating (0-100)
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
     uint8_t isContinuous;
     uint8_t exposureTimeS;
     uint8_t exposureWaitS;
-    uint32_t intervalTimeS;
-    uint32_t intervalTimeDS;
-    uint32_t exposureTimeDS;
-    uint32_t exposureWaitDS;
+    uint8_t intervalTimeS;
+    uint8_t intervalTimeDS;
+    uint8_t exposureTimeDS;
+    uint8_t exposureWaitDS;
     uint8_t focusTimeS;
-    uint32_t focusTimeDS;
+    uint8_t focusTimeDS;
     uint32_t killTimerStart;
      
     // LED state information for UI Feedback
@@ -113,7 +114,8 @@ class USBControllerUI {
     void ActuatorPulseStop( void );
 
     // User Input functions
-    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint32_t *storeMs, uint16_t queryValue );
+    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue );
+    void QueryButton( PS3Controller_ButtonUsages_t button, uint16_t queryValue);
     float CreateDeadzone( float value );
 
   public:
