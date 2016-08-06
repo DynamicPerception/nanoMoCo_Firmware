@@ -28,6 +28,7 @@ See dynamicperception.com for more information
  @brief Core USBControllerUI.h Header File
  */
  
+#defime USBCONTROLLERUI_NSETTINGS (1)
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
 
@@ -55,6 +56,22 @@ typedef struct {
   uint32_t prevUpdateTime;
 } ActuatorPulseState_t;
 
+typedef struct {
+    uint8_t isContinuous;
+    uint8_t moveTimeMinutes;
+    uint8_t moveTimeHours;
+    uint8_t accelPercentage;  // Percent of the time of the move that the dolly is accelerating (0-100)
+    uint8_t decelPercentage;  // Percent of the time of the move that the dolly is decelerating (0-100)
+    uint8_t intervalTimeS;
+    uint8_t intervalTimeDS;
+    uint8_t exposureTimeS;
+    uint8_t exposureWaitS;
+    uint8_t exposureTimeDS;
+    uint8_t exposureWaitDS;
+    uint8_t focusTimeS;
+    uint8_t focusTimeDS;
+} CtrlrUISettings_t; 
+
 enum USBControllerUI_State_t
 {
   USBCONTROLLERUI_STATE_Setting,
@@ -73,23 +90,13 @@ class USBControllerUI {
     uint8_t prevRightXVelocity;
     uint8_t  prevRightYVelocity;
 
-    uint8_t moveTimeMinutes;
-    uint8_t moveTimeHours;
-    uint8_t accelPercentage;  // Percent of the time of the move that the dolly is accelerating (0-100)
-    uint8_t decelPercentage;  // Percent of the time of the move that the dolly is decelerating (0-100)
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
-    uint8_t isContinuous;
-    uint8_t exposureTimeS;
-    uint8_t exposureWaitS;
-    uint8_t intervalTimeS;
-    uint8_t intervalTimeDS;
-    uint8_t exposureTimeDS;
-    uint8_t exposureWaitDS;
-    uint8_t focusTimeS;
-    uint8_t focusTimeDS;
+   
     uint32_t killTimerStart;
-     
+    
+    CtrlrUISettings_t uiSettings[USBCONTROLLERUI_NSETTINGS];
+
     // LED state information for UI Feedback
   //  LEDPulseState_t LEDPulseState;
 
@@ -116,6 +123,7 @@ class USBControllerUI {
     // User Input functions
     uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue );
     void QueryButton( PS3Controller_ButtonUsages_t button, uint16_t queryValue);
+    void ResetUIDefaults( void );
     float CreateDeadzone( float value );
 
   public:
