@@ -25,7 +25,6 @@ See dynamicperception.com for more information
 */
 
 
-
 /*
 
   ========================================
@@ -38,7 +37,7 @@ See dynamicperception.com for more information
 
 
 // EEPROM Memory Layout Version, change this any time you modify what is stored
-const unsigned int MEMORY_VERSION = 4;
+const unsigned int MEMORY_VERSION = 5;
 
 
 
@@ -55,7 +54,6 @@ const unsigned int MEMORY_VERSION = 4;
 void eepromCheck() {
   
   using namespace OMEEPROM;
-    
   if( saved() ) {
       if( version() != MEMORY_VERSION )
         eepromWrite();
@@ -100,6 +98,13 @@ void eepromWrite() {
 		write(EE_STOP_0		+ EE_MOTOR_MEMORY_SPACE * i, tempStop);
 		write(EE_END_0		+ EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
 	} 
+        
+        // Write default USB Controller Setting
+        char *tempPtr = (char *) &USBCtrlrUI.uiSettings;
+        for(int j=0;j<sizeof(CtrlrUISettings_t);j++)
+        {
+            write( EE_USBCTRLR_SETTINGS + j, tempPtr[j]);
+        }
 }
 
 
@@ -156,6 +161,13 @@ void eepromRestore() {
 			endPos[i] = tempEnd;
 		}	
 	}
+        
+        // Read default USB Controller Setting
+        char *tempPtr = (char *) &USBCtrlrUI.uiSettings;
+        for(int j=0;j<sizeof(CtrlrUISettings_t);j++)
+        {
+            read( EE_USBCTRLR_SETTINGS + j, tempPtr[j]);
+        }
 }
 
 

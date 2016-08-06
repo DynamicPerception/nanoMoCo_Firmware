@@ -73,7 +73,7 @@ See dynamicperception.com for more information
  name            = 2
  
 */
-
+const byte MOTOR_COUNT = 3;	
 const int EE_ADDR       = 0;				// device_address (2 bytes)
 const int EE_NAME       = 2;				// device name (16 bytes)
 
@@ -103,6 +103,8 @@ const int EE_LOAD_START_STOP = EE_LOAD_POS + 1;			// Whether to load the motors'
 const int EE_LOAD_END		 = EE_LOAD_START_STOP + 1;	// Whether to load the motors' end positions after power cycle (byte)
 
 const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
+
+const int EE_USBCTRLR_SETTINGS = EE_POS_0 + MOTOR_COUNT*EE_MOTOR_MEMORY_SPACE;  // Settings for USB Controller UI
 
 // Variables that are loaded from EEPROM that determine whether the motors' various positions should be restored
 uint8_t ee_load_curPos = false;
@@ -218,8 +220,7 @@ typedef OMMotorFunctions Motors;
 const unsigned int MOT_DEFAULT_MAX_STEP		= 5000;			// Default maximum controller step rate output
 const unsigned int MOT_DEFAULT_MAX_SPD		= 5000;			// Default maximum motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel rate for non-program continuous moves
-const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction
-const byte MOTOR_COUNT = 3;									// Number of motors possibly attached to controller
+const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction								// Number of motors possibly attached to controller
 
 // Speed variables
 unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in steps / sec
@@ -465,8 +466,12 @@ void setup() {
 			motor[i].ms(16);
 		motor[i].programBackCheck(false);	 
 	}
+        // Leaving this here for now, remove before merging
+        debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
+          
 
-	// restore/store eeprom memory
+	
+        // restore/store eeprom memory
 	eepromCheck();
  
 	// enable limit switch handler
@@ -482,10 +487,6 @@ void setup() {
 
 	// Ensure that the axis array is set
 	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
-
-        // Leaving this here for now, remove before merging
-        //debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
-        
         // Initialize USB Controller Mode
         USBCtrlrUI.init();
 }

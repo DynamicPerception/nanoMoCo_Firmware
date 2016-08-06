@@ -28,7 +28,7 @@ See dynamicperception.com for more information
  @brief Core USBControllerUI.h Header File
  */
  
-#defime USBCONTROLLERUI_NSETTINGS (1)
+#define USBCONTROLLERUI_NSETTINGS (3)
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
 
@@ -93,17 +93,11 @@ class USBControllerUI {
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
    
-    uint32_t killTimerStart;
-    
-    CtrlrUISettings_t uiSettings[USBCONTROLLERUI_NSETTINGS];
-
-    // LED state information for UI Feedback
-  //  LEDPulseState_t LEDPulseState;
+    uint32_t buttonTimerStart;
 
     // Actuator state information for UI Feedback
     ActuatorPulseState_t actuatorPulseState;
     
-    //uint32_t buttonTimers[17];
     void StartMove( void );
     void StopMove( void );
     void TriggerStartMove( void );
@@ -115,15 +109,16 @@ class USBControllerUI {
     void IteratePulses( void );
 
     // UI Indicator functions
-    //void LEDPulse( uint8_t LEDNum, uint16_t onMS, uint16_t offMS, uint8_t nTimes);
     void ActuatorPulse( uint16_t onMS, uint16_t offMS, uint8_t nTimes);
-  //  void LEDPulseStop( uint8_t LEDNum );
     void ActuatorPulseStop( void );
+    void ConfirmPulse( void );
 
     // User Input functions
-    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue );
-    void QueryButton( PS3Controller_ButtonUsages_t button, uint16_t queryValue);
+    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue, uint16_t tickRate );
+    void QueryButton( PS3Controller_ButtonUsages_t button, uint16_t queryValue, uint16_t tickRate);
     void ResetUIDefaults( void );
+    void SaveUISetting( uint8_t nSetting );
+    void LoadUISetting( uint8_t nSetting );
     float CreateDeadzone( float value );
 
   public:
@@ -131,6 +126,7 @@ class USBControllerUI {
     void init( void );
     void UITask( void );
     uint8_t IsShotRunning( void );
+    CtrlrUISettings_t uiSettings;
 };
 
 extern USBControllerUI USBCtrlrUI;
