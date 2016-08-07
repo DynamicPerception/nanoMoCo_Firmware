@@ -469,7 +469,8 @@ void setup() {
         // Leaving this here for now, remove before merging
         debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR);
           
-
+        // Initialize USB Controller Mode
+        USBCtrlrUI.init();
 	
         // restore/store eeprom memory
 	eepromCheck();
@@ -487,8 +488,6 @@ void setup() {
 
 	// Ensure that the axis array is set
 	KeyFrames::setAxisArray(kf, MOTOR_COUNT);
-        // Initialize USB Controller Mode
-        USBCtrlrUI.init();
 }
 
 
