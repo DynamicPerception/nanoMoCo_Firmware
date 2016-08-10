@@ -23,17 +23,21 @@ See dynamicperception.com for more information
 */
 #include "PS3ControllerHost.h"
 
-#define CTLRUI_QATEST_ENABLE
-
 USBControllerUI USBCtrlrUI;
 
 #define UI_DEADZONE (10.0)
 #define FAST_UI_TICK_RATE     (500)
 #define SLOW_UI_TICK_RATE     (1000)
+#define RUNNING_LED_TICK_RATE (FAST_UI_TICK_RATE)
 #define BUTTON_TIMER_TIME (2000)
 #define UI_LOADSAVE_TIMER_TIME (1000)
 
 #define USBCTRLR_MAX_MOTORS (3)
+
+#define UI_LED_CONNECTED    (1)
+#define UI_LED_SMS          (2)
+#define UI_LED_CAMERA     (3)
+#define UI_LED_RUNNING      (4)
 
 #define UI_BUTTON_ShotTimeHours    PS3CONTROLLER_BUTTON_R1
 #define UI_BUTTON_ShotTimeMinutes  PS3CONTROLLER_BUTTON_R2
@@ -118,8 +122,8 @@ void USBControllerUI::UITask( void )
 
   if (PS3CtrlrHost.IsConnected() == true && prevStatus == false)
   {
-    PS3CtrlrHost.SetLED(1, true);
-    PS3CtrlrHost.SetLED( 2, !uiSettings.isContinuous); 
+    PS3CtrlrHost.SetLED( UI_LED_CONNECTED, true );
+    PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous); 
   }
 
   prevStatus = PS3CtrlrHost.IsConnected();
@@ -255,7 +259,7 @@ void USBControllerUI::uiStateSetting( void )
     {
       // Toggle SMS
       uiSettings.isContinuous = !uiSettings.isContinuous;
-      PS3CtrlrHost.SetLED( 2, !uiSettings.isContinuous);
+      PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous);
     }
 
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Start) == PS3CONTROLLER_STATE_Down)
@@ -304,9 +308,15 @@ void USBControllerUI::uiStateSetting( void )
 void USBControllerUI::uiStateWait( void )
 {
   uint8_t buttonState;
+  static uint32_t runningLEDTimer=millis();
+  static uint8_t runningLEDState=false, cameraLEDState;
 
   if (isShotRunning == false || !running )
   {
+    runningLEDState = false;
+    cameraLEDState = false;
+    PS3CtrlrHost.SetLED( UI_LED_RUNNING, runningLEDState );
+    PS3CtrlrHost.SetLED( UI_LED_CAMERA, cameraLEDState);
     uiState = USBCONTROLLERUI_STATE_Setting;
     return;
   }
@@ -317,8 +327,12 @@ void USBControllerUI::uiStateWait( void )
     buttonTimerStart = millis();
   if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - buttonTimerStart) > BUTTON_TIMER_TIME))
   {
-    StopMove();
+    runningLEDState = false;
+    cameraLEDState = false;
+    PS3CtrlrHost.SetLED( UI_LED_RUNNING, runningLEDState );
+    PS3CtrlrHost.SetLED( UI_LED_CAMERA, cameraLEDState);
     uiState = USBCONTROLLERUI_STATE_Setting;
+    StopMove();
     return;
   }
   
@@ -338,6 +352,35 @@ void USBControllerUI::uiStateWait( void )
   QueryButton( UI_BUTTON_ExposureTimeDS, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_FocusTimeDS , uiSettings.focusTimeDS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_ExposureWaitDS, uiSettings.exposureWaitDS, FAST_UI_TICK_RATE);
+  
+  // Flash RUNNING LED
+  if((millis()-runningLEDTimer) >= RUNNING_LED_TICK_RATE)
+  {
+    runningLEDState = !runningLEDState;
+    PS3CtrlrHost.SetLED( UI_LED_RUNNING, runningLEDState );
+    runningLEDTimer = millis();
+  }
+  
+  // Flash BUSY LED
+  if(Camera.busy())
+  {
+    if(!cameraLEDState)
+    {
+      cameraLEDState = true;
+      PS3CtrlrHost.SetLED( UI_LED_CAMERA, cameraLEDState);     
+    }
+  }
+  else
+  {
+    if(cameraLEDState)
+    {
+      cameraLEDState = false;
+      PS3CtrlrHost.SetLED( UI_LED_CAMERA, cameraLEDState); 
+    }
+  }
+  
+  // Turn on LED while camera is exposing
+  return;
 }
 
 /** Stop Move
@@ -419,7 +462,6 @@ void USBControllerUI::StartMove( void )
   shotStartTime = millis();
   
   isShotRunning = true;
-
   startProgramCom();
 }
 
@@ -432,9 +474,9 @@ void USBControllerUI::StartMove( void )
 */
 void USBControllerUI::uiStateWaitToStart( void )
 {
-  uint8_t buttonState;
-
-  if (!areMotorsRunning())
+  uint8_t buttonState = PS3CtrlrHost.GetButtonState(UI_BUTTON_StopShot);
+  
+  if (!areMotorsRunning() && buttonState == PS3CONTROLLER_STATE_Up)
   {
     StartMove();
 
@@ -442,7 +484,7 @@ void USBControllerUI::uiStateWaitToStart( void )
     return;
   }
 
-  buttonState = PS3CtrlrHost.GetButtonState(UI_BUTTON_StopShot);
+
   if ( buttonState == PS3CONTROLLER_STATE_Down)
     buttonTimerStart = millis();
 
@@ -669,7 +711,7 @@ void USBControllerUI::ResetUIDefaults( void )
   uiSettings.intervalTimeS = 1;
   uiSettings.intervalTimeDS = 0;
   
-  PS3CtrlrHost.SetLED( 2, !uiSettings.isContinuous);
+  PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous );
 }
 
 /** Save a UI Setting
@@ -703,7 +745,7 @@ void USBControllerUI::LoadUISetting( uint8_t nSetting )
   }
   
   // Set controller UI stuff associated with this setting
-  PS3CtrlrHost.SetLED( 2, !uiSettings.isContinuous); 
+  PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous); 
 }
 
 /** Confirm Pulse
@@ -725,8 +767,4 @@ uint8_t USBControllerUI::IsShotRunning( void )
 {
   return(isShotRunning);
 }
-
-#ifdef CTLRUI_QATEST_ENABLE
-#endif
-
 
