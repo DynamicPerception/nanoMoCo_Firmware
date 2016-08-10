@@ -479,15 +479,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 		
-	//Command 11 set the max step rate of all motors
-	case 11:
-	{			   
-		maxStepRate(Node.ntoui(input_serial_buffer));
-		msg = "Setting max step rate (all motors): ";
-		debugMessage(GEN, command, MSG, maxStepRate());
-		response(true);
-		break;
-	}
+	/*
+		Command 11 -- Max step rate setting deprecated in version 0.70.
+		There's generally no reason to be fiddling with this value unless
+		some major firmware changes are being made. This will be hidden
+		from the serial API to avoid confusion.
+	*/
 		
 		
 	//Command 12 sets limit switch mode (0 - enable on RISING edge, 1 - enable on FALLING edge, 2 - enable on CHANGE edge)
@@ -818,15 +815,13 @@ void serMain(byte command, byte* input_serial_buffer) {
       response(true, (char*)device_name, 10);
       break;
     
-	//Command 106 reads max step rate for the motors, can poll any motor        
-	case 106:
-	{
-		msg = "Max step rate: ";
-		debugMessage(GEN, command, MSG, motor[0].maxStepRate());
-		response(true, motor[0].maxStepRate());
-		break;
-	}
-		
+	/*
+		Command 106 -- Max step rate query deprecated in version 0.70. 
+		There's generally no reason to be fiddling with this value unless
+		some major firmware changes are being made. This will be hidden
+		from the serial API to avoid confusion.
+	*/
+
 	//Command 107 reads voltage in
 	case 107:
 	{
