@@ -63,13 +63,17 @@ typedef struct {
     uint8_t accelPercentage;  // Percent of the time of the move that the dolly is accelerating (0-100)
     uint8_t decelPercentage;  // Percent of the time of the move that the dolly is decelerating (0-100)
     uint8_t intervalTimeS;
-    uint8_t intervalTimeDS;
+    uint8_t focusTimeDS;
     uint8_t exposureTimeS;
     uint8_t exposureWaitS;
     uint8_t exposureTimeDS;
-    uint8_t exposureWaitDS;
+    uint8_t leadinMinutes;
+    uint8_t leadinHours;
+    uint8_t intervalTimeDS;
+   
+    // Un-modifiable at this time
     uint8_t focusTimeS;
-    uint8_t focusTimeDS;
+    uint8_t exposureWaitDS;
 } CtrlrUISettings_t; 
 
 enum USBControllerUI_State_t
@@ -92,6 +96,7 @@ class USBControllerUI {
 
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
+    uint32_t leadinTimeMS;
    
     uint32_t buttonTimerStart;
 

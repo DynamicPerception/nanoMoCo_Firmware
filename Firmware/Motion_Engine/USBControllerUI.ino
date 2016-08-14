@@ -44,11 +44,8 @@ USBControllerUI USBCtrlrUI;
 #define UI_BUTTON_AccelPercentage  PS3CONTROLLER_BUTTON_L1
 #define UI_BUTTON_DecelPercentage  PS3CONTROLLER_BUTTON_L2
 #define UI_BUTTON_IntervalTimeS    PS3CONTROLLER_BUTTON_Cross
-#define UI_BUTTON_IntervalTimeDS   PS3CONTROLLER_BUTTON_Circle
 #define UI_BUTTON_ExposureTimeS    PS3CONTROLLER_BUTTON_Square
 #define UI_BUTTON_ExposureTimeDS   PS3CONTROLLER_BUTTON_Triangle
-#define UI_BUTTON_FocusTimeDS      PS3CONTROLLER_BUTTON_Up
-#define UI_BUTTON_ExposureWaitDS   PS3CONTROLLER_BUTTON_Down
 #define UI_BUTTON_SetStart         PS3CONTROLLER_BUTTON_Left
 #define UI_BUTTON_SetStop          PS3CONTROLLER_BUTTON_Right
 #define UI_BUTTON_ToggleMode       PS3CONTROLLER_BUTTON_PS
@@ -57,7 +54,9 @@ USBControllerUI USBCtrlrUI;
 #define UI_BUTTON_Modifier         PS3CONTROLLER_BUTTON_Select
 #define UI_BUTTON_SaveSetting      PS3CONTROLLER_BUTTON_R3
 #define UI_BUTTON_LoadSetting      PS3CONTROLLER_BUTTON_L3
-
+#define UI_BUTTON_LeadinMinutes    PS3CONTROLLER_BUTTON_Up
+#define UI_BUTTON_LeadinHours      PS3CONTROLLER_BUTTON_Down
+#define UI_BUTTON_FocusTimeDS      PS3CONTROLLER_BUTTON_Circle
 
 const uint32_t thousand = 1000;
 const uint32_t onehundred = 100;
@@ -227,16 +226,17 @@ void USBControllerUI::uiStateSetting( void )
     // Map timers/delays
     if (MonitorButton( modifierButtonState, UI_BUTTON_IntervalTimeS, &monitorValue, uiSettings.intervalTimeS, FAST_UI_TICK_RATE ))
       uiSettings.intervalTimeS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_IntervalTimeDS, &monitorValue, uiSettings.intervalTimeDS, FAST_UI_TICK_RATE ))
-      uiSettings.intervalTimeDS = monitorValue;
+    if (MonitorButton( modifierButtonState, UI_BUTTON_FocusTimeDS, &monitorValue, uiSettings.focusTimeDS, FAST_UI_TICK_RATE ))
+      uiSettings.focusTimeDS = monitorValue;
     if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeS, &monitorValue, uiSettings.exposureTimeS, FAST_UI_TICK_RATE ))
       uiSettings.exposureTimeS = monitorValue;
     if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeDS, &monitorValue, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE ))
       uiSettings.exposureTimeDS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_FocusTimeDS, &monitorValue, uiSettings.focusTimeDS, FAST_UI_TICK_RATE ))
-      uiSettings.focusTimeDS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureWaitDS, &monitorValue, uiSettings.exposureWaitDS, FAST_UI_TICK_RATE ))
-      uiSettings.exposureWaitDS = monitorValue;
+    if (MonitorButton( modifierButtonState, UI_BUTTON_LeadinMinutes, &monitorValue, uiSettings.leadinMinutes, FAST_UI_TICK_RATE ))
+      uiSettings.leadinMinutes = monitorValue;
+    if (MonitorButton( modifierButtonState, UI_BUTTON_LeadinHours, &monitorValue, uiSettings.leadinHours, FAST_UI_TICK_RATE ))
+      uiSettings.leadinHours = monitorValue;
+    
     
     // Load/Save Settings UI
     if (MonitorButton( modifierButtonState, UI_BUTTON_SaveSetting, &monitorValue, 0, SLOW_UI_TICK_RATE ))
@@ -337,7 +337,7 @@ void USBControllerUI::uiStateWait( void )
   }
   
   // Allow user to query the time left using R1/R2
-  uint32_t shotTimeLeftMS = shotTimeMS-(millis()- shotStartTime);
+  uint32_t shotTimeLeftMS = (shotTimeMS+leadinTimeMS)-(millis()- shotStartTime);
   uint8_t timeLeftHours = ((shotTimeLeftMS)/thousand)/(60*60);
   uint8_t timeLeftMinutes = ((shotTimeLeftMS)/(60*thousand))-(timeLeftHours*60);
   
@@ -347,11 +347,11 @@ void USBControllerUI::uiStateWait( void )
   QueryButton( UI_BUTTON_AccelPercentage, uiSettings.accelPercentage, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_DecelPercentage, uiSettings.decelPercentage, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_IntervalTimeS, uiSettings.intervalTimeS, FAST_UI_TICK_RATE);
-  QueryButton( UI_BUTTON_IntervalTimeDS, uiSettings.intervalTimeDS, FAST_UI_TICK_RATE);
+  QueryButton( UI_BUTTON_FocusTimeDS, uiSettings.focusTimeDS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_ExposureTimeS, uiSettings.exposureTimeS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_ExposureTimeDS, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE);
-  QueryButton( UI_BUTTON_FocusTimeDS , uiSettings.focusTimeDS, FAST_UI_TICK_RATE);
-  QueryButton( UI_BUTTON_ExposureWaitDS, uiSettings.exposureWaitDS, FAST_UI_TICK_RATE);
+  QueryButton( UI_BUTTON_LeadinMinutes , uiSettings.leadinMinutes, FAST_UI_TICK_RATE);
+  QueryButton( UI_BUTTON_LeadinHours, uiSettings.leadinHours, FAST_UI_TICK_RATE);
   
   // Flash RUNNING LED
   if((millis()-runningLEDTimer) >= RUNNING_LED_TICK_RATE)
@@ -421,6 +421,8 @@ void USBControllerUI::StartMove( void )
   
   shotTimeMS = (60 * (uint32_t) uiSettings.moveTimeMinutes + 60 * 60 * (uint32_t) uiSettings.moveTimeHours);
   shotTimeMS *= thousand;
+  leadinTimeMS = (60 * (uint32_t) uiSettings.leadinMinutes + 60 * 60 * (uint32_t) uiSettings.leadinHours);
+  leadinTimeMS *=thousand;
 
   Motors::planType(uiSettings.isContinuous);
 
@@ -433,32 +435,33 @@ void USBControllerUI::StartMove( void )
 
   // Assign motor parameters
   for (uint8_t i = 0; i < USBCTRLR_MAX_MOTORS; i++) {
+    
     motor[i].clear();
-    motor[i].planLeadIn(0);
-    motor[i].planLeadOut(0);
+
     motor[i].easing(OM_MOT_QUAD);
     motor[i].planType( uiSettings.isContinuous );
-    motor[i].planRun();
+    motor[i].planLeadOut(0);
+    motor[i].planLeadIn( leadinTimeMS / intervalTimeMS ); 
     if (!uiSettings.isContinuous)
     {
-      uint32_t travelLength = shotTimeMS / (uiSettings.intervalTimeS*thousand + uiSettings.intervalTimeDS*onehundred );    
+      uint32_t shotCount = shotTimeMS / intervalTimeMS;    
       
       // Number of Shots
-      motor[i].planAccelLength(accelFraction*travelLength);
-      motor[i].planDecelLength(decelFraction*travelLength);
-      
-      motor[i].planTravelLength( travelLength ) ;
-      // motor[i].planRun();
+      motor[i].planAccelLength(accelFraction*shotCount);
+      motor[i].planDecelLength(decelFraction*shotCount); 
+      motor[i].planTravelLength( shotCount ) ;
       cameraAutoMaxShots();
     }
     else
     {
       // Length of time in MS
       motor[i].planAccelLength( accelFraction * shotTimeMS );
-      motor[i].planDecelLength( decelFraction * shotTimeMS );
+      motor[i].planDecelLength( decelFraction * shotTimeMS ); 
       motor[i].planTravelLength( shotTimeMS );
     }
+    motor[i].planRun();
   }
+
   shotStartTime = millis();
   
   isShotRunning = true;
@@ -697,19 +700,24 @@ void USBControllerUI::TriggerStartMove( void )
 */
 void USBControllerUI::ResetUIDefaults( void )
 {
-  uiSettings.moveTimeMinutes = 5;
+  uiSettings.moveTimeMinutes = 10;
   uiSettings.moveTimeHours = 0;
   uiSettings.accelPercentage = 0;
   uiSettings.decelPercentage = 0;
   uiSettings.isContinuous = true;
-  uiSettings.exposureTimeS = 0;
+  uiSettings.exposureTimeS = 1;
+  uiSettings.exposureTimeDS = 0;
+  uiSettings.intervalTimeS = 2;
+  uiSettings.focusTimeDS = 0;
+  uiSettings.leadinMinutes = 0;
+  uiSettings.leadinHours = 0;
+  
+  // These are un-modifiable at the moment 
   uiSettings.exposureWaitS = 0;
-  uiSettings.exposureTimeDS = 1;
   uiSettings.exposureWaitDS = 2;
   uiSettings.focusTimeS = 0;
-  uiSettings.focusTimeDS = 0;
-  uiSettings.intervalTimeS = 1;
   uiSettings.intervalTimeDS = 0;
+
   
   PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous );
 }
