@@ -31,6 +31,7 @@ See dynamicperception.com for more information
 #define USBCONTROLLERUI_NSETTINGS (3)
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
+#define USBCONTROLLERUI_NMOTORS (3)
 
 typedef struct {
   uint8_t isOn;
@@ -81,6 +82,7 @@ enum USBControllerUI_State_t
   USBCONTROLLERUI_STATE_Setting,
   USBCONTROLLERUI_STATE_Wait,
   USBCONTROLLERUI_STATE_WaitToStart,
+  USBCONTROLLERUI_STATE_WaitToSetting
 };
 
 class USBControllerUI {
@@ -110,6 +112,7 @@ class USBControllerUI {
     void uiStateSetting( void );
     void uiStateWait( void );
     void uiStateWaitToStart( void );
+    void uiStateWaitToSetting( void );
 
     void IteratePulses( void );
 

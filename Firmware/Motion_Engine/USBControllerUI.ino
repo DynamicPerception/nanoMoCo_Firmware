@@ -32,8 +32,6 @@ USBControllerUI USBCtrlrUI;
 #define BUTTON_TIMER_TIME (2000)
 #define UI_LOADSAVE_TIMER_TIME (1000)
 
-#define USBCTRLR_MAX_MOTORS (3)
-
 #define UI_LED_CONNECTED    (1)
 #define UI_LED_SMS          (2)
 #define UI_LED_CAMERA     (3)
@@ -86,7 +84,7 @@ void USBControllerUI::init(void)
   
   isShotRunning = false;
 
-  for (uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
+  for (uint8_t i = 0 ; i < USBCONTROLLERUI_NMOTORS ; i++)
   {
     motor[i].easing(OM_MOT_QUAD);
     if (i == 0)
@@ -140,8 +138,14 @@ void USBControllerUI::UITask( void )
   {
     uiStateWaitToStart();
   }
+  else if(uiState == USBCONTROLLERUI_STATE_WaitToSetting)
+  {
+    uiStateWaitToSetting();
+  }
   IteratePulses();	 
 }
+
+
 
 /** Setting State
 
@@ -165,10 +169,15 @@ void USBControllerUI::uiStateSetting( void )
     motor[2].ms(16);
     
     // Map PS3 sticks to first four axis
-    if (leftXVelocity != prevLeftXVelocity) setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* mot_max_speed );
-    if (rightXVelocity != prevRightXVelocity) setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* mot_max_speed );
-    if (rightYVelocity != prevRightYVelocity) setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* mot_max_speed );
-
+    if (leftXVelocity != prevLeftXVelocity) { 
+      setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* mot_max_speed );
+    }
+    if (rightXVelocity != prevRightXVelocity){ 
+      setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* mot_max_speed );
+    }
+    if (rightYVelocity != prevRightYVelocity){
+      setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* mot_max_speed );
+    }
     prevLeftXVelocity =  leftXVelocity;
     prevLeftYVelocity = leftYVelocity;
     prevRightXVelocity = rightXVelocity;
@@ -184,27 +193,29 @@ void USBControllerUI::uiStateSetting( void )
     {
       if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
       {
-        sendAllToStart();
+        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
+        sendAllToStart(); 
+        return;
       }
       else
       {
         ConfirmPulse();
-        motor[0].startPos(motor[0].currentPos());  // Set start point on axis 0
-        motor[1].startPos(motor[1].currentPos());  // Set start point on axis 1
-        motor[2].startPos(motor[2].currentPos());  // Set start point on axis 2
+        for(uint8_t i=0; i<USBCONTROLLERUI_NMOTORS ; i++)
+          motor[i].startPos(motor[i].currentPos());  // Set start point on axis
       }
     }
     if (PS3CtrlrHost.GetButtonState( UI_BUTTON_SetStop ) == PS3CONTROLLER_STATE_Down)
     { if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
       {
+        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
         sendAllToStop();
+        return;
       }
       else
       {
         ConfirmPulse();
-        motor[0].stopPos(motor[0].currentPos());  // Set stop point on axis 0
-        motor[1].stopPos(motor[1].currentPos());  // Set stop point on axis 1
-        motor[2].stopPos(motor[2].currentPos());  // Set stop point on axis 2
+        for(uint8_t i=0; i<USBCONTROLLERUI_NMOTORS ; i++)
+          motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
       }
     }
 
@@ -393,15 +404,15 @@ void USBControllerUI::StopMove( void )
   stopProgram(true);
 
   isShotRunning = false;
-
+/*
   // Restore full speed microstep setting
-  for (uint8_t i = 0 ; i < USBCTRLR_MAX_MOTORS ; i++)
+  for (uint8_t i = 0 ; i < USBCONTROLLERUI_NMOTORS ; i++)
   {
     if (i == 0)
       motor[i].ms(4);
     else
       motor[i].ms(16);
-  }
+  }*/
 }
 
 /** Start Move
@@ -424,8 +435,6 @@ void USBControllerUI::StartMove( void )
   leadinTimeMS = (60 * (uint32_t) uiSettings.leadinMinutes + 60 * 60 * (uint32_t) uiSettings.leadinHours);
   leadinTimeMS *=thousand;
 
-  Motors::planType(uiSettings.isContinuous);
-
   pingPongMode(false);
 
   Camera.intervalTime(intervalTimeMS);
@@ -434,10 +443,9 @@ void USBControllerUI::StartMove( void )
   Camera.delayTime(exposureDelay);
 
   // Assign motor parameters
-  for (uint8_t i = 0; i < USBCTRLR_MAX_MOTORS; i++) {
+  for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS; i++) {
     
     motor[i].clear();
-
     motor[i].easing(OM_MOT_QUAD);
     motor[i].planType( uiSettings.isContinuous );
     motor[i].planLeadOut(0);
@@ -497,8 +505,27 @@ void USBControllerUI::uiStateWaitToStart( void )
     stopAllMotors();
     uiState = USBCONTROLLERUI_STATE_Setting;
   }
-
 }
+
+/** Waiting to Setting
+
+  Wait for motors to finish moving then resume setting state
+
+*/
+void USBControllerUI::uiStateWaitToSetting( void )
+{
+  uint8_t buttonState = PS3CtrlrHost.GetButtonState(UI_BUTTON_StopShot);
+
+  if ( buttonState == PS3CONTROLLER_STATE_Down)
+    buttonTimerStart = millis();
+
+  if ( !areMotorsRunning() || ((buttonState == PS3CONTROLLER_STATE_On) && ((millis() - buttonTimerStart) > BUTTON_TIMER_TIME)))
+  {
+    stopAllMotors();
+    uiState = USBCONTROLLERUI_STATE_Setting;
+  }
+}
+
 
 
 /** Create Deadzone
@@ -717,7 +744,6 @@ void USBControllerUI::ResetUIDefaults( void )
   uiSettings.exposureWaitDS = 2;
   uiSettings.focusTimeS = 0;
   uiSettings.intervalTimeDS = 0;
-
   
   PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous );
 }
