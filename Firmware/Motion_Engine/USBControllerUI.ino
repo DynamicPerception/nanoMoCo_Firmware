@@ -77,6 +77,7 @@ void USBControllerUI::init(void)
   prevLeftYVelocity = 128;
   prevRightXVelocity = 128;
   prevRightYVelocity = 128;
+  readyToStart = false;
 
   actuatorPulseState.isOn = false;
   
@@ -134,10 +135,6 @@ void USBControllerUI::UITask( void )
   {
     uiStateWait();
   }
-  else if (uiState == USBCONTROLLERUI_STATE_WaitToStart)
-  {
-    uiStateWaitToStart();
-  }
   else if(uiState == USBCONTROLLERUI_STATE_WaitToSetting)
   {
     uiStateWaitToSetting();
@@ -170,12 +167,15 @@ void USBControllerUI::uiStateSetting( void )
     
     // Map PS3 sticks to first four axis
     if (leftXVelocity != prevLeftXVelocity) { 
+      readyToStart=false;
       setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* mot_max_speed );
     }
     if (rightXVelocity != prevRightXVelocity){ 
+      readyToStart=false;
       setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* mot_max_speed );
     }
     if (rightYVelocity != prevRightYVelocity){
+      readyToStart=false;
       setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* mot_max_speed );
     }
     prevLeftXVelocity =  leftXVelocity;
@@ -195,6 +195,7 @@ void USBControllerUI::uiStateSetting( void )
       {
         uiState = USBCONTROLLERUI_STATE_WaitToSetting;
         sendAllToStart(); 
+        readyToStart=true;
         return;
       }
       else
@@ -282,11 +283,23 @@ void USBControllerUI::uiStateSetting( void )
         SaveUISetting( 0 );
         ConfirmPulse();
       }
-      else
+      else if(readyToStart==true)
       {
         // Start Shot
+        readyToStart=false;
         buttonTimerStart = millis();
-        TriggerStartMove();
+        uiState = USBCONTROLLERUI_STATE_Wait;
+        StartMove();
+        return;
+      }
+      else if (readyToStart==false)
+      {
+        // Goto start of move
+        readyToStart=true;
+        buttonTimerStart = millis();
+        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
+        sendAllToStart(); 
+        return;
       }
     }
   }
@@ -476,37 +489,6 @@ void USBControllerUI::StartMove( void )
   startProgramCom();
 }
 
-
-/** Waiting to start
-
-  Wait for motors to finish moving to start of move then
-  start the move
-
-*/
-void USBControllerUI::uiStateWaitToStart( void )
-{
-  uint8_t buttonState = PS3CtrlrHost.GetButtonState(UI_BUTTON_StopShot);
-  
-  if (!areMotorsRunning() && buttonState == PS3CONTROLLER_STATE_Up)
-  {
-    StartMove();
-
-    uiState = USBCONTROLLERUI_STATE_Wait;
-    return;
-  }
-
-
-  if ( buttonState == PS3CONTROLLER_STATE_Down)
-    buttonTimerStart = millis();
-
-  if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - buttonTimerStart) > BUTTON_TIMER_TIME))
-  {
-    isShotRunning = false;
-    stopAllMotors();
-    uiState = USBCONTROLLERUI_STATE_Setting;
-  }
-}
-
 /** Waiting to Setting
 
   Wait for motors to finish moving then resume setting state
@@ -519,10 +501,18 @@ void USBControllerUI::uiStateWaitToSetting( void )
   if ( buttonState == PS3CONTROLLER_STATE_Down)
     buttonTimerStart = millis();
 
-  if ( !areMotorsRunning() || ((buttonState == PS3CONTROLLER_STATE_On) && ((millis() - buttonTimerStart) > BUTTON_TIMER_TIME)))
+  if ( !areMotorsRunning() )
   {
+    uiState = USBCONTROLLERUI_STATE_Setting; 
+    return;
+  }
+  
+  if ( (buttonState == PS3CONTROLLER_STATE_On) && ((millis() - buttonTimerStart) > BUTTON_TIMER_TIME) )
+  {
+    readyToStart=false;
     stopAllMotors();
     uiState = USBCONTROLLERUI_STATE_Setting;
+    return;
   }
 }
 
@@ -705,20 +695,6 @@ void USBControllerUI::IteratePulses( void )
     actuatorPulseState.prevUpdateTime = millis();
   }
 }
-
-/** Start Move
-
-  Move all motors to start position and start motor move states.
-
-*/
-void USBControllerUI::TriggerStartMove( void )
-{
-  // Go to start of move1
-  sendAllToStart();
-
-  uiState = USBCONTROLLERUI_STATE_WaitToStart;
-}
-
 
 /** Reset UI Defaults
 

@@ -81,7 +81,6 @@ enum USBControllerUI_State_t
 {
   USBCONTROLLERUI_STATE_Setting,
   USBCONTROLLERUI_STATE_Wait,
-  USBCONTROLLERUI_STATE_WaitToStart,
   USBCONTROLLERUI_STATE_WaitToSetting
 };
 
@@ -101,17 +100,16 @@ class USBControllerUI {
     uint32_t leadinTimeMS;
    
     uint32_t buttonTimerStart;
+    uint8_t readyToStart;
 
     // Actuator state information for UI Feedback
     ActuatorPulseState_t actuatorPulseState;
     
     void StartMove( void );
     void StopMove( void );
-    void TriggerStartMove( void );
 
     void uiStateSetting( void );
     void uiStateWait( void );
-    void uiStateWaitToStart( void );
     void uiStateWaitToSetting( void );
 
     void IteratePulses( void );
