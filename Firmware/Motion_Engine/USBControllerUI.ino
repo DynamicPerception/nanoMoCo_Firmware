@@ -273,7 +273,14 @@ void USBControllerUI::uiStateSetting( void )
       uiSettings.isContinuous = !uiSettings.isContinuous;
       PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous);
     }
-
+     
+    if ((motor[0].currentPos() != motor[0].startPos()) || 
+        (motor[1].currentPos() != motor[1].startPos()) || 
+        (motor[2].currentPos() != motor[2].startPos()))
+    { 
+      readyToStart = false;
+    }
+    
     if (PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Start) == PS3CONTROLLER_STATE_Down)
     {
       if(PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Select) == PS3CONTROLLER_STATE_Down || PS3CtrlrHost.GetButtonState(PS3CONTROLLER_BUTTON_Select) == PS3CONTROLLER_STATE_On)
