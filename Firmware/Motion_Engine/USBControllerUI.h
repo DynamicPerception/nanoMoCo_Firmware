@@ -94,6 +94,7 @@ class USBControllerUI {
     uint8_t  prevLeftYVelocity;
     uint8_t prevRightXVelocity;
     uint8_t  prevRightYVelocity;
+    uint8_t isJoystickOwner;
 
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
