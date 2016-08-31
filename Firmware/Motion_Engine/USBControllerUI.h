@@ -32,6 +32,8 @@ See dynamicperception.com for more information
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
 #define USBCONTROLLERUI_NMOTORS (3)
+#define USBCONTROLLERUI_DOLLY_MSDEFAULT (4)
+#define USBCONTROLLERUI_PAN_MSDEFAULT (16)
 
 typedef struct {
   uint8_t isOn;
@@ -95,6 +97,8 @@ class USBControllerUI {
     uint8_t prevRightXVelocity;
     uint8_t  prevRightYVelocity;
     uint8_t isJoystickOwner;
+    
+    uint8_t microstepSettings[USBCONTROLLERUI_NMOTORS];
 
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
@@ -127,6 +131,8 @@ class USBControllerUI {
     void SaveUISetting( uint8_t nSetting );
     void LoadUISetting( uint8_t nSetting );
     float CreateDeadzone( float value );
+    void SaveMicrostepSettings( void );
+    void RestoreMicrostepSettings( void );
 
   public:
     USBControllerUI( void );

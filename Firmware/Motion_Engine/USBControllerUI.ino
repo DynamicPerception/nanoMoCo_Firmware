@@ -86,15 +86,6 @@ void USBControllerUI::init(void)
 
   isShotRunning = false;
 
-  for (uint8_t i = 0 ; i < USBCONTROLLERUI_NMOTORS ; i++)
-  {
-    motor[i].easing(OM_MOT_QUAD);
-    if (i == 0)
-      motor[i].ms(4);
-    else
-      motor[i].ms(16);
-  }
-
   Camera.exposureFocus(false);
   Camera.enable = true;
 
@@ -165,10 +156,6 @@ void USBControllerUI::uiStateSetting( void )
     float rightXVelocity = CreateDeadzone(PS3CtrlrHost.RightStickX);
     float rightYVelocity = CreateDeadzone(PS3CtrlrHost.RightStickY);
 
-    // Set Microstep
-    motor[0].ms(4);
-    motor[1].ms(16);
-    motor[2].ms(16);
 
     if ((leftXVelocity != 128 ||
         leftYVelocity != 128 ||
@@ -177,6 +164,7 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = true;
       joystickSet(true);
+      SaveMicrostepSettings();
     }
 
     // Map PS3 sticks to first four axis
@@ -310,6 +298,7 @@ void USBControllerUI::uiStateSetting( void )
         readyToStart = false;
         buttonTimerStart = millis();
         uiState = USBCONTROLLERUI_STATE_Wait;
+        
         StartMove();
         return;
       }
@@ -331,6 +320,7 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = false;
       joystickSet(false);
+      RestoreMicrostepSettings();
     }
   }
   else
@@ -356,6 +346,7 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = false;
       joystickSet(false);
+      RestoreMicrostepSettings();
     }
   }
 }
@@ -814,3 +805,18 @@ uint8_t USBControllerUI::IsShotRunning( void )
   return (isShotRunning);
 }
 
+void USBControllerUI::SaveMicrostepSettings( void )
+{
+  for(uint8_t i=0 ; i<USBCONTROLLERUI_NMOTORS ; i++ )
+    microstepSettings[i] = motor[i].ms();
+    
+    motor[0].ms(USBCONTROLLERUI_DOLLY_MSDEFAULT);
+    motor[1].ms(USBCONTROLLERUI_PAN_MSDEFAULT);
+    motor[2].ms(USBCONTROLLERUI_PAN_MSDEFAULT);
+}
+
+void USBControllerUI::RestoreMicrostepSettings( void )
+{
+  for(uint8_t i=0 ; i<USBCONTROLLERUI_NMOTORS ; i++ )
+    motor[i].ms( microstepSettings[i] );
+}
