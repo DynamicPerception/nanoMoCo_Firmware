@@ -92,10 +92,12 @@ class USBControllerUI {
     USBControllerUI_State_t uiState;
     uint8_t prevStatus;
     uint8_t isShotRunning;
-    uint8_t  prevLeftXVelocity;
-    uint8_t  prevLeftYVelocity;
+    uint8_t prevLeftXVelocity;
     uint8_t prevRightXVelocity;
-    uint8_t  prevRightYVelocity;
+    uint8_t prevRightYVelocity;
+    uint8_t leftXFilterCount;
+    uint8_t rightXFilterCount;
+    uint8_t rightYFilterCount;
     uint8_t isJoystickOwner;
     
     uint8_t microstepSettings[USBCONTROLLERUI_NMOTORS];

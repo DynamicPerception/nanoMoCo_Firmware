@@ -46,7 +46,7 @@ void PS3ControllerHost::init( void )
 {
   isConnected = false;
 }
-#define DEADZONE 10
+
 void PS3ControllerHost::USBTask(void)
 {
   if  (USB_HostState != HOST_STATE_Configured || !isConnected )
@@ -74,6 +74,14 @@ uint8_t PS3ControllerHost::IsConnected( void )
 
 void PS3ControllerHost::ResetControllerState( void )
 {
+  PS3CtrlrHost.LeftStickX = 128;
+  PS3CtrlrHost.LeftStickY = 128;
+  PS3CtrlrHost.RightStickX = 128;
+  PS3CtrlrHost.RightStickY = 128;
+  PS3CtrlrHost.LeftStickX = 128;
+  PS3CtrlrHost.LeftStickY = 128;
+  PS3CtrlrHost.RightStickX = 128;
+  PS3CtrlrHost.RightStickY = 128;
   SmallActuator = false;
   SmallActuatorDuration = 0;
 }
@@ -252,6 +260,22 @@ void PS3ControllerHost::SetSmallActuator( uint8_t rumbleState, uint8_t rumbleDur
   SendReportData((char *) LEDRUMReport, sizeof(LEDRUMReport));
 }
 
+uint8_t PS3ControllerHost::GetLeftStickX(void ) {
+  return(LeftStickX);
+}
+
+uint8_t PS3ControllerHost::GetLeftStickY ( void ){
+  return(LeftStickY);
+}
+
+uint8_t PS3ControllerHost::GetRightStickX( void ){
+  return(RightStickX);
+}
+
+uint8_t PS3ControllerHost::GetRightStickY( void ){
+  return(RightStickY);
+}
+
 // create an object, we'll need it below
 PS3ControllerHost PS3CtrlrHost = PS3ControllerHost();
 
@@ -316,10 +340,7 @@ void EVENT_USB_Host_DeviceEnumerationComplete(void) {
     // Hard fail
     return;
   }
-  PS3CtrlrHost.LeftStickX = 128;
-  PS3CtrlrHost.LeftStickY = 128;
-  PS3CtrlrHost.RightStickX = 128;
-  PS3CtrlrHost.RightStickY = 128;
+
   PS3CtrlrHost.ResetControllerState();
   PS3CtrlrHost.isConnected = true;
 
@@ -342,5 +363,7 @@ void EVENT_USB_Host_HostError(const uint8_t p_err) {
 void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t p_err, const uint8_t p_suberr) {
   // Hard fail
 }
+
+
 
 

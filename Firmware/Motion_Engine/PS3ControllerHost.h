@@ -157,10 +157,10 @@ class PS3ControllerHost {
     void init( void );
     void ResetControllerState( void );
     uint8_t IsConnected( void );
-    uint8_t LeftStickX;
-    uint8_t LeftStickY;
-    uint8_t RightStickX;
-    uint8_t RightStickY;
+    uint8_t GetLeftStickX(void );
+    uint8_t GetLeftStickY ( void );
+    uint8_t GetRightStickX( void );
+    uint8_t GetRightStickY( void );
     
     // Remove features we aren't using to save memory
     PS3Controller_ButtonStates_t PeekButtonState( PS3Controller_ButtonUsages_t button ); // Get button state without setting latching info
@@ -173,6 +173,11 @@ class PS3ControllerHost {
     uint8_t SmallActuator;
     uint8_t SmallActuatorDuration;
     uint8_t inputReportBuf[REPORT_BUF_SIZE];
+    
+    uint8_t LeftStickX;
+    uint8_t LeftStickY;
+    uint8_t RightStickX;
+    uint8_t RightStickY;
 
     
     // Remove features we aren't using to save memory

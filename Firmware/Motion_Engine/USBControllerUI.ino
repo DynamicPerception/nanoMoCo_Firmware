@@ -31,11 +31,13 @@ USBControllerUI USBCtrlrUI;
 #define RUNNING_LED_TICK_RATE (FAST_UI_TICK_RATE)
 #define BUTTON_TIMER_TIME (2000)
 #define UI_LOADSAVE_TIMER_TIME (1000)
+#define UI_REFRESH_TIME (10)  
 
 #define UI_LED_CONNECTED    (1)
 #define UI_LED_SMS          (2)
 #define UI_LED_CAMERA     (3)
 #define UI_LED_RUNNING      (4)
+#define UI_INPUTFILTER_COUNT (3)
 
 #define UI_BUTTON_ShotTimeHours    PS3CONTROLLER_BUTTON_R1
 #define UI_BUTTON_ShotTimeMinutes  PS3CONTROLLER_BUTTON_R2
@@ -74,7 +76,6 @@ void USBControllerUI::init(void)
   PS3CtrlrHost.init();
   prevStatus = false;
   prevLeftXVelocity = 128;
-  prevLeftYVelocity = 128;
   prevRightXVelocity = 128;
   prevRightYVelocity = 128;
   readyToStart = false;
@@ -99,9 +100,9 @@ void USBControllerUI::init(void)
 */
 void USBControllerUI::UITask( void )
 {
-  uint32_t prevTime;
+  static uint32_t prevTime;
 
-  if (millis() - prevTime < 10)
+  if ((millis() - prevTime) < UI_REFRESH_TIME)
   {
     return;
   }
@@ -114,6 +115,12 @@ void USBControllerUI::UITask( void )
   {
     PS3CtrlrHost.SetLED( UI_LED_CONNECTED, true );
     PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous);
+    leftXFilterCount=0;
+    rightXFilterCount=0;
+    rightYFilterCount=0;
+    prevLeftXVelocity = 128;
+    prevRightXVelocity = 128;
+    prevRightYVelocity = 128;
   }
 
   prevStatus = PS3CtrlrHost.IsConnected();
@@ -151,14 +158,31 @@ void USBControllerUI::uiStateSetting( void )
   if (PS3CtrlrHost.IsConnected())
   {
     // Stop drifting when idle
-    float leftXVelocity = CreateDeadzone(PS3CtrlrHost.LeftStickX);
-    float leftYVelocity = CreateDeadzone(PS3CtrlrHost.LeftStickY);
-    float rightXVelocity = CreateDeadzone(PS3CtrlrHost.RightStickX);
-    float rightYVelocity = CreateDeadzone(PS3CtrlrHost.RightStickY);
-
+    float leftXVelocity = CreateDeadzone(PS3CtrlrHost.GetLeftStickX());
+    float rightXVelocity = CreateDeadzone(PS3CtrlrHost.GetRightStickX());
+    float rightYVelocity = CreateDeadzone(PS3CtrlrHost.GetRightStickY());
+  
+    // Ignore recoil bumps on the sticks
+    if((leftXVelocity > 128 && prevLeftXVelocity < 128) || (leftXVelocity < 128 && prevLeftXVelocity > 128)) 
+      leftXFilterCount=UI_INPUTFILTER_COUNT;  
+    if(leftXFilterCount > 0) {
+      leftXVelocity = 128;
+       leftXFilterCount--;
+    }
+    if((rightXVelocity > 128 && prevRightXVelocity < 128) || (rightXVelocity < 128 && prevRightXVelocity > 128)) 
+      rightXFilterCount=UI_INPUTFILTER_COUNT;  
+    if(rightXFilterCount > 0) {
+      rightXVelocity = 128;
+       rightXFilterCount--;
+    }
+    if((rightYVelocity > 128 && prevRightYVelocity < 128) || (rightYVelocity < 128 && prevRightYVelocity > 128)) 
+      rightYFilterCount=UI_INPUTFILTER_COUNT;  
+    if(rightYFilterCount > 0) {
+      rightYVelocity = 128;
+       rightYFilterCount--;
+    }
 
     if ((leftXVelocity != 128 ||
-        leftYVelocity != 128 ||
         rightXVelocity != 128 ||
         rightYVelocity != 128) && isJoystickOwner == false)
     {
@@ -167,8 +191,9 @@ void USBControllerUI::uiStateSetting( void )
       SaveMicrostepSettings();
     }
 
-    // Map PS3 sticks to first four axis
-    if (leftXVelocity != prevLeftXVelocity) {
+    // Map PS3 sticks to first three axis
+    if(leftXVelocity != prevLeftXVelocity)
+    {
       readyToStart = false;
       setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* mot_max_speed );
     }
@@ -180,8 +205,8 @@ void USBControllerUI::uiStateSetting( void )
       readyToStart = false;
       setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* mot_max_speed );
     }
+
     prevLeftXVelocity =  leftXVelocity;
-    prevLeftYVelocity = leftYVelocity;
     prevRightXVelocity = rightXVelocity;
     prevRightYVelocity = rightYVelocity;
 
@@ -313,7 +338,6 @@ void USBControllerUI::uiStateSetting( void )
       }
     }
     if ((leftXVelocity == 128 &&
-         leftYVelocity == 128 &&
          rightXVelocity == 128 &&
          rightYVelocity == 128 &&
          isJoystickOwner == true) || !PS3CtrlrHost.IsConnected())
@@ -329,17 +353,9 @@ void USBControllerUI::uiStateSetting( void )
       prevLeftXVelocity = 128;
       setJoystickSpeed(0, 0 );
     }
-    if (prevLeftYVelocity != 128) {
-      prevLeftYVelocity = 128;
-      setJoystickSpeed(2, 0 );
-    }
     if (prevRightXVelocity != 128) {
       prevRightXVelocity = 128;
       setJoystickSpeed(1, 0 );
-    }
-    if (prevRightYVelocity != 128) {
-      setJoystickSpeed(3, 0 );
-      prevRightYVelocity = 128;
     }
     
     if(isJoystickOwner == true)
@@ -747,6 +763,10 @@ void USBControllerUI::ResetUIDefaults( void )
   uiSettings.exposureWaitDS = 2;
   uiSettings.focusTimeS = 0;
   uiSettings.intervalTimeDS = 0;
+  
+  prevLeftXVelocity = 128;
+  prevRightXVelocity = 128;
+  prevRightYVelocity = 128;
 
   PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous );
 }
