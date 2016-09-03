@@ -195,15 +195,15 @@ void USBControllerUI::uiStateSetting( void )
     if(leftXVelocity != prevLeftXVelocity)
     {
       readyToStart = false;
-      setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* mot_max_speed );
+      setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* motor[0].maxSpeed() );
     }
     if (rightXVelocity != prevRightXVelocity) {
       readyToStart = false;
-      setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* mot_max_speed );
+      setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* motor[1].maxSpeed() );
     }
     if (rightYVelocity != prevRightYVelocity) {
       readyToStart = false;
-      setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* mot_max_speed );
+      setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* motor[2].maxSpeed() );
     }
 
     prevLeftXVelocity =  leftXVelocity;
