@@ -52,11 +52,11 @@ USBControllerUI USBCtrlrUI;
 #define UI_BUTTON_StartShot        PS3CONTROLLER_BUTTON_Start
 #define UI_BUTTON_StopShot         PS3CONTROLLER_BUTTON_Start
 #define UI_BUTTON_Modifier         PS3CONTROLLER_BUTTON_Select
-#define UI_BUTTON_SaveSetting      PS3CONTROLLER_BUTTON_R3
-#define UI_BUTTON_LoadSetting      PS3CONTROLLER_BUTTON_L3
-#define UI_BUTTON_LeadinMinutes    PS3CONTROLLER_BUTTON_Up
-#define UI_BUTTON_LeadinHours      PS3CONTROLLER_BUTTON_Down
+#define UI_BUTTON_SaveSetting      PS3CONTROLLER_BUTTON_Down
+#define UI_BUTTON_LoadSetting      PS3CONTROLLER_BUTTON_Up
 #define UI_BUTTON_FocusTimeDS      PS3CONTROLLER_BUTTON_Circle
+#define UI_BUTTON_Leadin           PS3CONTROLLER_BUTTON_Left
+#define UI_BUTTON_Leadout          PS3CONTROLLER_BUTTON_Right
 
 const uint32_t thousand = 1000;
 const uint32_t onehundred = 100;
@@ -212,9 +212,50 @@ void USBControllerUI::uiStateSetting( void )
 
     uint8_t modifierButtonState;
     uint8_t buttonState;
+    uint8_t monitorValue;
 
     modifierButtonState = PS3CtrlrHost.GetButtonState( UI_BUTTON_Modifier );
-
+    if(PS3CtrlrHost.PeekButtonState( UI_BUTTON_Modifier ) && (PS3CtrlrHost.PeekButtonState( UI_BUTTON_SetStart) == PS3CONTROLLER_STATE_Down))
+    {
+        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
+        sendAllToStart();
+        readyToStart = true;
+        return;  
+    }
+    
+    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStart, &monitorValue, 0, FAST_UI_TICK_RATE ))
+    { 
+      if(monitorValue == 0)
+      {
+        ActuatorPulse( 50, 10, 1);
+        for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
+          motor[i].startPos(motor[i].currentPos());  // Set start point on axis
+      }  
+      else
+      {  
+        uiSettings.leadinMinutes = monitorValue-1;
+      }  
+  } 
+    
+    if(PS3CtrlrHost.PeekButtonState( UI_BUTTON_Modifier ) && (PS3CtrlrHost.PeekButtonState( UI_BUTTON_SetStop) == PS3CONTROLLER_STATE_Down))
+    {
+        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
+        sendAllToStop();
+        return;  
+    }
+    
+    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStop, &monitorValue, 0, FAST_UI_TICK_RATE ))
+    { 
+      if(monitorValue == 0)
+      {
+        ActuatorPulse( 50, 10, 1);
+        for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
+          motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
+      }  
+      else
+        uiSettings.leadoutMinutes = monitorValue-1;
+    } 
+    
     // Map DPAD Left/Right to Start/Stop points
     if (PS3CtrlrHost.GetButtonState( UI_BUTTON_SetStart ) == PS3CONTROLLER_STATE_Down)
     {
@@ -232,6 +273,8 @@ void USBControllerUI::uiStateSetting( void )
           motor[i].startPos(motor[i].currentPos());  // Set start point on axis
       }
     }
+    
+    
     if (PS3CtrlrHost.GetButtonState( UI_BUTTON_SetStop ) == PS3CONTROLLER_STATE_Down)
     { if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
       {
@@ -246,9 +289,6 @@ void USBControllerUI::uiStateSetting( void )
           motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
       }
     }
-
-    // Check for modifiers to play back value or record value by holding down button
-    uint8_t monitorValue;
 
     // Map moveTimeMinutes/movetimeHours to R1/R2
     if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeHours, &monitorValue, uiSettings.moveTimeMinutes, FAST_UI_TICK_RATE ))
@@ -271,10 +311,6 @@ void USBControllerUI::uiStateSetting( void )
       uiSettings.exposureTimeS = monitorValue;
     if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeDS, &monitorValue, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE ))
       uiSettings.exposureTimeDS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_LeadinMinutes, &monitorValue, uiSettings.leadinMinutes, FAST_UI_TICK_RATE ))
-      uiSettings.leadinMinutes = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_LeadinHours, &monitorValue, uiSettings.leadinHours, FAST_UI_TICK_RATE ))
-      uiSettings.leadinHours = monitorValue;
 
 
     // Load/Save Settings UI
@@ -404,7 +440,7 @@ void USBControllerUI::uiStateWait( void )
   }
 
   // Allow user to query the time left using R1/R2
-  uint32_t shotTimeLeftMS = (shotTimeMS + leadinTimeMS) - (millis() - shotStartTime);
+  uint32_t shotTimeLeftMS = (shotTimeMS + leadinTimeMS + leadoutTimeMS) - (millis() - shotStartTime);
   uint8_t timeLeftHours = ((shotTimeLeftMS) / thousand) / (60 * 60);
   uint8_t timeLeftMinutes = ((shotTimeLeftMS) / (60 * thousand)) - (timeLeftHours * 60);
 
@@ -417,8 +453,8 @@ void USBControllerUI::uiStateWait( void )
   QueryButton( UI_BUTTON_FocusTimeDS, uiSettings.focusTimeDS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_ExposureTimeS, uiSettings.exposureTimeS, FAST_UI_TICK_RATE);
   QueryButton( UI_BUTTON_ExposureTimeDS, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE);
-  QueryButton( UI_BUTTON_LeadinMinutes , uiSettings.leadinMinutes, FAST_UI_TICK_RATE);
-  QueryButton( UI_BUTTON_LeadinHours, uiSettings.leadinHours, FAST_UI_TICK_RATE);
+  QueryButton( UI_BUTTON_Leadin, uiSettings.leadinMinutes, FAST_UI_TICK_RATE);
+  QueryButton( UI_BUTTON_Leadout, uiSettings.leadoutMinutes, FAST_UI_TICK_RATE);
 
   // Flash RUNNING LED
   if ((millis() - runningLEDTimer) >= RUNNING_LED_TICK_RATE)
@@ -488,8 +524,10 @@ void USBControllerUI::StartMove( void )
 
   shotTimeMS = (60 * (uint32_t) uiSettings.moveTimeMinutes + 60 * 60 * (uint32_t) uiSettings.moveTimeHours);
   shotTimeMS *= thousand;
-  leadinTimeMS = (60 * (uint32_t) uiSettings.leadinMinutes + 60 * 60 * (uint32_t) uiSettings.leadinHours);
+  leadinTimeMS = 60 * (uint32_t) uiSettings.leadinMinutes;
   leadinTimeMS *= thousand;
+  leadoutTimeMS = 60 * (uint32_t) uiSettings.leadoutMinutes;
+  leadoutTimeMS *= thousand;
 
   pingPongMode(false);
 
@@ -504,8 +542,9 @@ void USBControllerUI::StartMove( void )
     motor[i].clear();
     motor[i].easing(OM_MOT_QUAD);
     motor[i].planType( uiSettings.isContinuous );
-    motor[i].planLeadOut(0);
     motor[i].planLeadIn( leadinTimeMS / intervalTimeMS );
+    motor[i].planLeadOut(leadoutTimeMS / intervalTimeMS);
+
     if (!uiSettings.isContinuous)
     {
       uint32_t shotCount = shotTimeMS / intervalTimeMS;
@@ -756,7 +795,7 @@ void USBControllerUI::ResetUIDefaults( void )
   uiSettings.intervalTimeS = 2;
   uiSettings.focusTimeDS = 0;
   uiSettings.leadinMinutes = 0;
-  uiSettings.leadinHours = 0;
+  uiSettings.leadoutMinutes = 0;
 
   // These are un-modifiable at the moment
   uiSettings.exposureWaitS = 0;

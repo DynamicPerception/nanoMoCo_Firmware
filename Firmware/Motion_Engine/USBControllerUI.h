@@ -71,7 +71,7 @@ typedef struct {
     uint8_t exposureWaitS;
     uint8_t exposureTimeDS;
     uint8_t leadinMinutes;
-    uint8_t leadinHours;
+    uint8_t leadoutMinutes;
     uint8_t intervalTimeDS;
    
     // Un-modifiable at this time
@@ -105,6 +105,7 @@ class USBControllerUI {
     uint32_t shotStartTime;
     uint32_t shotTimeMS;
     uint32_t leadinTimeMS;
+    uint32_t leadoutTimeMS;
    
     uint32_t buttonTimerStart;
     uint8_t readyToStart;
