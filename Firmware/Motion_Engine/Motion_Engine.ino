@@ -42,6 +42,7 @@ See dynamicperception.com for more information
 #include <MemoryFree.h>
 #include <hermite_spline.h>
 #include <key_frames.h>
+#include <CubicBezier.h>
 
 // openmoco standard libraries
 #include <OMComHandler.h>
@@ -123,7 +124,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 67;				// Serial API version
+const int SERIAL_VERSION			= 70;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -135,7 +136,7 @@ uint8_t timing_master				= true;				// Do we generate timing for all devices on 
 bool graffik_mode					= false;			// Indicates whether the controller is currently communicating with the Graffik application
 bool app_mode						= false;			// Indicates whether the controller is currently communicating with the mobile app
 bool df_mode						= false;			// Indicates whether DragonFrame mode is enabled
-
+byte controller_count				= 1;				// Number of controllers running concurrently. This is just a reference value for the app / Graffik
 
 /***************************************
 
@@ -221,9 +222,6 @@ const unsigned int MOT_DEFAULT_MAX_STEP		= 5000;			// Default maximum controller
 const unsigned int MOT_DEFAULT_MAX_SPD		= 5000;			// Default maximum motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel rate for non-program continuous moves
 const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction								// Number of motors possibly attached to controller
-
-// Speed variables
-unsigned int mot_max_speed = MOT_DEFAULT_MAX_SPD;			// Maximum motor speed in steps / sec
 
 // plan move types
 #define SMS				0		// Shoot-move-shoot mode
@@ -449,6 +447,7 @@ void setup() {
 	for( int i = 0; i < MOTOR_COUNT; i++){
 		motor[i].enable(true);
 		motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
+		motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
 		motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
 		motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
 		motor[i].sleep(false);

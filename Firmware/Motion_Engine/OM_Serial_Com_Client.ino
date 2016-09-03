@@ -469,7 +469,7 @@ void serMain(byte command, byte* input_serial_buffer) {
 		debugMessage(GEN, command, MSG);
 		// send a motor home
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			motor[i].contSpeed(mot_max_speed);
+            motor[i].contSpeed(motor[i].maxSpeed());
 			motor[i].ms(4);			
 			motor[i].home();
 			motor[i].setSending(true);
@@ -479,15 +479,12 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 		
-	//Command 11 set the max step rate of all motors
-	case 11:
-	{			   
-		maxStepRate(Node.ntoui(input_serial_buffer));
-		msg = "Setting max step rate (all motors): ";
-		debugMessage(GEN, command, MSG, maxStepRate());
-		response(true);
-		break;
-	}
+	/*
+		Command 11 -- Max step rate setting deprecated in version 0.70.
+		There's generally no reason to be fiddling with this value unless
+		some major firmware changes are being made. This will be hidden
+		from the serial API to avoid confusion.
+	*/
 		
 		
 	//Command 12 sets limit switch mode (0 - enable on RISING edge, 1 - enable on FALLING edge, 2 - enable on CHANGE edge)
@@ -723,6 +720,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break; 
 	}
 
+	//Command 33 sets the number of controllers running concurrently
+	case 33:
+	{
+		controller_count = input_serial_buffer[0];
+		msg = "Setting controller count: ";				
+		debugMessage(GEN, command, MSG, controller_count);
+		response(true, controller_count);
+		break;
+	}
+
 	//Command 50 sets Graffik Mode on or off
 	case 50:
 	{
@@ -808,15 +815,13 @@ void serMain(byte command, byte* input_serial_buffer) {
       response(true, (char*)device_name, 10);
       break;
     
-	//Command 106 reads max step rate for the motors, can poll any motor        
-	case 106:
-	{
-		msg = "Max step rate: ";
-		debugMessage(GEN, command, MSG, motor[0].maxStepRate());
-		response(true, motor[0].maxStepRate());
-		break;
-	}
-		
+	/*
+		Command 106 -- Max step rate query deprecated in version 0.70. 
+		There's generally no reason to be fiddling with this value unless
+		some major firmware changes are being made. This will be hidden
+		from the serial API to avoid confusion.
+	*/
+
 	//Command 107 reads voltage in
 	case 107:
 	{
@@ -1056,6 +1061,16 @@ void serMain(byte command, byte* input_serial_buffer) {
 		break;
 	}
 
+	//Command 134 returns the number of controllers running in concurrent mode
+	case 134:
+	{
+		controller_count = input_serial_buffer[0];
+		msg = "Controller count: ";
+		debugMessage(GEN, command, MSG, controller_count);
+		response(true, controller_count);
+		break;
+	}
+
 	//Command 140 returns the full run status as a single byte. Prefer this command over 0.101 and 
 	// 5.120, as they will be depreciated in future versions
 	case 140:
@@ -1252,7 +1267,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Sending to home";
 		debugMessage(subaddr, command, MSG);
 
-		thisMotor.contSpeed(mot_max_speed);
+        thisMotor.contSpeed(thisMotor.maxSpeed());
 
 		// send a motor home
 		thisMotor.ms(4);		
@@ -1272,7 +1287,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
 		msg = "Sending to end";
 		debugMessage(subaddr, command, MSG);
-		thisMotor.contSpeed(mot_max_speed);
+        thisMotor.contSpeed(thisMotor.maxSpeed());
 
 		thisMotor.moveToEnd();
 		startISR();
@@ -1296,8 +1311,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		// Normal speed change handling
 		else {			
 			// If the requested speed is higher than allowed, just use the highest permissible value
-			if (input_speed > mot_max_speed)
-				input_speed = mot_max_speed;
+            if (input_speed > thisMotor.maxSpeed())
+                input_speed = thisMotor.maxSpeed();
 			thisMotor.contSpeed(input_speed);
 			msg = "Setting cont. speed: ";
 			debugMessage(subaddr, command, MSG, (int)input_speed);
