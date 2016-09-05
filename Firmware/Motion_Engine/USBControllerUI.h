@@ -99,6 +99,7 @@ class USBControllerUI {
     uint8_t rightXFilterCount;
     uint8_t rightYFilterCount;
     uint8_t isJoystickOwner;
+    uint8_t motorActivationStatus;
     
     uint8_t microstepSettings[USBCONTROLLERUI_NMOTORS];
 

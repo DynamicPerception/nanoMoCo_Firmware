@@ -57,6 +57,14 @@ USBControllerUI USBCtrlrUI;
 #define UI_BUTTON_FocusTimeDS      PS3CONTROLLER_BUTTON_Circle
 #define UI_BUTTON_Leadin           PS3CONTROLLER_BUTTON_Left
 #define UI_BUTTON_Leadout          PS3CONTROLLER_BUTTON_Right
+#define UI_BUTTON_AxisActivation   PS3CONTROLLER_BUTTON_R3
+
+enum{
+  UI_MOTOR_ACTSTATE_PANANDTILT=0,
+  UI_MOTOR_ACTSTATE_PAN,
+  UI_MOTOR_ACTSTATE_TILT
+};
+
 
 const uint32_t thousand = 1000;
 const uint32_t onehundred = 100;
@@ -80,6 +88,7 @@ void USBControllerUI::init(void)
   prevRightYVelocity = 128;
   readyToStart = false;
   isJoystickOwner = false;
+  motorActivationStatus = UI_MOTOR_ACTSTATE_PANANDTILT;
 
   actuatorPulseState.isOn = false;
 
@@ -197,11 +206,12 @@ void USBControllerUI::uiStateSetting( void )
       readyToStart = false;
       setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* motor[0].maxSpeed() );
     }
-    if (rightXVelocity != prevRightXVelocity) {
+    if ((rightXVelocity != prevRightXVelocity) && ( motorActivationStatus == UI_MOTOR_ACTSTATE_PAN || motorActivationStatus == UI_MOTOR_ACTSTATE_PANANDTILT )) {
       readyToStart = false;
       setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* motor[1].maxSpeed() );
     }
-    if (rightYVelocity != prevRightYVelocity) {
+    
+    if ((rightYVelocity != prevRightYVelocity) && ( motorActivationStatus == UI_MOTOR_ACTSTATE_TILT || motorActivationStatus == UI_MOTOR_ACTSTATE_PANANDTILT )) {
       readyToStart = false;
       setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* motor[2].maxSpeed() );
     }
@@ -289,6 +299,13 @@ void USBControllerUI::uiStateSetting( void )
           motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
       }
     }
+
+    // Map R3 to motor activation state
+    if (MonitorButton( modifierButtonState,  UI_BUTTON_AxisActivation, &monitorValue, motorActivationStatus, FAST_UI_TICK_RATE ))
+    {  
+      if(monitorValue <= UI_MOTOR_ACTSTATE_TILT)
+        motorActivationStatus = monitorValue;
+    } 
 
     // Map moveTimeMinutes/movetimeHours to R1/R2
     if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeHours, &monitorValue, uiSettings.moveTimeMinutes, FAST_UI_TICK_RATE ))
