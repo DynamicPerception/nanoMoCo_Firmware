@@ -89,7 +89,7 @@ void USBControllerUI::init(void)
   readyToStart = false;
   isJoystickOwner = false;
   motorActivationStatus = UI_MOTOR_ACTSTATE_PANANDTILT;
-
+  
   actuatorPulseState.isOn = false;
 
   ResetUIDefaults();
@@ -135,17 +135,17 @@ void USBControllerUI::UITask( void )
   prevStatus = PS3CtrlrHost.IsConnected();
 
   // Run USB Controller State machine
-  if (uiState == USBCONTROLLERUI_STATE_Setting)
-  {
+  if (uiState == USBCONTROLLERUI_STATE_Setting) {
     uiStateSetting();
   }
-  else if (uiState == USBCONTROLLERUI_STATE_Wait)
-  {
+  else if (uiState == USBCONTROLLERUI_STATE_Wait) {
     uiStateWait();
   }
-  else if (uiState == USBCONTROLLERUI_STATE_WaitToSetting)
-  {
+  else if (uiState == USBCONTROLLERUI_STATE_WaitToSetting) {
     uiStateWaitToSetting();
+  }
+  else if (uiState == USBCONTROLLERUI_STATE_WaitToStop) {
+    uiStateWaitToStop();
   }
   IteratePulses();
 }
@@ -197,22 +197,24 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = true;
       joystickSet(true);
-      SaveMicrostepSettings();
     }
 
     // Map PS3 sticks to first three axis
     if(leftXVelocity != prevLeftXVelocity)
     {
       readyToStart = false;
+      motor[0].ms(microstepSettings[0]);
       setJoystickSpeed(0, ((leftXVelocity - 128.0f) / 128.0f)* motor[0].maxSpeed() );
     }
     if ((rightXVelocity != prevRightXVelocity) && ( motorActivationStatus == UI_MOTOR_ACTSTATE_PAN || motorActivationStatus == UI_MOTOR_ACTSTATE_PANANDTILT )) {
       readyToStart = false;
+      motor[1].ms(microstepSettings[1]);
       setJoystickSpeed(1, -((rightXVelocity - 128.0f) / 128.0f)* motor[1].maxSpeed() );
     }
     
     if ((rightYVelocity != prevRightYVelocity) && ( motorActivationStatus == UI_MOTOR_ACTSTATE_TILT || motorActivationStatus == UI_MOTOR_ACTSTATE_PANANDTILT )) {
       readyToStart = false;
+      motor[2].ms(microstepSettings[2]);
       setJoystickSpeed(2, -((rightYVelocity - 128.0f) / 128.0f)* motor[2].maxSpeed() );
     }
 
@@ -397,7 +399,6 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = false;
       joystickSet(false);
-      RestoreMicrostepSettings();
     }
   }
   else
@@ -415,7 +416,6 @@ void USBControllerUI::uiStateSetting( void )
     {
       isJoystickOwner = false;
       joystickSet(false);
-      RestoreMicrostepSettings();
     }
   }
 }
@@ -431,7 +431,7 @@ void USBControllerUI::uiStateWait( void )
   static uint32_t runningLEDTimer = millis();
   static uint8_t runningLEDState = false, cameraLEDState;
 
-  if (isShotRunning == false || !running )
+  if (isProgramDone() && (isShotRunning == false || !running) )
   {
     runningLEDState = false;
     cameraLEDState = false;
@@ -451,7 +451,7 @@ void USBControllerUI::uiStateWait( void )
     cameraLEDState = false;
     PS3CtrlrHost.SetLED( UI_LED_RUNNING, runningLEDState );
     PS3CtrlrHost.SetLED( UI_LED_CAMERA, cameraLEDState);
-    uiState = USBCONTROLLERUI_STATE_Setting;
+    uiState = USBCONTROLLERUI_STATE_WaitToStop;;
     StopMove();
     return;
   }
@@ -513,15 +513,6 @@ void USBControllerUI::StopMove( void )
   stopProgram(true);
 
   isShotRunning = false;
-  /*
-    // Restore full speed microstep setting
-    for (uint8_t i = 0 ; i < USBCONTROLLERUI_NMOTORS ; i++)
-    {
-      if (i == 0)
-        motor[i].ms(4);
-      else
-        motor[i].ms(16);
-    }*/
 }
 
 /** Start Move
@@ -610,12 +601,24 @@ void USBControllerUI::uiStateWaitToSetting( void )
   {
     readyToStart = false;
     stopAllMotors();
-    uiState = USBCONTROLLERUI_STATE_Setting;
+    uiState = USBCONTROLLERUI_STATE_WaitToStop;
     return;
   }
 }
 
+/** Waiting to Stop
 
+  Wait for motors to stop as a result of a stop request
+
+*/
+void USBControllerUI::uiStateWaitToStop( void )
+{
+    for (byte i = 0; i <USBCONTROLLERUI_NMOTORS; i++) {
+    if(motor[i].running())
+      return;
+  }
+  uiState = USBCONTROLLERUI_STATE_Setting;
+}
 
 /** Create Deadzone
 
@@ -881,18 +884,17 @@ uint8_t USBControllerUI::IsShotRunning( void )
   return (isShotRunning);
 }
 
-void USBControllerUI::SaveMicrostepSettings( void )
+uint8_t USBControllerUI::isProgramDone( void )
 {
   for(uint8_t i=0 ; i<USBCONTROLLERUI_NMOTORS ; i++ )
-    microstepSettings[i] = motor[i].ms();
-    
-    motor[0].ms(USBCONTROLLERUI_DOLLY_MSDEFAULT);
-    motor[1].ms(USBCONTROLLERUI_PAN_MSDEFAULT);
-    motor[2].ms(USBCONTROLLERUI_PAN_MSDEFAULT);
+  {
+    if(motor[i].programDone() == false)
+      return(false);
+  }
+  return(true);
 }
 
-void USBControllerUI::RestoreMicrostepSettings( void )
+void USBControllerUI::SetMotorMS( uint8_t motorNum, uint8_t ms )
 {
-  for(uint8_t i=0 ; i<USBCONTROLLERUI_NMOTORS ; i++ )
-    motor[i].ms( microstepSettings[i] );
+  microstepSettings[motorNum] = ms;
 }

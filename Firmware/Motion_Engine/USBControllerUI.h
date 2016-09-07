@@ -32,8 +32,6 @@ See dynamicperception.com for more information
 #define USBCONTROLLERUI_NLEDS (4)
 #define USBCONTROLLERUI_NACTUATORS (2)
 #define USBCONTROLLERUI_NMOTORS (3)
-#define USBCONTROLLERUI_DOLLY_MSDEFAULT (4)
-#define USBCONTROLLERUI_PAN_MSDEFAULT (16)
 
 typedef struct {
   uint8_t isOn;
@@ -83,7 +81,8 @@ enum USBControllerUI_State_t
 {
   USBCONTROLLERUI_STATE_Setting,
   USBCONTROLLERUI_STATE_Wait,
-  USBCONTROLLERUI_STATE_WaitToSetting
+  USBCONTROLLERUI_STATE_WaitToSetting,
+  USBCONTROLLERUI_STATE_WaitToStop
 };
 
 class USBControllerUI {
@@ -120,6 +119,7 @@ class USBControllerUI {
     void uiStateSetting( void );
     void uiStateWait( void );
     void uiStateWaitToSetting( void );
+    void uiStateWaitToStop( void );
 
     void IteratePulses( void );
 
@@ -135,8 +135,7 @@ class USBControllerUI {
     void SaveUISetting( uint8_t nSetting );
     void LoadUISetting( uint8_t nSetting );
     float CreateDeadzone( float value );
-    void SaveMicrostepSettings( void );
-    void RestoreMicrostepSettings( void );
+    uint8_t isProgramDone( void );
 
   public:
     USBControllerUI( void );
@@ -144,6 +143,7 @@ class USBControllerUI {
     void UITask( void );
     uint8_t IsShotRunning( void );
     CtrlrUISettings_t uiSettings;
+    void SetMotorMS( uint8_t motorNum, uint8_t ms );
 };
 
 extern USBControllerUI USBCtrlrUI;

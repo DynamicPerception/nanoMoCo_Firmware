@@ -157,7 +157,7 @@ void takeUpBacklash(boolean kf_move){
 		if (motor[i].programBackCheck() == true && motor[i].backlash() > 0) {			
 			// Indicate that a brief pause is necessary after starting the motors
 			wait_required = true;
-
+                        
 			// Set the motor microsteps to low resolution and increase speed for fastest takeup possible						
 			motor[i].ms(4);
 			
@@ -448,8 +448,8 @@ byte msAutoSet(uint8_t p_motor, boolean validateOnly) {
 		else
 			motor[p_motor].ms(microsteps);
 
-		// Save the microstep settings
-		OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
+                // What is side affect of removing this?  Seems odd to save the microstep setting to firmware every time it does a move
+                // OMEEPROM::write(EE_MS_0 + (p_motor * EE_MOTOR_MEMORY_SPACE), microsteps);
 
 		// USB print the debug value, if necessary
 		debug.funct(F("Requested Microsteps: "));
