@@ -1220,6 +1220,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		thisMotor.maxSpeed(in_val);
 		msg = "Setting max speed: ";
 		debugMessage(subaddr, command, MSG, in_val);		
+        eepromWriteMaxSpd();
 		response(true);
 		break;
 	}
@@ -1332,6 +1333,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		msg = "Setting acceleration: ";
 		debugMessage(subaddr, command, MSG, in_val);		
 		thisMotor.contAccel(in_val);		
+        eepromWriteAccel();
 		response(true);
 		break;
 	}

@@ -38,7 +38,7 @@ See dynamicperception.com for more information
 
 
 // EEPROM Memory Layout Version, change this any time you modify what is stored
-const unsigned int MEMORY_VERSION = 4;
+const unsigned int MEMORY_VERSION = 5;
 
 
 
@@ -98,10 +98,25 @@ void eepromWrite() {
 		write(EE_POS_0		+ EE_MOTOR_MEMORY_SPACE * i, tempPos);
 		write(EE_START_0	+ EE_MOTOR_MEMORY_SPACE * i, tempStart);
 		write(EE_STOP_0		+ EE_MOTOR_MEMORY_SPACE * i, tempStop);
-		write(EE_END_0		+ EE_MOTOR_MEMORY_SPACE * i, tempEnd);		
+		write(EE_END_0		+ EE_MOTOR_MEMORY_SPACE * i, tempEnd);
 	} 
+    eepromWriteAccel();
+    eepromWriteMaxSpd();
 }
 
+void eepromWriteAccel(){
+    for (int i = 0; i < MOTOR_COUNT; i++){
+        float tempAccel = motor[i].contAccel();
+        EEPROM.write(EE_ACCEL_0 + EE_MOTOR_MEMORY_SPACE * i, tempAccel);
+    }
+}
+
+void eepromWriteMaxSpd(){
+    for (int i = 0; i < MOTOR_COUNT; i++){
+        float tempAccel = motor[i].maxSpeed();
+        EEPROM.write(EE_MAX_SPD_0 + EE_MOTOR_MEMORY_SPACE * i, tempAccel);
+    }
+}
 
  /** Read all variables from EEPROM */
  
@@ -133,6 +148,8 @@ void eepromRestore() {
 	long tempStart	= 0;
 	long tempStop	= 0;
 	long tempEnd	= 0;
+    float tempAccel  = 0;
+    float tempMaxSpd = 0;
 	
 	
 	for (int i = 0; i < MOTOR_COUNT; i++){
@@ -143,9 +160,14 @@ void eepromRestore() {
 		read(EE_START_0 + EE_MOTOR_MEMORY_SPACE * i, tempStart);
 		read(EE_STOP_0	+ EE_MOTOR_MEMORY_SPACE * i, tempStop);
 		read(EE_END_0	+ EE_MOTOR_MEMORY_SPACE * i, tempEnd);
+        read(EE_ACCEL_0   + EE_MOTOR_MEMORY_SPACE * i, tempAccel);
+        read(EE_MAX_SPD_0 + EE_MOTOR_MEMORY_SPACE * i, tempMaxSpd);
+
 		
 		motor[i].ms(tempMS);
 		motor[i].sleep(tempSleep);
+        motor[i].contAccel(tempAccel);
+        motor[i].maxSpeed(tempMaxSpd);
 		if (ee_load_curPos)
 			motor[i].currentPos(tempPos);
 		if (ee_load_startStop){
