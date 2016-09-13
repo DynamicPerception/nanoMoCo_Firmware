@@ -543,10 +543,12 @@ void loop() {
 	  
 	// If a classic-style program is running   
    if( running ) {
+       updateRunIndicator();
 	   updateLegacyProgram();
    }
    // If a key frame program is running
    else if (kf_running){
+       updateRunIndicator();
 	   kf_updateProgram();	   
    }
 
@@ -557,6 +559,47 @@ void loop() {
 		   motor[i].restoreLastMs();
 	   }
    }
+}
+
+/**
+ *  This function causes the debug LED to blink to indicate that a program is currently running.
+ *  In normal mode, the light is normally off and blinks on, in intervalometer mode, it is 
+ *  normally on and blinks off.
+ */
+void updateRunIndicator(){
+    // Indicator should stop blinking if the program is paused
+    if (pause_flag || kf_paused)
+        return;
+
+    const int period = 2000;
+    static long period_start = 0;
+    float duty_pct;
+    // Intervalometer mode should blink off, otherwise should blink on
+    if (getIntervalometerMode()){
+        duty_pct = 0.9;
+    }
+    else{
+        duty_pct = 0.1;
+    }
+    // Turn off debug light at start of period...
+    if (millis() - period_start > period){
+        debugOn();
+        period_start = millis();
+        return;
+    }
+    // ...then turn it on after its duty cycle as elapsed
+    else if (millis() - period_start > (int)(period * duty_pct)){
+        debugOff();
+    }
+}
+
+void setIntervalometerIndicator(){
+    if (getIntervalometerMode()){
+        debugOn();
+    }
+    else{
+        debugOff();
+    }
 }
 
 void updateLegacyProgram(){
@@ -589,11 +632,6 @@ void updateLegacyProgram(){
 	// If the start delay is done then check current engine state and handle appropriately
 	// Skip the delay if the ping_pong_flag is set
 	if (run_time >= start_delay || ping_pong_flag){		
-		// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
-		if (external_intervalometer)
-			debugOn();
-		else
-			debugOff();
 		// Proceed with the program
 		Engine.checkCycle();
 		delay_flag = false;
@@ -622,6 +660,8 @@ void pauseProgram() {
 	Camera.stop();
 	stopAllMotors();
 	running = false;
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 
@@ -645,6 +685,9 @@ void stopProgram(uint8_t force_clear) {
 	// clear out motor moved data and stop motor 
 	clearAll();	
 	Camera.stop(); 
+
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 

@@ -203,6 +203,9 @@ void kf_pauseProgram(){
 
 	// Log the start time of the pause
 	kf_pause_start = millis();	
+
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 void kf_stopProgram(){
@@ -235,6 +238,9 @@ void kf_stopProgram(boolean savePingPongVals){
 	// If it's a video move, trigger the camera once to stop the recording
 	if (Motors::planType() == CONT_VID)
 		Camera.expose();
+
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 void kf_updateProgram(){
