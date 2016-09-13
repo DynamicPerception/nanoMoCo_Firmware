@@ -90,6 +90,9 @@ void eepromWrite() {
 		tempStart	= motor[i].startPos();
 		tempStop	= motor[i].stopPos();
 		tempEnd		= endPos[i];
+
+                if(i<USBCONTROLLERUI_NMOTORS)
+                  USBCtrlrUI.SetMotorMS( i, tempMS );
 		
 		write(EE_MS_0		+ EE_MOTOR_MEMORY_SPACE * i, tempMS);
 		write(EE_SLEEP_0	+ EE_MOTOR_MEMORY_SPACE * i, tempSleep);
@@ -150,6 +153,8 @@ void eepromRestore() {
 		read(EE_END_0	+ EE_MOTOR_MEMORY_SPACE * i, tempEnd);
 		
 		motor[i].ms(tempMS);
+                if(i<USBCONTROLLERUI_NMOTORS)
+                  USBCtrlrUI.SetMotorMS( i, tempMS );
 		motor[i].sleep(tempSleep);
 		if (ee_load_curPos)
 			motor[i].currentPos(tempPos);

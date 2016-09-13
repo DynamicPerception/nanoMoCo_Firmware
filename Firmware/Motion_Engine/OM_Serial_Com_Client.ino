@@ -1206,7 +1206,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 		// set motor microstep (1,2,4,8,16)
 		byte in_val = input_serial_buffer[0];
 		thisMotor.ms(in_val);
-		OMEEPROM::write(EE_MS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, in_val);		
+		OMEEPROM::write(EE_MS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, in_val);
+                if((subaddr-1)<USBCONTROLLERUI_NMOTORS)
+                  USBCtrlrUI.SetMotorMS( subaddr-1, in_val );		
 		msg = "Setting microsteps: ";
 		debugMessage(subaddr, command, MSG, in_val);
 		response(true);
