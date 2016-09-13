@@ -239,7 +239,7 @@ void USBControllerUI::uiStateSetting( void )
     { 
       if(monitorValue == 0)
       {
-        ActuatorPulse( 50, 10, 1);
+        ActuatorPulse( 400, 10, 1);
         for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
           motor[i].startPos(motor[i].currentPos());  // Set start point on axis
       }  
@@ -260,48 +260,14 @@ void USBControllerUI::uiStateSetting( void )
     { 
       if(monitorValue == 0)
       {
-        ActuatorPulse( 50, 10, 1);
+        ActuatorPulse( 400, 10, 1);
         for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
           motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
       }  
       else
         uiSettings.leadoutMinutes = monitorValue-1;
     } 
-    
-    // Map DPAD Left/Right to Start/Stop points
-    if (PS3CtrlrHost.GetButtonState( UI_BUTTON_SetStart ) == PS3CONTROLLER_STATE_Down)
-    {
-      if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
-      {
-        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
-        sendAllToStart();
-        readyToStart = true;
-        return;
-      }
-      else
-      {
-        ConfirmPulse();
-        for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
-          motor[i].startPos(motor[i].currentPos());  // Set start point on axis
-      }
-    }
-    
-    
-    if (PS3CtrlrHost.GetButtonState( UI_BUTTON_SetStop ) == PS3CONTROLLER_STATE_Down)
-    { if (modifierButtonState == PS3CONTROLLER_STATE_Down || modifierButtonState == PS3CONTROLLER_STATE_On)
-      {
-        uiState = USBCONTROLLERUI_STATE_WaitToSetting;
-        sendAllToStop();
-        return;
-      }
-      else
-      {
-        ConfirmPulse();
-        for (uint8_t i = 0; i < USBCONTROLLERUI_NMOTORS ; i++)
-          motor[i].stopPos(motor[i].currentPos());  // Set start point on axis
-      }
-    }
-
+ 
     // Map R3 to motor activation state
     if (MonitorButton( modifierButtonState,  UI_BUTTON_AxisActivation, &monitorValue, motorActivationStatus, FAST_UI_TICK_RATE, 1 ))
     {  
