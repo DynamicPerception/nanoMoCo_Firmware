@@ -129,7 +129,7 @@ class USBControllerUI {
     void ConfirmPulse( void );
 
     // User Input functions
-    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue, uint16_t tickRate );
+    uint8_t MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue, uint16_t tickRate, uint8_t maxValue );
     void QueryButton( PS3Controller_ButtonUsages_t button, uint16_t queryValue, uint16_t tickRate);
     void ResetUIDefaults( void );
     void SaveUISetting( uint8_t nSetting );

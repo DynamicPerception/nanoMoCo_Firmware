@@ -161,7 +161,7 @@ void USBControllerUI::UITask( void )
 void USBControllerUI::uiStateSetting( void )
 {
   // If another app is running joystick mode, ignore PS3 Controller
-  if (isJoystickOwner == false && joystickSet() == true)
+  if ((isJoystickOwner == false && joystickSet() == true) || (getRunStatus() > 0))
     return;
 
   if (PS3CtrlrHost.IsConnected())
@@ -235,7 +235,7 @@ void USBControllerUI::uiStateSetting( void )
         return;  
     }
     
-    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStart, &monitorValue, 0, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStart, &monitorValue, 0, FAST_UI_TICK_RATE, 255 ))
     { 
       if(monitorValue == 0)
       {
@@ -256,7 +256,7 @@ void USBControllerUI::uiStateSetting( void )
         return;  
     }
     
-    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStop, &monitorValue, 0, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_SetStop, &monitorValue, 0, FAST_UI_TICK_RATE, 255 ))
     { 
       if(monitorValue == 0)
       {
@@ -303,37 +303,51 @@ void USBControllerUI::uiStateSetting( void )
     }
 
     // Map R3 to motor activation state
-    if (MonitorButton( modifierButtonState,  UI_BUTTON_AxisActivation, &monitorValue, motorActivationStatus, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState,  UI_BUTTON_AxisActivation, &monitorValue, motorActivationStatus, FAST_UI_TICK_RATE, 1 ))
     {  
-      if(monitorValue <= UI_MOTOR_ACTSTATE_TILT)
-        motorActivationStatus = monitorValue;
+      if(monitorValue == 1)
+      {   
+        // Toggle Motor activation
+        switch(motorActivationStatus)
+        {
+          case UI_MOTOR_ACTSTATE_PANANDTILT:
+            motorActivationStatus = UI_MOTOR_ACTSTATE_PAN;
+            break;
+          case UI_MOTOR_ACTSTATE_PAN:
+            motorActivationStatus = UI_MOTOR_ACTSTATE_TILT;
+            break;
+          case UI_MOTOR_ACTSTATE_TILT:
+            motorActivationStatus = UI_MOTOR_ACTSTATE_PANANDTILT;
+            break;
+        }
+      }
     } 
 
     // Map moveTimeMinutes/movetimeHours to R1/R2
-    if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeHours, &monitorValue, uiSettings.moveTimeMinutes, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeHours, &monitorValue, uiSettings.moveTimeMinutes, FAST_UI_TICK_RATE, 255 ))
       uiSettings.moveTimeMinutes = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeMinutes, &monitorValue, uiSettings.moveTimeHours, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_ShotTimeMinutes, &monitorValue, uiSettings.moveTimeHours, FAST_UI_TICK_RATE, 255 ))
       uiSettings.moveTimeHours = monitorValue;
 
     // Map DECECL/ACCEL percentage to L1/L2
-    if (MonitorButton( modifierButtonState, UI_BUTTON_AccelPercentage, &monitorValue, uiSettings.accelPercentage, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_AccelPercentage, &monitorValue, uiSettings.accelPercentage, FAST_UI_TICK_RATE, 100 ))
       uiSettings.accelPercentage = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_DecelPercentage, &monitorValue, uiSettings.decelPercentage, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_DecelPercentage, &monitorValue, uiSettings.decelPercentage, FAST_UI_TICK_RATE, 100 ))
       uiSettings.decelPercentage = monitorValue;
 
     // Map timers/delays
-    if (MonitorButton( modifierButtonState, UI_BUTTON_IntervalTimeS, &monitorValue, uiSettings.intervalTimeS, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_IntervalTimeS, &monitorValue, uiSettings.intervalTimeS, FAST_UI_TICK_RATE, 255 ))
       uiSettings.intervalTimeS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_FocusTimeDS, &monitorValue, uiSettings.focusTimeDS, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_FocusTimeDS, &monitorValue, uiSettings.focusTimeDS, FAST_UI_TICK_RATE, 10 ))
       uiSettings.focusTimeDS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeS, &monitorValue, uiSettings.exposureTimeS, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeS, &monitorValue, uiSettings.exposureTimeS, FAST_UI_TICK_RATE, 255 ))
       uiSettings.exposureTimeS = monitorValue;
-    if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeDS, &monitorValue, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_ExposureTimeDS, &monitorValue, uiSettings.exposureTimeDS, FAST_UI_TICK_RATE, 10 ))
       uiSettings.exposureTimeDS = monitorValue;
 
 
     // Load/Save Settings UI
-    if (MonitorButton( modifierButtonState, UI_BUTTON_SaveSetting, &monitorValue, 0, SLOW_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_SaveSetting, &monitorValue, 0, SLOW_UI_TICK_RATE, 3 ))
     {
       if (monitorValue > 0 && monitorValue < (USBCONTROLLERUI_NSETTINGS + 1))
       {
@@ -341,7 +355,7 @@ void USBControllerUI::uiStateSetting( void )
       }
     }
 
-    if (MonitorButton( modifierButtonState, UI_BUTTON_LoadSetting, &monitorValue, 0, SLOW_UI_TICK_RATE ))
+    if (MonitorButton( modifierButtonState, UI_BUTTON_LoadSetting, &monitorValue, 0, SLOW_UI_TICK_RATE, 3 ))
     {
       if (monitorValue > 0 && monitorValue < (USBCONTROLLERUI_NSETTINGS + 1))
       {
@@ -356,6 +370,13 @@ void USBControllerUI::uiStateSetting( void )
       PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous);
     }
 
+    if (PS3CtrlrHost.GetButtonState(UI_BUTTON_ToggleMode) == PS3CONTROLLER_STATE_Down)
+    {
+      // Toggle motor activation
+      uiSettings.isContinuous = !uiSettings.isContinuous;
+      PS3CtrlrHost.SetLED( UI_LED_SMS, !uiSettings.isContinuous);
+    }
+    
     if ((motor[0].currentPos() != motor[0].startPos()) ||
         (motor[1].currentPos() != motor[1].startPos()) ||
         (motor[2].currentPos() != motor[2].startPos()))
@@ -527,8 +548,20 @@ void USBControllerUI::StartMove( void )
   uint32_t exposureDelay = uiSettings.exposureWaitS * thousand + uiSettings.exposureWaitDS * onehundred;
   uint32_t intervalTimeMS = uiSettings.intervalTimeS * thousand + uiSettings.intervalTimeDS * onehundred;
 
-  float accelFraction = uiSettings.accelPercentage / 100.0f;
-  float decelFraction = uiSettings.accelPercentage / 100.0f;
+  float accelFraction;
+  float decelFraction;
+  
+  if(uiSettings.accelPercentage + uiSettings.decelPercentage > 100)
+  {
+    // Invalid accel/decel profile
+    accelFraction = 0;
+    decelFraction = 0;
+  }
+  else
+  {
+    accelFraction = uiSettings.accelPercentage / 100.0f;
+    decelFraction = uiSettings.accelPercentage / 100.0f;
+  }
 
   shotTimeMS = (60 * (uint32_t) uiSettings.moveTimeMinutes + 60 * 60 * (uint32_t) uiSettings.moveTimeHours);
   shotTimeMS *= thousand;
@@ -673,13 +706,14 @@ void USBControllerUI::QueryButton( PS3Controller_ButtonUsages_t button, uint16_t
           false otherwise
 
 */
-uint8_t USBControllerUI::MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue, uint16_t tickRate )
+uint8_t USBControllerUI::MonitorButton( uint8_t modifierButtonState, PS3Controller_ButtonUsages_t button, uint8_t *storeValue, uint16_t queryValue, uint16_t tickRate, uint8_t maxValue )
 {
   uint8_t buttonState;
   static uint8_t isQuery = false;
   static uint8_t isMonitoring = false;
   static uint8_t curButtonMonitoring = 0;
   static uint32_t buttonTimer;
+  static uint8_t pulseStopped;
 
   buttonState = PS3CtrlrHost.GetButtonState( button );
 
@@ -691,6 +725,7 @@ uint8_t USBControllerUI::MonitorButton( uint8_t modifierButtonState, PS3Controll
       curButtonMonitoring = button;
       isMonitoring = true;
       buttonTimer = millis();
+      pulseStopped = false;
       ActuatorPulse( tickRate * 0.15, tickRate * 0.85, 255);
     }
     else if (buttonState == PS3CONTROLLER_STATE_Down && ((modifierButtonState == PS3CONTROLLER_STATE_Down) || (modifierButtonState == PS3CONTROLLER_STATE_On)))
@@ -706,10 +741,18 @@ uint8_t USBControllerUI::MonitorButton( uint8_t modifierButtonState, PS3Controll
     }
     else if (buttonState == PS3CONTROLLER_STATE_Up && isQuery == false)
     {
-      ActuatorPulseStop();
+      if(pulseStopped == false)
+        ActuatorPulseStop();
       isMonitoring = false;
       *storeValue = actuatorPulseState.nPulses;
       return (true);
+    }
+    
+    if(actuatorPulseState.nPulses >= maxValue && pulseStopped == false)
+    {
+      ActuatorPulseStop();
+      pulseStopped = true;
+      actuatorPulseState.nPulses = maxValue;
     }
   }
   return (false);
@@ -749,7 +792,7 @@ void USBControllerUI::ActuatorPulse( uint16_t onMS, uint16_t offMS, uint8_t nTim
 void USBControllerUI::ActuatorPulseStop( void )
 {
   actuatorPulseState.isOn = false;
-  PS3CtrlrHost.SetSmallActuator(false, 0x00);
+  //PS3CtrlrHost.SetSmallActuator(false, 0x00);
 }
 
 /** Iterate Pulses
@@ -761,8 +804,9 @@ void USBControllerUI::IteratePulses( void )
 {
   uint32_t timeElapsed;
   uint8_t i;
+  static uint8_t finishPulse = false;
 
-  if (actuatorPulseState.isOn)
+  if (actuatorPulseState.isOn || finishPulse == true)
   {
     timeElapsed = (millis() - actuatorPulseState.prevUpdateTime);
     if ( actuatorPulseState.offTimeLeft > 0 )
@@ -772,6 +816,7 @@ void USBControllerUI::IteratePulses( void )
         actuatorPulseState.offTimeLeft = 0;
         actuatorPulseState.onTimeLeft = actuatorPulseState.onTime;
         actuatorPulseState.nPulses++;
+        finishPulse = true;
         PS3CtrlrHost.SetSmallActuator( true, 0xFE);
       }
       else
@@ -789,6 +834,7 @@ void USBControllerUI::IteratePulses( void )
           actuatorPulseState.offTimeLeft = actuatorPulseState.offTime;
         }
         PS3CtrlrHost.SetSmallActuator( false, 0xFE);
+        finishPulse = false;
       }
       else
         actuatorPulseState.onTimeLeft -= timeElapsed;
