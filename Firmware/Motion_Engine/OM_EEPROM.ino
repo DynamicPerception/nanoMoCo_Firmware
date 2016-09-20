@@ -78,6 +78,8 @@ void eepromWrite() {
   write(EE_ADDR, device_address);
   write(EE_NAME, *device_name, 10);
 
+    // Motor values must be written to local variables first,
+    // otherwise they don't write properly to EEPROM
 	byte tempMS = 0;
 	bool tempSleep = false;
 	long tempPos = 0;
@@ -106,15 +108,15 @@ void eepromWrite() {
 
 void eepromWriteAccel(){
     for (int i = 0; i < MOTOR_COUNT; i++){
-        float tempAccel = motor[i].contAccel();
-        EEPROM.write(EE_ACCEL_0 + EE_MOTOR_MEMORY_SPACE * i, tempAccel);
+        float temp_accel = motor[i].contAccel();
+        OMEEPROM::write(EE_ACCEL_0 + EE_MOTOR_MEMORY_SPACE * i, temp_accel);
     }
 }
 
 void eepromWriteMaxSpd(){
     for (int i = 0; i < MOTOR_COUNT; i++){
-        float tempAccel = motor[i].maxSpeed();
-        EEPROM.write(EE_MAX_SPD_0 + EE_MOTOR_MEMORY_SPACE * i, tempAccel);
+        unsigned int temp_spd = motor[i].maxSpeed();
+        OMEEPROM::write(EE_MAX_SPD_0 + EE_MOTOR_MEMORY_SPACE * i, temp_spd);
     }
 }
 
