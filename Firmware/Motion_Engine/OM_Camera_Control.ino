@@ -69,11 +69,11 @@ void camCallBack(byte code) {
   // which can result in unexpected behavior
   
   if( code == OM_CAM_FFIN ) {
-	  debug.functln("camCallBack() - Start");
+	  debug.functln(F("camCallBack() - Start"));
 	  Engine.state(ST_EXP);
   }
   else if( code == OM_CAM_EFIN ) {	
-	debug.functln("camCallBack() - Stop");
+	debug.functln(F("camCallBack() - Stop"));
 	camera_fired++;
     Engine.state(ST_WAIT);
   }
@@ -95,15 +95,22 @@ void checkCameraRepeat() {
       // if we don't have camera repeat function enabled,
       // then go ahead and clear for alt out post shot check
     if( Camera.repeat == 0 ) {
-      Engine.state(ST_ALTP);
+      // No idea while state 6 will never execute but this is a fix for it
+      if ( ! (ALT_OUT_AFTER == altInputs[0] || ALT_OUT_AFTER == altInputs[1]))
+        Engine.state(ST_MOVE);
+      else
+        Engine.state(ST_ALTP);
       return;
     }
     
    if( repdone >= Camera.repeat ) {
        // we've done all of the repeat cycles
      repdone = 0;
-       // clear for check post-exposure alt output trigger
-     Engine.state(ST_ALTP);
+      // No idea while state 6 will never execute but this is a fix for it
+      if ( ! (ALT_OUT_AFTER == altInputs[0] || ALT_OUT_AFTER == altInputs[1]))
+        Engine.state(ST_MOVE);
+      else
+        Engine.state(ST_ALTP);
      return;
    }
    

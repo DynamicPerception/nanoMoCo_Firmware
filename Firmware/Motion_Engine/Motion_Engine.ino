@@ -55,6 +55,8 @@ See dynamicperception.com for more information
 #include <OMMoCoNode.h>
 #include <OMEEPROM.h>
 
+#include "PS3ControllerHost.h"
+#include "USBControllerUI.h"
 
 /***************************************
 
@@ -72,7 +74,7 @@ See dynamicperception.com for more information
  name            = 2
  
 */
-
+const byte MOTOR_COUNT = 3;	
 const int EE_ADDR       = 0;				// device_address (2 bytes)
 const int EE_NAME       = 2;				// device name (16 bytes)
 
@@ -108,6 +110,8 @@ const int EE_LOAD_START_STOP = EE_LOAD_POS + 1;			// Whether to load the motors'
 const int EE_LOAD_END		 = EE_LOAD_START_STOP + 1;	// Whether to load the motors' end positions after power cycle (byte)
 
 const int EE_MOTOR_MEMORY_SPACE = 24;		//Number of bytes required for storage for each motor's variables
+
+const int EE_USBCTRLR_SETTINGS = EE_POS_0 + MOTOR_COUNT*EE_MOTOR_MEMORY_SPACE;  // Settings for USB Controller UI
 
 // Variables that are loaded from EEPROM that determine whether the motors' various positions should be restored
 uint8_t ee_load_curPos = false;
@@ -223,8 +227,7 @@ typedef OMMotorFunctions Motors;
 const unsigned int MOT_DEFAULT_MAX_STEP		= 5000;			// Default maximum controller step rate output
 const unsigned int MOT_DEFAULT_MAX_SPD		= 5000;			// Default maximum motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL			= 15000.0;		// Default motor accel/decel rate for non-program continuous moves
-const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction
-const byte MOTOR_COUNT = 3;									// Number of motors possibly attached to controller
+const unsigned int MOT_DEFAULT_BACKLASH		= 0;			// Default number of backlash steps to take up when reversing direction								// Number of motors possibly attached to controller
 
 // plan move types
 #define SMS				0		// Shoot-move-shoot mode
@@ -305,6 +308,7 @@ uint8_t watchdog_mode = false;
 uint8_t watchdog_active = false;
 unsigned long commandTime = 0;
 byte joystick_mode = false;
+
 
 
 /***************************************
@@ -467,8 +471,13 @@ void setup() {
 			motor[i].ms(16);
 		motor[i].programBackCheck(false);	 
 	}
-
-	// restore/store eeprom memory
+        // Leaving this here for now, remove before merging
+        //debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR | DebugClass::DB_STEPS );
+          
+        // Initialize USB Controller Mode
+        USBCtrlrUI.init();
+	
+        // restore/store eeprom memory
 	eepromCheck();
  
 	// enable limit switch handler
@@ -533,10 +542,11 @@ void loop() {
 
 	//Stop the motors if they're running, watchdog is active, and time since last received command has exceeded timeout
 	if (watchdog_active && (millis() - commandTime > WATCHDOG_MAX_TIME)){
+              //  debug.functln("stop all");
 		for (byte i = 0; i < MOTOR_COUNT; i++){
 			if (motor[i].running()){
 				stopAllMotors();
-				break;
+				break; 
 			}
 		}
 	}	
@@ -565,6 +575,9 @@ void loop() {
 		   motor[i].restoreLastMs();
 	   }
    }
+
+   // Do controller per frame processing
+   USBCtrlrUI.UITask();
 }
 
 /**
@@ -1086,27 +1099,27 @@ void motorDebug() {
 		
 
 		for (byte i = 0; i < MOTOR_COUNT; i++){
-			debug.steps("Current Steps ");
+			debug.steps(F("Current Steps "));
 			debug.steps(motor[i].currentPos());
-			debug.steps(" continious Speed: ");
+			debug.steps(F(" continious Speed: "));
 			debug.steps(motor[i].contSpeed());
-			debug.steps(" backlash: ");
+			debug.steps(F(" backlash: "));
 			debug.steps(motor[i].backlash());
-			debug.steps(" startPos: ");
+			debug.steps(F(" startPos: "));
 			debug.steps(motor[i].startPos());
-			debug.steps(" stopPos: ");
+			debug.steps(F(" stopPos: "));
 			debug.steps(motor[i].stopPos());
-			debug.steps(" endPos: ");
+			debug.steps(F(" endPos: "));
 			debug.steps(motor[i].endPos());
-			debug.steps(" running: ");
+			debug.steps(F(" running: "));
 			debug.steps(motor[i].running());
-			debug.steps(" enable: ");
+			debug.steps(F(" enable: "));
 			debug.steps(motor[i].enable());
-			debug.steps(" Type: ");
+			debug.steps(F(" Type: "));
 			debug.stepsln(Motors::planType());
-			debug.steps(" shots: ");
+			debug.steps(F(" shots: "));
 			debug.steps(camera_fired);
-			debug.steps(" leadIn: ");
+			debug.steps(F(" leadIn: "));
 			debug.stepsln(motor[i].planLeadIn());
 		}
 	}
