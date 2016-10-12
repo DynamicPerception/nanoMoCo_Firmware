@@ -158,7 +158,7 @@ void eepromRestore() {
     long tempStop   = 0;
     long tempEnd    = 0;
     float tempAccel  = 0;
-    float tempMaxSpd = 0;
+    unsigned int tempMaxSpd = 0;
 
 
     for (int i = 0; i < MOTOR_COUNT; i++){
