@@ -78,32 +78,38 @@ const byte MOTOR_COUNT = 3;
 const int EE_ADDR       = 0;				// device_address (2 bytes)
 const int EE_NAME       = 2;				// device name (16 bytes)
 
-const int EE_POS_0   = EE_NAME    + 10;		// Motor 0 current position (long int)
-const int EE_END_0   = EE_POS_0   + 4;		// Motor 0 end limit position (long int)
-const int EE_START_0 = EE_END_0   + 4;		// Motor 0 program start position (long int)
-const int EE_STOP_0  = EE_START_0 + 4;		// Motor 0 program stop position (long int)
-const int EE_MS_0    = EE_STOP_0  + 4;		// Motor 0 microstep value (byte)
-const int EE_SLEEP_0 = EE_MS_0    + 1;		// Motor 0 sleep state (byte)
+const int EE_POS_0     = EE_NAME      + 16;     // Motor 0 current position (long int)
+const int EE_END_0     = EE_POS_0     + 4;		// Motor 0 end limit position (long int)
+const int EE_START_0   = EE_END_0     + 4;		// Motor 0 program start position (long int)
+const int EE_STOP_0    = EE_START_0   + 4;		// Motor 0 program stop position (long int)
+const int EE_MS_0      = EE_STOP_0    + 4;		// Motor 0 microstep value (byte)
+const int EE_SLEEP_0   = EE_MS_0      + 1;		// Motor 0 sleep state (byte)
+const int EE_MAX_SPD_0 = EE_SLEEP_0   + 1;		// Motor 0 max speed (unsigned int)
+const int EE_ACCEL_0   = EE_MAX_SPD_0 + 2;		// Motor 0 acceleration rate (float)
 
-const int EE_POS_1   = EE_SLEEP_0 + 1;		// Motor 1 current position (long int)
-const int EE_END_1   = EE_POS_1   + 4;		// Motor 1 end limit position (long int)
-const int EE_START_1 = EE_END_1   + 4;		// Motor 1 program start position (long int)
-const int EE_STOP_1  = EE_START_1 + 4;		// Motor 1 program stop position (long int)
-const int EE_MS_1    = EE_STOP_1  + 4;		// Motor 1 microstep value (byte)
-const int EE_SLEEP_1 = EE_MS_1    + 1;		// Motor 0 sleep state (byte)
+const int EE_POS_1     = EE_ACCEL_0   + 4;		// Motor 1 current position (long int)
+const int EE_END_1     = EE_POS_1     + 4;		// Motor 1 end limit position (long int)
+const int EE_START_1   = EE_END_1     + 4;		// Motor 1 program start position (long int)
+const int EE_STOP_1    = EE_START_1   + 4;		// Motor 1 program stop position (long int)
+const int EE_MS_1      = EE_STOP_1    + 4;		// Motor 1 microstep value (byte)
+const int EE_SLEEP_1   = EE_MS_1      + 1;		// Motor 1 sleep state (byte)
+const int EE_MAX_SPD_1 = EE_SLEEP_1   + 1;		// Motor 1 max speed (unsigned int)
+const int EE_ACCEL_1   = EE_MAX_SPD_1 + 2;		// Motor 1 acceleration rate (float)
 
-const int EE_POS_2   = EE_SLEEP_1 + 1;		// Motor 2 current position (long int)
-const int EE_END_2   = EE_POS_2   + 4;		// Motor 2 end limit position (long int)
-const int EE_START_2 = EE_END_2   + 4;		// Motor 2 program start position (long int)
-const int EE_STOP_2  = EE_START_2 + 4;		// Motor 2 program stop position (long int)
-const int EE_MS_2    = EE_STOP_2  + 4;		// Motor 2 microstep value (byte)
-const int EE_SLEEP_2 = EE_MS_2    + 1;		// Motor 0 sleep state (byte)
+const int EE_POS_2     = EE_ACCEL_1   + 4;		// Motor 2 current position (long int)
+const int EE_END_2     = EE_POS_2     + 4;		// Motor 2 end limit position (long int)
+const int EE_START_2   = EE_END_2     + 4;		// Motor 2 program start position (long int)
+const int EE_STOP_2    = EE_START_2   + 4;		// Motor 2 program stop position (long int)
+const int EE_MS_2      = EE_STOP_2    + 4;		// Motor 2 microstep value (byte)
+const int EE_SLEEP_2   = EE_MS_2      + 1;		// Motor 2 sleep state (byte)
+const int EE_MAX_SPD_2 = EE_SLEEP_2   + 1;		// Motor 2 max speed (unsigned int)
+const int EE_ACCEL_2   = EE_MAX_SPD_2 + 2;		// Motor 2 acceleration rate (float)
 
-const int EE_LOAD_POS		 = EE_SLEEP_2 + 1;			// Whether to load the motors' current positions after power cycle (byte)
+const int EE_LOAD_POS        = EE_ACCEL_2 + 4;			// Whether to load the motors' current positions after power cycle (byte)
 const int EE_LOAD_START_STOP = EE_LOAD_POS + 1;			// Whether to load the motors' start/stop positions after power cycle (byte)
 const int EE_LOAD_END		 = EE_LOAD_START_STOP + 1;	// Whether to load the motors' end positions after power cycle (byte)
 
-const int EE_MOTOR_MEMORY_SPACE = 18;		//Number of bytes required for storage for each motor's variables
+const int EE_MOTOR_MEMORY_SPACE = 24;		//Number of bytes required for storage for each motor's variables
 
 const int EE_USBCTRLR_SETTINGS = EE_POS_0 + MOTOR_COUNT*EE_MOTOR_MEMORY_SPACE;  // Settings for USB Controller UI
 
@@ -124,7 +130,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]			= "OMAXISVX";		// Serial API name
-const int SERIAL_VERSION			= 70;				// Serial API version
+const int SERIAL_VERSION			= 71;				// Serial API version
 byte node							= MOCOBUS;			// default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]					= "DEFAULT   ";		// default device name, exactly 9 characters + null terminator
 int device_address					= 3;				// NMX address (default = 3)
@@ -553,10 +559,12 @@ void loop() {
 	  
 	// If a classic-style program is running   
    if( running ) {
+       updateRunIndicator();
 	   updateLegacyProgram();
    }
    // If a key frame program is running
    else if (kf_running){
+       updateRunIndicator();
 	   kf_updateProgram();	   
    }
 
@@ -570,6 +578,47 @@ void loop() {
 
    // Do controller per frame processing
    USBCtrlrUI.UITask();
+}
+
+/**
+ *  This function causes the debug LED to blink to indicate that a program is currently running.
+ *  In normal mode, the light is normally off and blinks on, in intervalometer mode, it is 
+ *  normally on and blinks off.
+ */
+void updateRunIndicator(){
+    // Indicator should stop blinking if the program is paused
+    if (pause_flag || kf_paused)
+        return;
+
+    const int period = 2000;
+    static long period_start = 0;
+    float duty_pct;
+    // Intervalometer mode should blink off, otherwise should blink on
+    if (getIntervalometerMode()){
+        duty_pct = 0.9;
+    }
+    else{
+        duty_pct = 0.1;
+    }
+    // Turn off debug light at start of period...
+    if (millis() - period_start > period){
+        debugOn();
+        period_start = millis();
+        return;
+    }
+    // ...then turn it on after its duty cycle as elapsed
+    else if (millis() - period_start > (int)(period * duty_pct)){
+        debugOff();
+    }
+}
+
+void setIntervalometerIndicator(){
+    if (getIntervalometerMode()){
+        debugOn();
+    }
+    else{
+        debugOff();
+    }
 }
 
 void updateLegacyProgram(){
@@ -602,11 +651,6 @@ void updateLegacyProgram(){
 	// If the start delay is done then check current engine state and handle appropriately
 	// Skip the delay if the ping_pong_flag is set
 	if (run_time >= start_delay || ping_pong_flag){		
-		// If we're in external intervalometer mode, keep the debug LED on, otherwise turn it off
-		if (external_intervalometer)
-			debugOn();
-		else
-			debugOff();
 		// Proceed with the program
 		Engine.checkCycle();
 		delay_flag = false;
@@ -635,6 +679,8 @@ void pauseProgram() {
 	Camera.stop();
 	stopAllMotors();
 	running = false;
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 
@@ -658,6 +704,9 @@ void stopProgram(uint8_t force_clear) {
 	// clear out motor moved data and stop motor 
 	clearAll();	
 	Camera.stop(); 
+
+    // Set the proper intervalometer LED status
+    setIntervalometerIndicator();
 }
 
 
