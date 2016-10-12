@@ -32,12 +32,12 @@ const int ALT_TRIG_THRESH  = 750;
 
 
 //Limit switch inputs (0 = detached, 1 = attached RISING, 2 = attached FALLING, 3 = attached CHANGE)
-byte					 ring = 0;
-byte					  tip = 0;
+byte                     ring = 0;
+byte                      tip = 0;
 
 //Pins for the I/O
-const byte           AUX_RING = 24;				//PD0
-const byte            AUX_TIP = 25;				//PD1
+const byte           AUX_RING = 24;             //PD0
+const byte            AUX_TIP = 25;             //PD1
 
 
 
@@ -47,21 +47,21 @@ unsigned long trigLast = millis();
 
 
 void limitSwitchAttach(byte p_altDirection) { 
-	
-	
-	switch(p_altDirection){
-		case 0: 
-			altDirection = RISING;
-			break;
-		case 1:
-			altDirection = FALLING;
-			break;
-		case 2:
-			altDirection = CHANGE;
-			break;
-		default:
-			break;
-	}
+    
+    
+    switch(p_altDirection){
+        case 0: 
+            altDirection = RISING;
+            break;
+        case 1:
+            altDirection = FALLING;
+            break;
+        case 2:
+            altDirection = CHANGE;
+            break;
+        default:
+            break;
+    }
 }
 
 
@@ -104,7 +104,7 @@ void altHandler(byte p_which) {
     if( altInputs[p_which] == ALT_START) 
         startProgram();
     else if( altInputs[p_which] == ALT_STOP_MOTORS && running == true)
-		stopAllMotors();
+        stopAllMotors();
     else if( altInputs[p_which] == ALT_STOP)
         stopProgram();
     else if( altInputs[p_which] == ALT_TOGGLE) {
@@ -115,9 +115,9 @@ void altHandler(byte p_which) {
     }
     else if( altInputs[p_which] == ALT_EXTINT ) {
         
-		debug.serln("External trigger detected");
-		
-		// set camera ok to fire
+        debug.serln("External trigger detected");
+        
+        // set camera ok to fire
         altForceShot = true;
           // do not clear the state, as we may be in the middle of a move
           // when a trigger is received! (or some other activity, for that matter)
@@ -125,19 +125,19 @@ void altHandler(byte p_which) {
     }
     else if( altInputs[p_which] == ALT_DIR) {
         motor[0].dir( !motor[0].dir() );
-		motor[1].dir( !motor[1].dir() );
-		motor[2].dir( !motor[2].dir() );
-	} else if (altInputs[p_which] == ALT_SET_HOME){
-		stopAllMotors();
-		motor[0].homeSet();
-		motor[1].homeSet();
-		motor[2].homeSet();
-	} else if (altInputs[p_which] == ALT_SET_END){
-		stopAllMotors();
-		motor[0].maxSteps((motor[0].currentPos()));
-		motor[1].maxSteps((motor[1].currentPos()));
-		motor[2].maxSteps((motor[2].currentPos()));
-	}
+        motor[1].dir( !motor[1].dir() );
+        motor[2].dir( !motor[2].dir() );
+    } else if (altInputs[p_which] == ALT_SET_HOME){
+        stopAllMotors();
+        motor[0].homeSet();
+        motor[1].homeSet();
+        motor[2].homeSet();
+    } else if (altInputs[p_which] == ALT_SET_END){
+        stopAllMotors();
+        motor[0].maxSteps((motor[0].currentPos()));
+        motor[1].maxSteps((motor[1].currentPos()));
+        motor[2].maxSteps((motor[2].currentPos()));
+    }
         
   } //end if millis...
 }
@@ -170,46 +170,46 @@ void altISRTwo() {
 void altConnect(byte p_which, byte p_mode) {
   
   
-	altInputs[p_which] = p_mode;
-	//sets the pin affected
-	byte pin = AUX_RING;
-	if (p_which == 1)
-		pin = AUX_TIP;
+    altInputs[p_which] = p_mode;
+    //sets the pin affected
+    byte pin = AUX_RING;
+    if (p_which == 1)
+        pin = AUX_TIP;
   
-	if( p_which == 0) {
-		detachInterrupt(2);
-	} else if ( p_which == 1) {
-		detachInterrupt(3);
-	} 
+    if( p_which == 0) {
+        detachInterrupt(2);
+    } else if ( p_which == 1) {
+        detachInterrupt(3);
+    } 
 
-	// disable the input?
+    // disable the input?
  
-	if( p_mode == ALT_OFF ) {
-		pinMode(pin, INPUT);
-		return;
-	}
+    if( p_mode == ALT_OFF ) {
+        pinMode(pin, INPUT);
+        return;
+    }
   
-	// only attach interrupts for input modes
-	if( p_mode != ALT_OUT_BEFORE && p_mode != ALT_OUT_AFTER ) {
-		// set pin as input
-		pinMode(pin, INPUT);
-		// enable pull-up resistor
-		digitalWrite(pin, HIGH);
+    // only attach interrupts for input modes
+    if( p_mode != ALT_OUT_BEFORE && p_mode != ALT_OUT_AFTER ) {
+        // set pin as input
+        pinMode(pin, INPUT);
+        // enable pull-up resistor
+        digitalWrite(pin, HIGH);
   
-		// regarding 6 and 7 below - don't ask me.. ask who ever did that wierd order in WInterrupts.c
-		switch( p_which ) {
-			case 0: //sets interrupt attached to ring
-				attachInterrupt(2, altISROne, altDirection);
-				break;
-			case 1:	//sets interrupt attached to tip
-				attachInterrupt(3, altISRTwo, altDirection);
-				break;
-		}
-	} else {    
-		// it's an output mode    
-		pinMode(pin, OUTPUT);
-		digitalWrite(pin, ! altOutTrig);    
-	}
+        // regarding 6 and 7 below - don't ask me.. ask who ever did that wierd order in WInterrupts.c
+        switch( p_which ) {
+            case 0: //sets interrupt attached to ring
+                attachInterrupt(2, altISROne, altDirection);
+                break;
+            case 1: //sets interrupt attached to tip
+                attachInterrupt(3, altISRTwo, altDirection);
+                break;
+        }
+    } else {    
+        // it's an output mode    
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, ! altOutTrig);    
+    }
  
   
 }    
@@ -255,7 +255,7 @@ void altOutStart(byte p_mode) {
     Engine.state(ST_BLOCK);
   }
   else if( p_mode == ALT_OUT_BEFORE ) {
-	  //clear to shoot
+      //clear to shoot
     Engine.state(ST_CLEAR);
   }
   else {

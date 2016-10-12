@@ -69,12 +69,12 @@ void camCallBack(byte code) {
   // which can result in unexpected behavior
   
   if( code == OM_CAM_FFIN ) {
-	  debug.functln(F("camCallBack() - Start"));
-	  Engine.state(ST_EXP);
+      debug.functln(F("camCallBack() - Start"));
+      Engine.state(ST_EXP);
   }
-  else if( code == OM_CAM_EFIN ) {	
-	debug.functln(F("camCallBack() - Stop"));
-	camera_fired++;
+  else if( code == OM_CAM_EFIN ) {  
+    debug.functln(F("camCallBack() - Stop"));
+    camera_fired++;
     Engine.state(ST_WAIT);
   }
   else if( code == OM_CAM_WFIN ) {
@@ -88,7 +88,7 @@ void camCallBack(byte code) {
 
  // check for camera repeat cycle
 void checkCameraRepeat() {
-	
+    
   
     static byte repdone = 0;
     
@@ -124,57 +124,57 @@ Start or stop camera test mode
 */
 void cameraTest(uint8_t p_start) {
 
-	// If the command doesn't change the test mode, ignore it and exit the fucntion
-	if (camera_test_mode == p_start)
-		return;
+    // If the command doesn't change the test mode, ignore it and exit the fucntion
+    if (camera_test_mode == p_start)
+        return;
 
-	Camera.enable = true;
-	static uint8_t old_enable[MOTOR_COUNT];
-	static unsigned long old_max_shots;
-	camera_test_mode = p_start;
+    Camera.enable = true;
+    static uint8_t old_enable[MOTOR_COUNT];
+    static unsigned long old_max_shots;
+    camera_test_mode = p_start;
 
-	// Entering test mode
-	if (camera_test_mode) {
-		
-		// Save current program type, then switch to SMS mode
-		oldProgramMode = Motors::planType();
-		Motors::planType(SMS);
+    // Entering test mode
+    if (camera_test_mode) {
+        
+        // Save current program type, then switch to SMS mode
+        oldProgramMode = Motors::planType();
+        Motors::planType(SMS);
 
-		// Remember each motor's enable mode and disable all of them
-		for (byte i = 0; i < MOTOR_COUNT; i++) {
-			old_enable[i] = motor[i].enable();
-			motor[i].enable(false);
-		}
+        // Remember each motor's enable mode and disable all of them
+        for (byte i = 0; i < MOTOR_COUNT; i++) {
+            old_enable[i] = motor[i].enable();
+            motor[i].enable(false);
+        }
 
-		// Remember the current max shots setting
-		old_max_shots = Camera.getMaxShots();
+        // Remember the current max shots setting
+        old_max_shots = Camera.getMaxShots();
 
-		// Set the max shots to an arbitrarily large value so the test mode doesn't stop
-		Camera.setMaxShots(10000);
+        // Set the max shots to an arbitrarily large value so the test mode doesn't stop
+        Camera.setMaxShots(10000);
 
-		// Starting the program will make the camera fire, but the motors won't move
-		startProgram();
+        // Starting the program will make the camera fire, but the motors won't move
+        startProgram();
 
-	}
+    }
 
-	// Exiting test mode
-	else if (!camera_test_mode) {
+    // Exiting test mode
+    else if (!camera_test_mode) {
 
-		// Stop the camera firing
-		stopProgram();
+        // Stop the camera firing
+        stopProgram();
 
-		// Restore motor enable statuses and camera max shots
-		for (byte i = 0; i < MOTOR_COUNT; i++)
-			motor[i].enable(old_enable[i]);
+        // Restore motor enable statuses and camera max shots
+        for (byte i = 0; i < MOTOR_COUNT; i++)
+            motor[i].enable(old_enable[i]);
 
-		Camera.setMaxShots(old_max_shots);
+        Camera.setMaxShots(old_max_shots);
 
-		// Reset the shot count to 0
-		camera_fired = 0;
+        // Reset the shot count to 0
+        camera_fired = 0;
 
-		// Restore old program type
-		Motors::planType(oldProgramMode);
-	}
+        // Restore old program type
+        Motors::planType(oldProgramMode);
+    }
 }
 
 
@@ -185,7 +185,7 @@ Return whether the camera is in test mode
 */
 uint8_t cameraTest() {
 
-	return(camera_test_mode);
+    return(camera_test_mode);
 
 }
 
@@ -197,35 +197,35 @@ Automatically sets the max shots value based upon the lead-in, travel, and lead-
 */
 void cameraAutoMaxShots() {
 
-	// This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
-	if (Motors::planType() != SMS)
-		return;
+    // This function should only be used with SMS mode, since leads and travel are in milliseconds for CONT_TL and CONT_VID
+    if (Motors::planType() != SMS)
+        return;
 
-	unsigned int longest = 0;
-	unsigned int current = 0;
+    unsigned int longest = 0;
+    unsigned int current = 0;
 
-	// Find the longest combination of leads and travel, then set that as the max shots
-	for (byte i = 0; i < MOTOR_COUNT; i++) {
-		current = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
-		if (current > longest)
-			longest = current;
-	}
+    // Find the longest combination of leads and travel, then set that as the max shots
+    for (byte i = 0; i < MOTOR_COUNT; i++) {
+        current = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
+        if (current > longest)
+            longest = current;
+    }
 
-	Camera.setMaxShots(longest);
+    Camera.setMaxShots(longest);
 }
 
 // Returns the total number of shots from the current program pass, plus any previous passes
 unsigned int getTotalShots(){
-	if (!running && !kf_running)
-		return 0;
-	else
-		return camera_fired + ping_pong_shots;
+    if (!running && !kf_running)
+        return 0;
+    else
+        return camera_fired + ping_pong_shots;
 }
 
 // Clears shot counters
 void clearShotCounter(){
-	camera_fired = 0;
-	ping_pong_shots = 0;
+    camera_fired = 0;
+    ping_pong_shots = 0;
 }
 
 

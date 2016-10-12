@@ -26,15 +26,15 @@
 /*
 void stopAllCameras() {
 
-	// stop timer (always)
-	// we do this before bringing the pin low in case
-	// a VERY short action time was set to prevent the
-	// timer from continuing to trigger and getting stuck in
-	// a loop.
+    // stop timer (always)
+    // we do this before bringing the pin low in case
+    // a VERY short action time was set to prevent the
+    // timer from continuing to trigger and getting stuck in
+    // a loop.
 
-	MsTimer2::stop();
-	camera[0].stop();
-	camera[1].stop();
+    MsTimer2::stop();
+    camera[0].stop();
+    camera[1].stop();
 
 }
 
@@ -49,8 +49,8 @@ void stopAllCameras() {
 /*
 
 void exposeAll() {
-	camera[0].expose();
-	camera[1].expose();
+    camera[0].expose();
+    camera[1].expose();
 }
 
 /** Trigger Exposure
@@ -65,15 +65,15 @@ void exposeAll() {
 /*
 void expose(unsigned long p_time) {
 
-	// do not expose if exposure time is zero
+    // do not expose if exposure time is zero
   if( p_time == 0 ) {
-  	  if( f_camSignal != 0 )
-  	  	  f_camSignal(OM_CAM_EFIN);
+      if( f_camSignal != 0 )
+          f_camSignal(OM_CAM_EFIN);
 
-  	  return;
+      return;
   }
-  	// indicate (for stop()), that we are in an exposure
-  	// to properly set output states when timer2 completes
+    // indicate (for stop()), that we are in an exposure
+    // to properly set output states when timer2 completes
 
     m_curAct = OM_CAM_INEXP;
 
@@ -100,7 +100,7 @@ void expose(unsigned long p_time) {
     // do it now
 
   if( f_camSignal != 0 )
-  	  f_camSignal(OM_CAMEXP);
+      f_camSignal(OM_CAMEXP);
 
   return;
 }
@@ -114,7 +114,7 @@ void expose(unsigned long p_time) {
 */
 /*
 void focus() {
-	this->focus(m_timeFoc);
+    this->focus(m_timeFoc);
 }
 
 /** Trigger Focus
@@ -129,12 +129,12 @@ void focus() {
 /*
 void focus(unsigned int p_time) {
 
-	// do not focus if focus time is 0
+    // do not focus if focus time is 0
   if( p_time == 0 ) {
-  	  if( f_camSignal != 0 )
-  	  	  f_camSignal(OM_CAM_FFIN);
+      if( f_camSignal != 0 )
+          f_camSignal(OM_CAM_FFIN);
 
-  	  return;
+      return;
   }
 
   digitalWrite(m_focus, HIGH);
@@ -149,7 +149,7 @@ void focus(unsigned int p_time) {
   m_isBzy = true;
     // report focus in progress
   if( f_camSignal != 0 )
-  	  f_camSignal(OM_CAMFOC);
+      f_camSignal(OM_CAMFOC);
 
 }
 
@@ -166,12 +166,12 @@ void focus(unsigned int p_time) {
 /*
 void cameraWait(unsigned int p_Time) {
 
-	// do not wait, if wait time is 0
+    // do not wait, if wait time is 0
   if( p_Time == 0 ) {
-	  if( f_camSignal != 0 )
-		  f_camSignal(OM_CAM_WFIN);
+      if( f_camSignal != 0 )
+          f_camSignal(OM_CAM_WFIN);
 
-	  return;
+      return;
   }
 
   m_curAct = OM_CAM_INDLY;
@@ -183,6 +183,6 @@ void cameraWait(unsigned int p_Time) {
   m_isBzy = true;
 
   if( f_camSignal != 0 )
-  	  f_camSignal(OM_CAMWAIT);
+      f_camSignal(OM_CAMWAIT);
 }
 
