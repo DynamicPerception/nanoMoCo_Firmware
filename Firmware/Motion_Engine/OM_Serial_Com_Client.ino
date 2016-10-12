@@ -513,47 +513,58 @@ void serMain(byte command, byte* input_serial_buffer) {
 
     //Command 15 Set Alt Output Before Shot Delay
     case 15:
-
-    altBeforeDelay = Node.ntoui(input_serial_buffer);
-    altSetup();
-    response(true);
-    break;
+    {
+               altBeforeDelay = Node.ntoui(input_serial_buffer);
+               altSetup();
+               response(true);
+               break;
+    }
     //Command 16 Set Alt Output After Shot Delay
     case 16:
-    altAfterDelay = Node.ntoui(input_serial_buffer);
-    altSetup();
-    response(true);
-    break;
+    {
+               altAfterDelay = Node.ntoui(input_serial_buffer);
+               altSetup();
+               response(true);
+               break;
+    }
     //Command 17 Set Alt Output Before Shot Time
     case 17:
-    altBeforeMs = Node.ntoui(input_serial_buffer);
-    altSetup();
-    response(true);
-    break;
+    {
+               altBeforeMs = Node.ntoui(input_serial_buffer);
+               altSetup();
+               response(true);
+               break;
+    }
     //Command 18 Set Alt Output After Shot Time
     case 18:
-    altAfterMs = Node.ntoui(input_serial_buffer);
-    altSetup();
-    response(true);
-    break;
+    {
+               altAfterMs = Node.ntoui(input_serial_buffer);
+               altSetup();
+               response(true);
+               break;
+    }
     //Command 19 Set Alt Output Trigger Level
     case 19:
-    if (input_serial_buffer[0] == 1) {
-        altOutTrig = HIGH;
-        response(true);
+    {
+               if (input_serial_buffer[0] == 1) {
+                   altOutTrig = HIGH;
+                   response(true);
+               }
+               else if (input_serial_buffer[0] == 0) {
+                   altOutTrig = LOW;
+                   response(true);
+               }
+               else
+                   response(false);
+               break;
     }
-    else if (input_serial_buffer[0] == 0) {
-        altOutTrig = LOW;
-        response(true);
-    }
-    else
-        response(false);
-    break;
     //Command 20 sets the max run time  
     case 20:
-    max_time = Node.ntoul(input_serial_buffer);
-    response(true);
-    break;
+    {
+               max_time = Node.ntoul(input_serial_buffer);
+               response(true);
+               break;
+    }
     //Command 21 set start time delay (input is in miliseconds)
     case 21:
     {
@@ -735,9 +746,11 @@ void serMain(byte command, byte* input_serial_buffer) {
 
     //Command 100 read firmware version
     case 100:
-    // serial api version
-    response(true, (unsigned long)SERIAL_VERSION);
-    break;
+    {
+                // serial api version
+                response(true, (unsigned long)SERIAL_VERSION);
+                break;
+    }
     //Command 101 reads run status
     case 101:
     {
@@ -773,19 +786,25 @@ void serMain(byte command, byte* input_serial_buffer) {
 
     //Command 103 is camera(s) currently exposing?  
     case 103:
-    // camera currently exposing
-    response(true, (byte)Camera.busy());
-    break;
+    {
+                // camera currently exposing
+                response(true, (byte)Camera.busy());
+                break;
+    }
     //Command 104 reads master timing value  
     case 104:
-    // timing master    
-    response(true, timing_master);
-    break;
+    {
+                // timing master    
+                response(true, timing_master);
+                break;
+    }
     //Command 105 reads device name 
     case 105:
-    // device name
-    response(true, (char*)device_name, 10);
-    break;
+    {
+                // device name
+                response(true, (char*)device_name, 10);
+                break;
+    }
     /*
         Command 106 -- Max step rate query deprecated in version 0.70.
         There's generally no reason to be fiddling with this value unless
@@ -848,24 +867,34 @@ void serMain(byte command, byte* input_serial_buffer) {
 
     //Command 112 reads Alt Output Before Shot Delay Time
     case 112:
-    response(true, altBeforeDelay);
-    break;
+    {
+                response(true, altBeforeDelay);
+                break;
+    }
     //Command 113 reads Alt Output After Shot Delay Time
     case 113:
-    response(true, altAfterDelay);
-    break;
+    {
+                response(true, altAfterDelay);
+                break;
+    }
     //Command 114 reads Alt Output Before Shot Time
     case 114:
-    response(true, altBeforeMs);
-    break;
+    {
+                response(true, altBeforeMs);
+                break;
+    }
     //Command 115 reads Alt Output After Shot Time
     case 115:
-    response(true, altAfterMs);
-    break;
+    {
+                response(true, altAfterMs);
+                break;
+    }
     //Command 116 reads Alt Output Trigger Level
     case 116:
-    response(true, altOutTrig);
-    break;
+    {
+                response(true, altOutTrig);
+                break;
+    }
     //Command 117 reads start time delay (miliseconds)
     case 117:
     {
@@ -886,8 +915,10 @@ void serMain(byte command, byte* input_serial_buffer) {
 
     //Command 119 reads whether the controller has been powercycled since last query
     case 119:
-    response(true, powerCycled());
-    break;
+    {
+                response(true, powerCycled());
+                break;
+    }
     //Command 120 reads joystick mode setting
     case 120:
     {
@@ -1106,7 +1137,7 @@ void serMain(byte command, byte* input_serial_buffer) {
                 break;
     }
 
-    //Error    
+    //Error
     default:
     //response(false);
     break;
@@ -1125,7 +1156,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
     switch (command) {
 
-        //Command 2 set the sleep mode of the motor
+    //Command 2 set the sleep mode of the motor
     case 2:
     {
               motorSleep(( subaddr - 1 ), input_serial_buffer[0]);
@@ -1616,7 +1647,14 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
                    // need to decrease run time counter
                    {
-                       unsigned long delayTime = ( Camera.intervalTime() > ( Camera.triggerTime() + Camera.focusTime() + Camera.delayTime() ) ) ? Camera.intervalTime() : ( Camera.triggerTime() + Camera.focusTime() + Camera.delayTime() );
+                       unsigned long delayTime;
+                       if (Camera.intervalTime() > ( Camera.triggerTime() + Camera.focusTime() + Camera.delayTime() )) {
+                           delayTime = Camera.intervalTime();
+                       }
+                       else {
+                           delayTime = Camera.triggerTime() + Camera.focusTime() + Camera.delayTime();
+                       }
+
                        if (run_time >= delayTime)
                            run_time -= delayTime;
                        else
@@ -2140,7 +2178,6 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 
     //Error
     default:
-
     //response(false);
     break;
     }
@@ -2174,7 +2211,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer) {
 
     switch (command) {
 
-        // Command 10 sets the current axis
+    // Command 10 sets the current axis
     case 10:
     {
                int axis = Node.ntoi(input_serial_buffer);
@@ -2698,8 +2735,3 @@ void response(uint8_t p_stat, char* p_resp, int p_len) {
     break;
     }
 }
-
-
-
-
-
