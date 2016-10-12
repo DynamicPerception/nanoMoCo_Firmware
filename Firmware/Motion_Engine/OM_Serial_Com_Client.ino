@@ -693,7 +693,7 @@ void serMain(byte command, byte* input_serial_buffer) {
         msg = "Setting cur pos restore: ";
         ee_load_curPos = input_serial_buffer[0];
         OMEEPROM::write(EE_LOAD_POS, ee_load_curPos);
-        debugMessage(GEN, command, MSG, ee_load_curPos);        
+        debugMessage(GEN, command, MSG, ee_load_curPos);
         response(true, ee_load_curPos);
         break;
     }
@@ -724,7 +724,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 33:
     {
         controller_count = input_serial_buffer[0];
-        msg = "Setting controller count: ";             
+        msg = "Setting controller count: ";
         debugMessage(GEN, command, MSG, controller_count);
         response(true, controller_count);
         break;
@@ -779,7 +779,7 @@ void serMain(byte command, byte* input_serial_buffer) {
              status = 0;
                 
         msg = "Run status: ";
-        debugMessage(GEN, command, MSG, status);            
+        debugMessage(GEN, command, MSG, status);
                 
         response(true, status);
     }
@@ -1037,7 +1037,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 131 returns whether the current position should be saved after a power cycle
     case 131:
     {
-        msg = "Cur pos restore: ";             
+        msg = "Cur pos restore: ";
         debugMessage(GEN, command, MSG, ee_load_curPos);
         response(true, ee_load_curPos);
         break;
@@ -1106,7 +1106,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 252 sets the MoCoBus debug enable state
     case 252:
     {
-        byte setting = input_serial_buffer[0];      
+        byte setting = input_serial_buffer[0];
         response(true, debug.setMoco(setting));
         break;
     }
@@ -1161,7 +1161,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
         motorSleep((subaddr - 1), input_serial_buffer[0]);
         msg = "Setting sleep: ";
-        debugMessage(subaddr, command, MSG, motorSleep(subaddr-1));             
+        debugMessage(subaddr, command, MSG, motorSleep(subaddr-1));
         response(true);
         break;
     }
@@ -1189,12 +1189,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         break;
     }
 
-    //Command 5 set motor's backlash amount  
+    //Command 5 set motor's backlash amount
     case 5:
     {       
-        unsigned int in_val = Node.ntoui(input_serial_buffer);      
+        unsigned int in_val = Node.ntoui(input_serial_buffer);
         thisMotor.backlash(in_val);
-        msg = "Setting backlash: ";     
+        msg = "Setting backlash: ";
         debugMessage(subaddr, command, MSG, in_val);
         response(true);
         break;
@@ -1207,8 +1207,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         byte in_val = input_serial_buffer[0];
         thisMotor.ms(in_val);
         OMEEPROM::write(EE_MS_0 + (subaddr - 1) * EE_MOTOR_MEMORY_SPACE, in_val);
-                if((subaddr-1)<USBCONTROLLERUI_NMOTORS)
-                  USBCtrlrUI.SetMotorMS( subaddr-1, in_val );       
+        if((subaddr-1)<USBCONTROLLERUI_NMOTORS)
+            USBCtrlrUI.SetMotorMS(subaddr - 1, in_val);
         msg = "Setting microsteps: ";
         debugMessage(subaddr, command, MSG, in_val);
         response(true);
@@ -1253,7 +1253,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 10:
     {              
         msg = "Setting end here: ";
-        debugMessage(subaddr, command, MSG, thisMotor.currentPos());        
+        debugMessage(subaddr, command, MSG, thisMotor.currentPos());
         endPos[subaddr - 1] = thisMotor.currentPos();
         //long tempPos = thisMotor.currentPos();
         //thisMotor.endPos(tempPos);        
