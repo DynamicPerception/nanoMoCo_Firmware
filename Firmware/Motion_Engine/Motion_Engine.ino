@@ -224,10 +224,11 @@ boolean       keep_camera_alive = false;
 typedef OMMotorFunctions Motors;
 
 // Deafult motor settings
-const unsigned int MOT_DEFAULT_MAX_STEP     = 5000;         // Default maximum controller step rate output
-const unsigned int MOT_DEFAULT_MAX_SPD      = 5000;         // Default maximum motor speed in steps / sec
-const float MOT_DEFAULT_CONT_ACCEL          = 15000.0;      // Default motor accel/decel rate for non-program continuous moves
-const unsigned int MOT_DEFAULT_BACKLASH     = 0;            // Default number of backlash steps to take up when reversing direction                             // Number of motors possibly attached to controller
+const unsigned int MOT_DEFAULT_MAX_STEP         = 5000;         // Default maximum controller step rate output
+const unsigned int MOT_DEFAULT_MAX_SLIDE_SPD    = 5000;         // Default maximum slider motor speed in steps / sec
+const unsigned int MOT_DEFAULT_MAX_ROTARY_SPD   = 3000;         // Default maximum rotary motor speed in steps / sec
+const float MOT_DEFAULT_CONT_ACCEL              = 15000.0;      // Default motor accel/decel rate for non-program continuous moves
+const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction                             // Number of motors possibly attached to controller
 
 // plan move types
 #define SMS             0       // Shoot-move-shoot mode
@@ -453,8 +454,14 @@ void setup() {
     for( int i = 0; i < MOTOR_COUNT; i++){
         motor[i].enable(true);
         motor[i].maxStepRate(MOT_DEFAULT_MAX_STEP);
-        motor[i].maxSpeed(MOT_DEFAULT_MAX_SPD);
-        motor[i].contSpeed(MOT_DEFAULT_MAX_SPD);
+        if (i == 0) {
+            motor[i].maxSpeed(MOT_DEFAULT_MAX_SLIDE_SPD);
+            motor[i].contSpeed(MOT_DEFAULT_MAX_SLIDE_SPD);
+        }
+        else {
+            motor[i].maxSpeed(MOT_DEFAULT_MAX_ROTARY_SPD);
+            motor[i].contSpeed(MOT_DEFAULT_MAX_ROTARY_SPD);
+        }
         motor[i].contAccel(MOT_DEFAULT_CONT_ACCEL);
         motor[i].sleep(false);
         motor[i].backlash(MOT_DEFAULT_BACKLASH);
