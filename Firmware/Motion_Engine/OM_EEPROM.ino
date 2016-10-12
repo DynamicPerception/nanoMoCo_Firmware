@@ -37,7 +37,7 @@ See dynamicperception.com for more information
 
 
 // EEPROM Memory Layout Version, change this any time you modify what is stored
-const unsigned int MEMORY_VERSION = 5;
+const unsigned int MEMORY_VERSION = 7;
 
 
 
@@ -93,8 +93,8 @@ void eepromWrite() {
         tempStop    = motor[i].stopPos();
         tempEnd     = endPos[i];
 
-                if(i<USBCONTROLLERUI_NMOTORS)
-                  USBCtrlrUI.SetMotorMS( i, tempMS );
+        if(i<USBCONTROLLERUI_NMOTORS)
+            USBCtrlrUI.SetMotorMS( i, tempMS );
 
         write(EE_MS_0       + EE_MOTOR_MEMORY_SPACE * i, tempMS);
         write(EE_SLEEP_0    + EE_MOTOR_MEMORY_SPACE * i, tempSleep);

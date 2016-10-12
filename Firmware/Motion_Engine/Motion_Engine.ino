@@ -74,7 +74,7 @@ See dynamicperception.com for more information
  name            = 2
  
 */
-const byte MOTOR_COUNT = 3; 
+const byte MOTOR_COUNT  = 3; 
 const int EE_ADDR       = 0;                // device_address (2 bytes)
 const int EE_NAME       = 2;                // device name (16 bytes)
 
@@ -476,15 +476,15 @@ void setup() {
             motor[i].ms(4);
         else
             motor[i].ms(16);
-        motor[i].programBackCheck(false);    
+        motor[i].programBackCheck(false);
     }
-        // Leaving this here for now, remove before merging
-        //debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR | DebugClass::DB_STEPS );
+    // Leaving this here for now, remove before merging
+    //debug.setState(DebugClass::DB_FUNCT | DebugClass::DB_COM_OUT | DebugClass::DB_GEN_SER |  DebugClass::DB_MOTOR | DebugClass::DB_STEPS );
           
-        // Initialize USB Controller Mode
-        USBCtrlrUI.init();
+    // Initialize USB Controller Mode
+    USBCtrlrUI.init();
     
-        // restore/store eeprom memory
+    // restore/store eeprom memory
     eepromCheck();
  
     // enable limit switch handler
