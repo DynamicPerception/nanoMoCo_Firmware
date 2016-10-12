@@ -174,8 +174,8 @@ void eepromRestore() {
 
 
         motor[i].ms(tempMS);
-                if(i<USBCONTROLLERUI_NMOTORS)
-                  USBCtrlrUI.SetMotorMS( i, tempMS );
+        if(i<USBCONTROLLERUI_NMOTORS)
+            USBCtrlrUI.SetMotorMS( i, tempMS );
         motor[i].sleep(tempSleep);
         motor[i].contAccel(tempAccel);
         motor[i].maxSpeed(tempMaxSpd);
