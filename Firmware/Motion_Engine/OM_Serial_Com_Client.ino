@@ -565,6 +565,7 @@ void serMain(byte command, byte* input_serial_buffer) {
                response(true);
                break;
     }
+
     //Command 21 set start time delay (input is in miliseconds)
     case 21:
     {
