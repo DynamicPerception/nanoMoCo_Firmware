@@ -97,22 +97,19 @@ const int KF = 5;
 const PROGMEM char SUBADDR[] = "Subaddr:";
 const PROGMEM char COMMAND[] = " command:";
 const PROGMEM char TIME[] = "time ";
-
 const PROGMEM char GEN_STR[] = "Gen.";
 const PROGMEM char MOT_STR[] = "Mot.";
 const PROGMEM char CAM_STR[] = "Cam.";
 const PROGMEM char KF_STR[] = "Kf.";
-
 const PROGMEM char SETTING_NEW_ADDRESS[] = "Setting new address!";
 const PROGMEM char MOCOBUS_STR[] = "MocoBus ";
 const PROGMEM char BLUETOOTH_STR[] = "Bluetooth ";
-
 #define msg static const char PROGMEM MSG[]
 #define thisMotor motor[subaddr - 1]
 #define getMsg getMsgFromFlash
 
 char* getMsgFromFlash(const char* message) {
-    strcpy_P(buffer, message);          
+    strcpy_P(buffer, message);
     return buffer;
 }
 
@@ -139,9 +136,9 @@ void printInputBuffer(byte subaddr, byte command, byte* buf){
 
 void serNode1Handler(byte subaddr, byte command, byte*buf) {
     node = MOCOBUS;
-    commandTime = millis();  
+    commandTime = millis();
     debug.com(MOCOBUS_STR);
-    printInputBuffer(subaddr, command, buf);    
+    printInputBuffer(subaddr, command, buf);
     serCommandHandler(subaddr, command, buf);
 }
 
@@ -227,7 +224,6 @@ void serCommandHandler(byte subaddr, byte command, byte* buf) {
     
     //update the last time a command was received 
     commandTime = millis();
-
  switch(subaddr) {   
    case 0:
 
@@ -289,15 +285,12 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
     case OM_BCAST_START:
       startProgram();
       break;
-      
     case OM_BCAST_STOP:
       stopProgram();
       break;
-      
     case OM_BCAST_PAUSE:
       pauseProgram();
       break;
-      
       //resets controller to default address/name, flashes the debug LED 5 times to indicate restart required      
     case OM_BCAST_SET_ADDRESS:
         debug.serln(SETTING_NEW_ADDRESS);
@@ -311,7 +304,6 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
             flasher(DEBUG_PIN, 5);
         }
         break;
-
     case OM_GRAFFIK_MODE_USB:
     {
         node = USB;
@@ -323,19 +315,15 @@ void serBroadcastHandler(byte subaddr, byte command, byte* buf) {
     case OM_BCAST_KF_START:
         kf_startProgram();
         break;
-
     case OM_BCAST_KF_STOP:
         kf_stopProgram();
         break;
-
     case OM_BCAST_KF_PAUSE:
         kf_pauseProgram();
         break;
-
     case OM_BCAST_GET_ADDRESS:
         response(true, Node.address());
         break;
-
     default:
       break;
   }
@@ -393,7 +381,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 5:
     {
         msg = "Toggling debug LED";
-        debugMessage(GEN, command, MSG);                
+        debugMessage(GEN, command, MSG);
         // turn off led in case it was on an on cycle
         static uint8_t toggle = false;
         if (!toggle) {
@@ -411,14 +399,12 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 6 sets the master timing  
     case 6:
       ComMgr.master(input_serial_buffer[0]);
-      response(true);      
+      response(true);
       break;
-   
     //Command 7 sets the name of the device  
     case 7:
       {  
          memset(device_name, 0, 10);
-               
            for(byte i = 0; i <= 10; i++) {
              if( input_serial_buffer[i] != 0 ) 
                device_name[i] = input_serial_buffer[i];
@@ -429,7 +415,6 @@ void serMain(byte command, byte* input_serial_buffer) {
       OMEEPROM::write(EE_NAME, *device_name, 10);
       response(true);
       break;
-      
     //Command 8 sets new address for device
     case 8:
     {
@@ -461,7 +446,6 @@ void serMain(byte command, byte* input_serial_buffer) {
       }
       response(true);
       break;
-      
     //Command 10 send all motors home
     case 10:
     {
@@ -470,7 +454,7 @@ void serMain(byte command, byte* input_serial_buffer) {
         // send a motor home
         for (byte i = 0; i < MOTOR_COUNT; i++){
             motor[i].contSpeed(motor[i].maxSpeed());
-            motor[i].ms(4);         
+            motor[i].ms(4);
             motor[i].home();
             motor[i].setSending(true);
         }
@@ -507,17 +491,14 @@ void serMain(byte command, byte* input_serial_buffer) {
                altConnect(0, _ring);
                altConnect(1, _tip);
                altSetup();
-
                // Set the external_intervalomter flag so running time is equal to total program time during the entire program
                if (_ring == ALT_EXTINT || _tip == ALT_EXTINT)
                    external_intervalometer = true;
                else
                    external_intervalometer = false;
-
                response(true);
     }
         break;
-        
     //Command 14 sets joystick watchdog flag
     case 14:
     {           
@@ -535,28 +516,24 @@ void serMain(byte command, byte* input_serial_buffer) {
         altSetup();
         response(true);
         break;
-        
     //Command 16 Set Alt Output After Shot Delay
     case 16:
         altAfterDelay = Node.ntoui(input_serial_buffer);
         altSetup();
         response(true);
         break;
-        
     //Command 17 Set Alt Output Before Shot Time
     case 17:
         altBeforeMs = Node.ntoui(input_serial_buffer);
         altSetup();
         response(true);
         break;
-
     //Command 18 Set Alt Output After Shot Time
     case 18:
         altAfterMs = Node.ntoui(input_serial_buffer);
         altSetup();
         response(true);
         break;
-        
     //Command 19 Set Alt Output Trigger Level
     case 19:
         if (input_serial_buffer[0] == 1){
@@ -568,13 +545,11 @@ void serMain(byte command, byte* input_serial_buffer) {
         } else
             response(false);
         break;
-        
     //Command 20 sets the max run time  
     case 20:
         max_time = Node.ntoul(input_serial_buffer);
         response(true);
         break;
-    
     //Command 21 set start time delay (input is in miliseconds)
     case 21:
     {          
@@ -604,10 +579,10 @@ void serMain(byte command, byte* input_serial_buffer) {
     // This is to avoid incorrect commands due to corrupt communications causing runaway motors or controller lockup.
     case 23:
     {
-        byte mode = input_serial_buffer[0];            
+        byte mode = input_serial_buffer[0];
         joystickSet(mode);
         msg = "Setting joystick mode";
-        debugMessage(GEN, command, MSG, mode);             
+        debugMessage(GEN, command, MSG, mode);
         response(true);
         break;
     }
@@ -639,11 +614,11 @@ void serMain(byte command, byte* input_serial_buffer) {
         //debugMessage(GEN, command, SET + ALL + MOTOR + START + POS + HERE);
         for (byte i = 0; i < MOTOR_COUNT; i++){
             long tempPos = motor[i].currentPos();
-            motor[i].startPos(tempPos);         
+            motor[i].startPos(tempPos);
             debug.ser(" motor ");
             debug.ser(i);
             debug.ser(" start: ");
-            debug.serln(motor[i].startPos());                       
+            debug.serln(motor[i].startPos());
         }
         response(true);
         break;
@@ -655,13 +630,13 @@ void serMain(byte command, byte* input_serial_buffer) {
         //debugMessage(GEN, command, SET + ALL + MOTOR + STOP + POS + HERE);
         for (byte i = 0; i < MOTOR_COUNT; i++){
             long tempPos = motor[i].currentPos();
-            motor[i].stopPos(tempPos);          
+            motor[i].stopPos(tempPos);
             msg = "Setting stop pos here for all motors...";
             debugMessage(GEN, command, MSG);
             debug.ser("motor ");
             debug.ser(i);
             debug.ser(" stop: ");
-            debug.serln(motor[i].stopPos());                        
+            debug.serln(motor[i].stopPos());
         }
         response(true);
         break;
@@ -672,7 +647,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     {
         fps = input_serial_buffer[0];
         msg = "Setting FPS flag: ";
-        debugMessage(GEN, command, MSG, fps);   
+        debugMessage(GEN, command, MSG, fps);
         response(true);
         break;
     }
@@ -717,7 +692,7 @@ void serMain(byte command, byte* input_serial_buffer) {
         OMEEPROM::write(EE_LOAD_END, ee_load_endPos);
         debugMessage(GEN, command, MSG, ee_load_endPos);
         response(true, ee_load_endPos);
-        break; 
+        break;
     }
 
     //Command 33 sets the number of controllers running concurrently
@@ -759,7 +734,6 @@ void serMain(byte command, byte* input_serial_buffer) {
       // serial api version
       response( true, (unsigned long) SERIAL_VERSION );
       break;
-    
     //Command 101 reads run status
     case 101:
     {
@@ -777,21 +751,17 @@ void serMain(byte command, byte* input_serial_buffer) {
             status = 1;
         else
              status = 0;
-                
         msg = "Run status: ";
         debugMessage(GEN, command, MSG, status);
-                
         response(true, status);
     }
       break;
-    
     //Command 102 reads current run time. If the program has completed, it will return the run time when the program stopped.
     case 102:
     {
         msg = "Current run time: ";
         debugMessage(GEN, command, MSG, getRunTime());
         debug.serln(getRunTime());
-                
         response(true, getRunTime());
         break;
     }
@@ -802,19 +772,16 @@ void serMain(byte command, byte* input_serial_buffer) {
       // camera currently exposing
       response( true, (byte) Camera.busy() );
       break;
-      
     //Command 104 reads master timing value  
     case 104:
       // timing master    
       response( true, timing_master );
       break;
-      
     //Command 105 reads device name 
     case 105:
       // device name
       response(true, (char*)device_name, 10);
       break;
-    
     /*
         Command 106 -- Max step rate query deprecated in version 0.70. 
         There's generally no reason to be fiddling with this value unless
@@ -879,7 +846,6 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 112:
         response(true, altBeforeDelay);
         break;
-    
     //Command 113 reads Alt Output After Shot Delay Time
     case 113:
         response(true, altAfterDelay);
@@ -892,12 +858,10 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 115:
         response(true, altAfterMs);
         break;
-        
     //Command 116 reads Alt Output Trigger Level
     case 116:
         response(true, altOutTrig);
         break;
-
     //Command 117 reads start time delay (miliseconds)
     case 117:
     {
@@ -920,7 +884,6 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 119:
         response(true, powerCycled());
         break;
-
     //Command 120 reads joystick mode setting
     case 120:
     {
@@ -934,7 +897,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 121:
     {
         msg = "Pingpong mode: ";
-        debugMessage(GEN, command, MSG, pingPongMode());        
+        debugMessage(GEN, command, MSG, pingPongMode());
         response(true, pingPongMode());
         break;
     }
@@ -953,8 +916,8 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 123:
     {
         msg = "% Complete: ";
-        debugMessage(GEN, command, MSG, programPercent());      
-        debug.serln(programPercent());      
+        debugMessage(GEN, command, MSG, programPercent());
+        debug.serln(programPercent());
         response(true, programPercent());
         break;
     }
@@ -976,7 +939,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 125:
     {
         msg = "Total program time: ";
-        debugMessage(GEN, command, MSG, totalProgramTime());                
+        debugMessage(GEN, command, MSG, totalProgramTime());
         response(true, totalProgramTime());
         break;
     }
@@ -986,7 +949,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     {
         uint8_t complete = programComplete() ? 1 : 0;
         msg = "Is program complete?: ";
-        debugMessage(GEN, command, MSG, complete);      
+        debugMessage(GEN, command, MSG, complete);
         response(true, complete);
         break;
     }
@@ -995,7 +958,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 127:
     {
         msg = "FPS flag: ";
-        debugMessage(GEN, command, MSG, fps);       
+        debugMessage(GEN, command, MSG, fps);
         response(true, fps);
         break;
     }
@@ -1221,7 +1184,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         unsigned int in_val = Node.ntoui(input_serial_buffer);
         thisMotor.maxSpeed(in_val);
         msg = "Setting max speed: ";
-        debugMessage(subaddr, command, MSG, in_val);        
+        debugMessage(subaddr, command, MSG, in_val);
         eepromWriteMaxSpd();
         response(true);
         break;
@@ -1232,7 +1195,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
         byte in_val = input_serial_buffer[0];
         msg = "Setting direction: ";
-        debugMessage(subaddr, command, MSG, in_val);        
+        debugMessage(subaddr, command, MSG, in_val);
         thisMotor.dir(in_val);
         response(true);
         break;
@@ -1256,7 +1219,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         debugMessage(subaddr, command, MSG, thisMotor.currentPos());
         endPos[subaddr - 1] = thisMotor.currentPos();
         //long tempPos = thisMotor.currentPos();
-        //thisMotor.endPos(tempPos);        
+        //thisMotor.endPos(tempPos);
         response(true);
         break;
     }
@@ -1269,11 +1232,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
             thisMotor.ms(4);*/
         msg = "Sending to home";
         debugMessage(subaddr, command, MSG);
-
         thisMotor.contSpeed(thisMotor.maxSpeed());
-
         // send a motor home
-        thisMotor.ms(4);        
+        thisMotor.ms(4);
         thisMotor.home();
         startISR();
         thisMotor.setSending(true);
@@ -1287,11 +1248,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         // Move at the maximum motor speed
         //if (!graffikMode())
         //  thisMotor.ms(4);
-
         msg = "Sending to end";
         debugMessage(subaddr, command, MSG);
         thisMotor.contSpeed(thisMotor.maxSpeed());
-
         thisMotor.moveToEnd();
         startISR();
         response(true);
@@ -1302,8 +1261,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 13:
     {
         float input_speed = Node.ntof(input_serial_buffer);
-        
-        
         // If joystick mode or Graffik mode is active and the last speed setting was ~0, automatically start a simple continuous move in the correct direction
         if (joystick_mode || graffikMode()){                        
             msg = "Setting joystick speed: ";
@@ -1324,7 +1281,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         // Don't send a response in joystick or Graffik modes
         if (!joystick_mode && !graffikMode())
             response(true);
-
         break;
     }
 
@@ -1333,8 +1289,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
         float in_val = Node.ntof(input_serial_buffer);
         msg = "Setting acceleration: ";
-        debugMessage(subaddr, command, MSG, in_val);        
-        thisMotor.contAccel(in_val);        
+        debugMessage(subaddr, command, MSG, in_val);
+        thisMotor.contAccel(in_val);
         eepromWriteAccel();
         response(true);
         break;
@@ -1346,7 +1302,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         // set direction
         byte dir = input_serial_buffer[0];
         input_serial_buffer++;
-
         // if in joystick mode, check whether the speed is currently set to zero and needs to change
         if (joystick_mode && thisMotor.desiredSpeed() < 1.0 && thisMotor.desiredSpeed() > - 1.0) {
             if (dir == 1)
@@ -1358,15 +1313,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
         // how many steps to take
         unsigned long steps = Node.ntoul(input_serial_buffer);
         msg = "Commanded steps: ";
-        debugMessage(subaddr, command, MSG, steps);            
-
+        debugMessage(subaddr, command, MSG, steps);
         // move
         if (steps == 0)
             thisMotor.continuous(true);
-                
         thisMotor.move(dir, steps);
         startISR();
-
         response(true);
         break;
     }
@@ -1375,9 +1327,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 16:
     {
         long tempPos = Node.ntol(input_serial_buffer);
-        thisMotor.startPos(tempPos);        
+        thisMotor.startPos(tempPos);
         msg = "Setting start: ";
-        debugMessage(subaddr, command, MSG, tempPos);       
+        debugMessage(subaddr, command, MSG, tempPos);
         response(true);
         break;
     }
@@ -1386,9 +1338,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 17:
     {
         long tempPos = Node.ntol(input_serial_buffer);
-        thisMotor.stopPos(tempPos);     
+        thisMotor.stopPos(tempPos);
         msg = "Setting stop: ";
-        debugMessage(subaddr, command, MSG, tempPos);       
+        debugMessage(subaddr, command, MSG, tempPos);
         response(true);
         break;
     }
@@ -1419,7 +1371,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
         thisMotor.planLeadIn(Node.ntoul(input_serial_buffer));
         msg = "Setting lead-in: ";
-        debugMessage(subaddr, command, MSG, thisMotor.planLeadIn());        
+        debugMessage(subaddr, command, MSG, thisMotor.planLeadIn());
         if (!graffik_mode)
             thisMotor.planLeadOut(0);
         cameraAutoMaxShots(); // If current mode is SMS, this will set the max shots value based upon the leads and travel settings
@@ -1491,7 +1443,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 26 is not yet allocated
     case 26:
         break;
-
     //Command 27 reset limits and program positions
     case 27:
     {
@@ -1630,14 +1581,12 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
 
             // go ahead and make sure we fire immediately
             camera_tm = millis() - Camera.intervalTime();
-
             thisMotor.autoPause = true;
             startProgram();
             response(true);
         }
 
         break;
-
     // Command 52 steps back one sms planed cycle
     case 52:
         // step back one interleaved (sms) plan cycle
@@ -1653,7 +1602,6 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
                 // rollback one shot in the program
                 if (camera_fired > 0)
                     camera_fired--;
-
                 thisMotor.planReverse();
                 startISR();
             }
@@ -1661,19 +1609,15 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
             // need to decrease run time counter
             {
                 unsigned long delayTime = (Camera.intervalTime() > (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime())) ? Camera.intervalTime() : (Camera.triggerTime() + Camera.focusTime() + Camera.delayTime());
-
                 if (run_time >= delayTime)
                     run_time -= delayTime;
                 else
                     run_time = 0;
             }
             response(true);
-
         } // end else (mt_plan
 
         break;
-
-    
     //*****************MOTOR READ COMMANDS********************
     
     //Command 100 reads motor enable status
@@ -1698,7 +1642,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 102:
     {
         msg = "Microsteps: ";
-        debugMessage(subaddr, command, MSG, thisMotor.ms());    
+        debugMessage(subaddr, command, MSG, thisMotor.ms());
         response(true, thisMotor.ms());
         break;
     }
@@ -1831,7 +1775,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 116:
     {
         msg = "Program decel length: ";
-        debugMessage(subaddr, command, MSG, thisMotor.planDecelLength());               
+        debugMessage(subaddr, command, MSG, thisMotor.planDecelLength());
         response(true, thisMotor.planDecelLength());
         break;
     }
@@ -1850,7 +1794,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
         uint8_t valid = validateProgram(subaddr - 1, false) ? 1 : 0;
         msg = "Is program valid? : ";
-        debugMessage(subaddr, command, MSG, valid);     
+        debugMessage(subaddr, command, MSG, valid);
         response(true, valid);
         break;
     }
@@ -2193,7 +2137,6 @@ void serCamera(byte subaddr, byte command, byte* input_serial_buffer) {
 void serialComplexMove(byte subaddr, byte* buf) {
    byte dir = buf[0];
    buf++;
-   
    unsigned long dist  = Node.ntoul(buf);
    buf += 5; // one padding byte added
    
@@ -2204,8 +2147,7 @@ void serialComplexMove(byte subaddr, byte* buf) {
    buf += 5; // one padding byte added
    
    unsigned long decel  = Node.ntoul(buf);
-
-   thisMotor.move(dir, dist, arrive, accel, decel); 
+   thisMotor.move(dir, dist, arrive, accel, decel);
 }
 
 
@@ -2221,14 +2163,12 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     case 10:
     {
         int axis = Node.ntoi(input_serial_buffer);
-        
         msg = "Selecting axis: ";
-        debugMessage(KF, command, MSG, axis);       
-
+        debugMessage(KF, command, MSG, axis);
         // A valid axis must be selected
         if (axis >= 0 && axis <= MOTOR_COUNT){         
             // Set the current axis
-            KeyFrames::setAxis(axis);                  
+            KeyFrames::setAxis(axis);
         }
         response(true, axis);
         break;
@@ -2237,8 +2177,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     // Command 11 sets key frame count
     case 11:
     {
-        int in_val = Node.ntoi(input_serial_buffer);        
-
+        int in_val = Node.ntoi(input_serial_buffer);
         // If this is the start of a new transmission, set the count and the receive flag
         if (in_val >= 0){                       
             int axis = KeyFrames::getAxis();
@@ -2246,7 +2185,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
             kf[axis].resetXN();
             kf[axis].resetFN();
             kf[axis].resetDN();
-            kf[axis].setKFCount(in_val);                                
+            kf[axis].setKFCount(in_val);
             msg = "Setting key frame count: ";
             debugMessage(KF, command, MSG, in_val);
         }                     
@@ -2259,16 +2198,13 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     {       
         // Parse the incoming value
         float in_val = Node.ntof(input_serial_buffer);
-
         int axis = KeyFrames::getAxis();
-        int frame = kf[axis].countXN();     
-        
+        int frame = kf[axis].countXN();
         // Set the received value
-        kf[axis].setXN(in_val);     
-        long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;             
+        kf[axis].setXN(in_val);
+        long echo = kf[axis].getXN(frame) * FLOAT_TO_FIXED;
         msg = "Setting abscissa: ";
         debugMessage(KF, command, MSG, kf[axis].getXN(frame));
-
         // Echo the assigned value
         response(true, echo);
         break;
@@ -2278,16 +2214,14 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     case 13:
     {
         // Parse the incoming value
-        float in_val = Node.ntof(input_serial_buffer);      
+        float in_val = Node.ntof(input_serial_buffer);
         int axis = KeyFrames::getAxis();
         int frame = kf[axis].countFN();
-
         // Set the received value
         kf[axis].setFN(in_val);
         long echo = kf[axis].getFN(frame) * FLOAT_TO_FIXED;
         msg = "Setting position: ";
         debugMessage(KF, command, MSG, kf[axis].getFN(frame));
-        
         // Echo the assigned value
         response(true, echo);
         break;
@@ -2298,18 +2232,15 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     {
         // Parse the incoming value
         float in_val = Node.ntof(input_serial_buffer);
-        
         int axis = KeyFrames::getAxis();
         int frame = kf[axis].countDN();
-
         // Set the received value
         kf[axis].setDN(in_val);
         long echo = kf[axis].getDN(frame) * FLOAT_TO_FIXED;
         msg = "Setting velocity: ";
         debugMessage(KF, command, MSG, kf[axis].getDN(frame));
-        
         // Echo the assigned value
-        response(true, echo);       
+        response(true, echo);
         break;
     }
 
@@ -2329,12 +2260,10 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     case 16:
     {
         int axis = KeyFrames::getAxis();
-                
         // Set the start and stop positions from first and last key points          
         if (kf[axis].getKFCount() > 1){
             long start = kf[axis].getFN(0);
             motor[axis].startPos(start);
-
             long stop = kf[axis].getFN(kf[axis].getKFCount() - 1);
             motor[axis].stopPos(stop);
         }
@@ -2344,7 +2273,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
         }
                 
         msg = "Ending KF transmission";
-        debugMessage(KF, command, MSG);     
+        debugMessage(KF, command, MSG);
         response(true);
         break;
     }
@@ -2355,11 +2284,9 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
         // Parse the incoming value
         long in_val = Node.ntol(input_serial_buffer);
         KeyFrames::setContVidTime(in_val);
-
         long echo = KeyFrames::getContVidTime();
         msg = "Setting cont. vid. move time: ";
-        debugMessage(KF, command, MSG, echo);       
-        
+        debugMessage(KF, command, MSG, echo);
         // Echo the assigned value
         response(true, echo);
         break;
@@ -2368,7 +2295,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     // Command 20 runs/resumes a keyframe program
     case 20:
     {               
-        kf_startProgram();     
+        kf_startProgram();
         msg = "Running/resuming kf program";
         debugMessage(KF, command, MSG);
         response(true);
@@ -2442,9 +2369,9 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     case 102:
     {
         float in_val = Node.ntof(input_serial_buffer);
-        long ret = (long)(kf[KeyFrames::getAxis()].pos(in_val) * FLOAT_TO_FIXED);       
+        long ret = (long)(kf[KeyFrames::getAxis()].pos(in_val) * FLOAT_TO_FIXED);
         msg = "Position at time x: ";
-        debugMessage(KF, command, MSG, kf[KeyFrames::getAxis()].pos(in_val));               
+        debugMessage(KF, command, MSG, kf[KeyFrames::getAxis()].pos(in_val));
         response(true, ret);
         break;
     }
@@ -2484,7 +2411,7 @@ void serKeyFrame(byte command, byte* input_serial_buffer){
     {
         uint8_t ret = (uint8_t)kf[KeyFrames::getAxis()].validateAccel();
         msg = "Accel valid: ";
-        debugMessage(KF, command, MSG, ret);        
+        debugMessage(KF, command, MSG, ret);
         response(true, ret);
         break;
     }
@@ -2611,25 +2538,24 @@ void debugMessage(byte subaddr, int command, const char* message, float data){
 
 void response_check(uint8_t p_stat) {   
     if (!p_stat){
-        //debug.confirmln("Command response: FAILURE");     
+        //debug.confirmln("Command response: FAILURE");
     }
     else{
-        //debug.confirmln("Command response OK!");              
+        //debug.confirmln("Command response OK!");
     }
 }
 
 void response(uint8_t p_stat){
     response_check(p_stat);
-
     switch(node){
         case 3:
             NodeUSB.response(p_stat);
             break;
         case 2:
-            NodeBlue.response(p_stat); 
+            NodeBlue.response(p_stat);
             break;
         case 1:
-            Node.response(p_stat); 
+            Node.response(p_stat);
             break;
         default:
             break;
@@ -2639,7 +2565,6 @@ void response(uint8_t p_stat){
 
 void response(uint8_t p_stat, uint8_t p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
             NodeUSB.response(p_stat, p_resp);
@@ -2648,7 +2573,7 @@ void response(uint8_t p_stat, uint8_t p_resp){
             NodeBlue.response(p_stat, p_resp);
             break;
         case 1:
-            Node.response(p_stat, p_resp); 
+            Node.response(p_stat, p_resp);
             break;
         default:
             break;
@@ -2657,10 +2582,9 @@ void response(uint8_t p_stat, uint8_t p_resp){
 
 void response(uint8_t p_stat, unsigned int p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
-            NodeUSB.response(p_stat, p_resp);           
+            NodeUSB.response(p_stat, p_resp);
             break;
         case 2:
             NodeBlue.response(p_stat, p_resp);
@@ -2675,7 +2599,6 @@ void response(uint8_t p_stat, unsigned int p_resp){
 
 void response(uint8_t p_stat, int p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
             NodeUSB.response(p_stat, p_resp);
@@ -2693,10 +2616,9 @@ void response(uint8_t p_stat, int p_resp){
 
 void response(uint8_t p_stat, unsigned long p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
-            NodeUSB.response(p_stat, p_resp);       
+            NodeUSB.response(p_stat, p_resp);
             break;
         case 2:
             NodeBlue.response(p_stat, p_resp);
@@ -2711,7 +2633,6 @@ void response(uint8_t p_stat, unsigned long p_resp){
 
 void response(uint8_t p_stat, long p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
             NodeUSB.response(p_stat, p_resp);
@@ -2729,7 +2650,6 @@ void response(uint8_t p_stat, long p_resp){
 
 void response(uint8_t p_stat, float p_resp){
     response_check(p_stat);
-
     switch(node){
         case 3:
             NodeUSB.response(p_stat, p_resp);
@@ -2747,13 +2667,12 @@ void response(uint8_t p_stat, float p_resp){
 
 void response(uint8_t p_stat, char* p_resp, int p_len){
     response_check(p_stat);
-    
     switch(node){
         case 3:
             NodeUSB.response(p_stat, p_resp, p_len);
             break;
         case 2:
-            NodeBlue.response(p_stat, p_resp, p_len);  
+            NodeBlue.response(p_stat, p_resp, p_len);
             break;
         case 1:
             Node.response(p_stat, p_resp, p_len);
