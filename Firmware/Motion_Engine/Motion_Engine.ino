@@ -706,7 +706,6 @@ void stopProgram(uint8_t force_clear) {
     
     running = false;
     still_shooting_flag = false;
-    ping_pong_flag = false;
 
     // clear out motor moved data and stop motor 
     clearAll(); 

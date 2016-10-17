@@ -230,7 +230,6 @@ void kf_stopProgram(boolean savePingPongVals){
     still_shooting_flag = false;
 
     if (!savePingPongVals){
-        ping_pong_flag = false;
         kf_ping_pong_time = 0;
         ping_pong_shots = 0;
     }

@@ -373,8 +373,7 @@ void serMain(byte command, byte* input_serial_buffer) {
               msg = "Stopping program";
               debugMessage(GEN, command, MSG);
               stopProgram();
-              pause_flag = false;
-              ping_pong_flag = false;
+              pause_flag = false;              
               response(true);
               break;
     }
