@@ -164,7 +164,7 @@ void USBControllerUI::uiStateSetting( void )
   if ((isJoystickOwner == false && joystickSet() == true) || (getRunStatus() > 0))
     return;
 
-  if (PS3CtrlrHost.IsConnected())
+  if (PS3CtrlrHost.IsConnected() == true)
   {
     // Stop drifting when idle
     float leftXVelocity = CreateDeadzone(PS3CtrlrHost.GetLeftStickX());
@@ -382,7 +382,7 @@ void USBControllerUI::uiStateSetting( void )
     if ((leftXVelocity == 128 &&
          rightXVelocity == 128 &&
          rightYVelocity == 128 &&
-         isJoystickOwner == true) || !PS3CtrlrHost.IsConnected())
+         isJoystickOwner == true) || !PS3CtrlrHost.IsConnected() == true)
     {
       isJoystickOwner = false;
       joystickSet(false);
