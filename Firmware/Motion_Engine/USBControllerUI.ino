@@ -821,7 +821,7 @@ void USBControllerUI::ResetUIDefaults( void )
   uiSettings.moveTimeHours = 0;
   uiSettings.accelPercentage = 0;
   uiSettings.decelPercentage = 0;
-  uiSettings.isContinuous = true;
+  uiSettings.isContinuous = false;
   uiSettings.exposureTimeS = 1;
   uiSettings.exposureTimeDS = 0;
   uiSettings.intervalTimeS = 2;
