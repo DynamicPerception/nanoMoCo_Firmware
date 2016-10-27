@@ -600,8 +600,17 @@ void reverseStartStop(){
         //Switches start and stop positions
         long curStart = motor[i].startPos();
         long curStop = motor[i].stopPos();
+        unsigned long curAccel = motor[i].planAccelLength();
+        unsigned long curDecel = motor[i].planDecelLength();
+        unsigned long curLeadIn = motor[i].planLeadIn();
+        unsigned long curLeadOut = motor[i].planLeadOut();
+
         motor[i].startPos(curStop);
         motor[i].stopPos(curStart);
+        motor[i].planAccelLength(curDecel);
+        motor[i].planDecelLength(curAccel);
+        motor[i].planLeadIn(curLeadOut);
+        motor[i].planLeadOut(curLeadIn);
     }
 
     // Swap key point order     

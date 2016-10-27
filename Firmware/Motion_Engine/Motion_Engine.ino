@@ -130,7 +130,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]            = "OMAXISVX";       // Serial API name
-const int SERIAL_VERSION            = 72;               // Serial API version
+const int SERIAL_VERSION            = 73;               // Serial API version
 byte node                           = MOCOBUS;          // default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]                  = "DEFAULT   ";     // default device name, exactly 9 characters + null terminator
 int device_address                  = 3;                // NMX address (default = 3)
@@ -713,8 +713,13 @@ void stopProgram(uint8_t force_clear) {
 
     // Set the proper intervalometer LED status
     setIntervalometerIndicator();
-}
 
+    // If the program was on a ping-pong mode reverse pass,
+    // reset all the parameters to their forward settings
+    if (isReversePass()) {
+        reverseStartStop();
+    }
+}
 
 void startProgram() {
   // start program

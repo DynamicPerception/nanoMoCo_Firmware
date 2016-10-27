@@ -34,7 +34,7 @@ See dynamicperception.com for more information
 
 unsigned long   camera_tm   = 0;
 byte            altBlock    = 0;
-
+bool            is_reversed = false;
 
 void setupControlCycle() {
 
@@ -47,6 +47,17 @@ void setupControlCycle() {
 }
 
 
+void toggleReversePass() {
+    is_reversed = !is_reversed;
+}
+
+void clearReversePass(bool reversed) {
+    is_reversed = false;
+}
+
+bool isReversePass() {
+    return is_reversed;
+}
 
 void cycleCamera() {
     debug.functln(F("cycleCamera() - Start"));
@@ -109,6 +120,7 @@ void cycleCamera() {
                 ping_pong_shots += camera_fired;
                 ping_pong_time += run_time;
                 stopProgram();
+                toggleReversePass();
                 reverseStartStop();
                 ping_pong_flag = true;
                 startProgram();

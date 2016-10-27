@@ -232,6 +232,11 @@ void kf_stopProgram(boolean savePingPongVals){
     if (!savePingPongVals){
         kf_ping_pong_time = 0;
         ping_pong_shots = 0;
+        // If the program was on a ping-pong mode reverse pass,
+        // reset all the parameters to their forward settings
+        if (isReversePass()) {
+            reverseStartStop();
+        }
     }
 
     // If it's a video move, trigger the camera once to stop the recording
