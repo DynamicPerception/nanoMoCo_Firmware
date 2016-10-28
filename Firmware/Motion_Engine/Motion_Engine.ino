@@ -228,7 +228,7 @@ const unsigned int MOT_DEFAULT_MAX_STEP         = 5000;         // Default maxim
 const unsigned int MOT_DEFAULT_MAX_SLIDE_SPD    = 5000;         // Default maximum slider motor speed in steps / sec
 const unsigned int MOT_DEFAULT_MAX_ROTARY_SPD   = 3000;         // Default maximum rotary motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL              = 15000.0;      // Default motor accel/decel rate for non-program continuous moves
-const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction                             // Number of motors possibly attached to controller
+const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction
 
 // plan move types
 #define SMS             0       // Shoot-move-shoot mode
@@ -716,6 +716,7 @@ void stopProgram(bool prep_new_pingpong_pass) {
     // If the program was on a ping-pong mode reverse pass,
     // reset all the parameters to their forward settings
     if (!prep_new_pingpong_pass && isReversePass()) {
+        clearReversePass();
         reverseStartStop();
     }
 }

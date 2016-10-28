@@ -51,7 +51,7 @@ void toggleReversePass() {
     is_reversed = !is_reversed;
 }
 
-void clearReversePass(bool reversed) {
+void clearReversePass() {
     is_reversed = false;
 }
 
@@ -115,14 +115,14 @@ void cycleCamera() {
             // If not running a ping-pong move, activate the camera trigger to stop the video recording
             if (!pingPongMode() && Motors::planType() == CONT_VID)
                 Camera.expose();
-            // If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
-            if (pingPongMode()) {               
+            // If ping pong mode is active reverse direction and start the program again
+            if (pingPongMode()) {                
                 ping_pong_shots += camera_fired;
                 ping_pong_time += run_time;
                 stopProgram(true);
                 toggleReversePass();
                 reverseStartStop();
-                ping_pong_flag = true;
+                ping_pong_flag = true;                
                 startProgram();
             }
             // Otherwise, just stop the program

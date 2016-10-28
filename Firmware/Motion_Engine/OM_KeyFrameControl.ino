@@ -235,6 +235,7 @@ void kf_stopProgram(boolean prep_new_pingpong_pass){
         // If the program was on a ping-pong mode reverse pass,
         // reset all the parameters to their forward settings
         if (isReversePass()) {
+            clearReversePass();
             reverseStartStop();
         }
     }
@@ -338,7 +339,7 @@ void kf_updateProgram(){
             joystickSet(false);
         }
         else{
-            debug.serln(F("Stopping kf program"));                                  
+            debug.serln(F("Stopping kf program"));
             // If ping-pong mode is active, reverse and start a new program
             if (pingPongMode()){
                 // The shot count and run time are reset when starting a new program, 
@@ -347,13 +348,11 @@ void kf_updateProgram(){
                 kf_ping_pong_time += kf_run_time;
                 ping_pong_shots += camera_fired;
                 kf_stopProgram(true);
-                debug.serln(F("Starting ping-pong phase"));
                 ping_pong_flag = true;
-                debug.serln(F("Reversing key points"));
                 toggleReversePass();
                 reverseStartStop();
                 debug.serln(F("Starting new kf bounce program"));
-                kf_startProgram(true);          
+                kf_startProgram(true);
             }
             else{
                 kf_stopProgram();
