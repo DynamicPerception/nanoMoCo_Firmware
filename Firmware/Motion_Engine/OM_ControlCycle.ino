@@ -94,7 +94,7 @@ void cycleCamera() {
 
       // If this is a video move there might be a lead-out to wait for, so if the run time is less than the total calculated time, don't stop the program yet
       // totalProgramTime() and last_run_time are unsigned, so they must be recast as signed values to avoid rolling the result if last_runt_time is longer
-      if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
+      if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) { 
           
           ready_to_stop = false;
 
@@ -119,7 +119,7 @@ void cycleCamera() {
             if (pingPongMode()) {               
                 ping_pong_shots += camera_fired;
                 ping_pong_time += run_time;
-                stopProgram();
+                stopProgram(true);
                 toggleReversePass();
                 reverseStartStop();
                 ping_pong_flag = true;

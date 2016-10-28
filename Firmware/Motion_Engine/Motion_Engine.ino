@@ -288,7 +288,7 @@ bool            program_complete    = false;            // program completion fl
 
 
 
-void stopProgram(uint8_t force_clear = true);   // Predefine this function to declare the default argument
+void stopProgram(bool prep_new_pingpong_pass = false);   // Predefine this function to declare the default argument
 
 extern void df_setup();
 extern void df_loop();
@@ -691,17 +691,16 @@ void pauseProgram() {
 }
 
 
-void stopProgram(uint8_t force_clear) {
+void stopProgram(bool prep_new_pingpong_pass) {
 
     // stop/clear program
     stopAllMotors();
-    if( force_clear == true ) {
-        run_time     = 0;
-        camera_fired = 0;
-        for( int i = 0; i < MOTOR_COUNT; i++){
-            //resets the program move
-            motor[i].resetProgramMove();
-        }
+    
+    run_time     = 0;
+    camera_fired = 0;
+    for( int i = 0; i < MOTOR_COUNT; i++){
+        //resets the program move
+        motor[i].resetProgramMove();
     }
     
     running = false;
@@ -716,7 +715,7 @@ void stopProgram(uint8_t force_clear) {
 
     // If the program was on a ping-pong mode reverse pass,
     // reset all the parameters to their forward settings
-    if (isReversePass()) {
+    if (!prep_new_pingpong_pass && isReversePass()) {
         reverseStartStop();
     }
 }

@@ -212,7 +212,7 @@ void kf_stopProgram(){
     kf_stopProgram(false);
 }
 
-void kf_stopProgram(boolean savePingPongVals){
+void kf_stopProgram(boolean prep_new_pingpong_pass){
 
     debug.funct(F("STOPPING KF PROGRAM"));
     
@@ -229,7 +229,7 @@ void kf_stopProgram(boolean savePingPongVals){
     kf_paused = false;  
     still_shooting_flag = false;
 
-    if (!savePingPongVals){
+    if (!prep_new_pingpong_pass) {
         kf_ping_pong_time = 0;
         ping_pong_shots = 0;
         // If the program was on a ping-pong mode reverse pass,
@@ -350,6 +350,7 @@ void kf_updateProgram(){
                 debug.serln(F("Starting ping-pong phase"));
                 ping_pong_flag = true;
                 debug.serln(F("Reversing key points"));
+                toggleReversePass();
                 reverseStartStop();
                 debug.serln(F("Starting new kf bounce program"));
                 kf_startProgram(true);          
