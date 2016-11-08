@@ -596,7 +596,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     {
                byte mode = input_serial_buffer[0];
                joystickSet(mode);
-               msg = "Setting joystick mode";
+               msg = "Setting joystick mode ";
                debugMessage(GEN, command, MSG, mode);
                response(true);
                break;
@@ -607,7 +607,7 @@ void serMain(byte command, byte* input_serial_buffer) {
     case 24:
     {
                pingPongMode(input_serial_buffer[0]);
-               msg = "Setting ping-pong mode";
+               msg = "Setting ping-pong mode ";
                debugMessage(GEN, command, MSG);
                response(true);
                break;
@@ -1498,7 +1498,7 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 28:
     {
                byte ms = msAutoSet(subaddr - 1);
-               msg = "Auto-setting microsteps";
+               msg = "Auto-setting microsteps ";
                debugMessage(subaddr, command, MSG, ms);
                response(true, ms);
                break;
