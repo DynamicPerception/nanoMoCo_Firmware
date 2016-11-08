@@ -16,10 +16,10 @@ void DebugClass::init()
 	  ensure both the debug output lines are off
 	*/
 	m_debug_flag = B00000000;
-	m_usb = false;
+	m_usb = true;
     
     // Leaving this here for now, set to false before merging
-    m_moco = true;
+    m_moco = false;
 }
 
 void DebugClass::setState(byte state){
