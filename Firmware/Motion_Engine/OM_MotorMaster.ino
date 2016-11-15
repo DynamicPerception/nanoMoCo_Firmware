@@ -106,13 +106,13 @@ void motorCallback( byte code ) {
 
 
 void setMasterHandler( void(*p_Func)(uint8_t) ) {
-	f_motSignal = p_Func;
+    f_motSignal = p_Func;
 }
 
 void _fireCallback(uint8_t p_Param) {
-	if( f_motSignal != 0 ) {
-		f_motSignal(p_Param);
-	}
+    if( f_motSignal != 0 ) {
+        f_motSignal(p_Param);
+    }
 }
 
 
@@ -142,14 +142,14 @@ void _fireCallback(uint8_t p_Param) {
 uint8_t maxStepRate( unsigned int p_Rate ) {
 
 
-	if(  p_Rate != 10000 && p_Rate != 5000 && p_Rate != 4000 && p_Rate != 2000 && p_Rate != 1000 )
-		return(false);
+    if(  p_Rate != 10000 && p_Rate != 5000 && p_Rate != 4000 && p_Rate != 2000 && p_Rate != 1000 )
+        return(false);
 
 
     motor[0].maxStepRate(p_Rate);
     motor[1].maxStepRate(p_Rate);
     motor[2].maxStepRate(p_Rate);
-	return(true);
+    return(true);
 
 }
 
@@ -163,7 +163,7 @@ uint8_t maxStepRate( unsigned int p_Rate ) {
  */
 
 unsigned int maxStepRate() {
-	return( motor[0].maxStepRate() );
+    return( motor[0].maxStepRate() );
 }
 
 
@@ -179,12 +179,12 @@ void stopAllMotors() {
         // set motors not moving in async mode
 
       for (int i = 0; i < MOTOR_COUNT; i++) {
-		motor[i].stop();		  
-		//update current position to EEPROM
-		long tempPosition= motor[i].currentPos();
-		OMEEPROM::write(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
+        motor[i].stop();          
+        //update current position to EEPROM
+        long tempPosition= motor[i].currentPos();
+        OMEEPROM::write(EE_POS_0 + (i) * EE_MOTOR_MEMORY_SPACE, tempPosition);
       }
-	  
+      
       
       ISR_On = false;
 
@@ -208,32 +208,32 @@ void stopAllMotors() {
 
 void clearAll() {
 
-		// stop if currently running
+        // stop if currently running
 
-	if( motor[0].running() || motor[1].running() || motor[2].running() )
-		stopAllMotors();
+    if( motor[0].running() || motor[1].running() || motor[2].running() )
+        stopAllMotors();
 
-	for (int i = 0; i < MOTOR_COUNT; i++){
+    for (int i = 0; i < MOTOR_COUNT; i++){
 
         motor[i].clear();
-	}
+    }
 }
 
 
  // execute an async move, when specifying a direction
 void startISR() {
-	
-	if ((motor[0].running() || motor[1].running() || motor[2].running())){
+    
+    if ((motor[0].running() || motor[1].running() || motor[2].running())){
 
-		// is async control not already running?
-		if( !ISR_On ) {
+        // is async control not already running?
+        if( !ISR_On ) {
            
-			_fireCallback(OM_MOT_MOVING);
-			Timer1.initialize(motor[0].curSamplePeriod());
-			Timer1.attachInterrupt(_runISR);
-			ISR_On = true;
-		} // end if not running
-	}
+            _fireCallback(OM_MOT_MOVING);
+            Timer1.initialize(motor[0].curSamplePeriod());
+            Timer1.attachInterrupt(_runISR);
+            ISR_On = true;
+        } // end if not running
+    }
 
 }
 
@@ -242,37 +242,37 @@ void startISR() {
  // of the motor
 
 void _runISR() {
-	//PORTF |= (1 << motor[2].stpflg);
-	//delayMicroseconds(1);
-	
-	
+    //PORTF |= (1 << motor[2].stpflg);
+    //delayMicroseconds(1);
+    
+    
     //steps all motors at once   
-	for(int i = 0; i < MOTOR_COUNT; i++){
-		if(motor[i].running()){				    
-			motor[i].checkRefresh();					// Reset motor steps, cycles, error, etc for the new ISR run
-			if (motor[i].checkStep()){					// 
-				byteFired |= (1 << motor[i].stpflg);
-			}
-		} // end if( motor[i].m_isRun
+    for(int i = 0; i < MOTOR_COUNT; i++){
+        if(motor[i].running()){                 
+            motor[i].checkRefresh();                    // Reset motor steps, cycles, error, etc for the new ISR run
+            if (motor[i].checkStep()){                  // 
+                byteFired |= (1 << motor[i].stpflg);
+            }
+        } // end if( motor[i].m_isRun
 
-	} // end for loop	
-		
-	
-	
+    } // end for loop   
+        
+    
+    
     PORTF |= byteFired;
     delayMicroseconds(1);
     PORTF &= ~byteFired;
-	
+    
 
-	
-	//resets the byteFired flag
-	byteFired = 0;
-	
+    
+    //resets the byteFired flag
+    byteFired = 0;
+    
     if (!(motor[0].running() || motor[1].running() || motor[2].running())){
         stopAllMotors();
     }
 
-	//PORTF &= ~(1 << motor[2].stpflg);
+    //PORTF &= ~(1 << motor[2].stpflg);
 }
 
 

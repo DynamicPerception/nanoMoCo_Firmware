@@ -17,7 +17,9 @@ void DebugClass::init()
 	*/
 	m_debug_flag = B00000000;
 	m_usb = false;
-	m_moco = false;
+    
+    // Leaving this here for now, set to false before merging
+    m_moco = true;
 }
 
 void DebugClass::setState(byte state){
