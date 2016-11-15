@@ -34,7 +34,7 @@ See dynamicperception.com for more information
 
 unsigned long   camera_tm   = 0;
 byte            altBlock    = 0;
-
+bool            is_reversed = false;
 
 void setupControlCycle() {
 
@@ -47,6 +47,17 @@ void setupControlCycle() {
 }
 
 
+void toggleReversePass() {
+    is_reversed = !is_reversed;
+}
+
+void clearReversePass() {
+    is_reversed = false;
+}
+
+bool isReversePass() {
+    return is_reversed;
+}
 
 void cycleCamera() {
     debug.functln(F("cycleCamera() - Start"));
@@ -83,7 +94,7 @@ void cycleCamera() {
 
       // If this is a video move there might be a lead-out to wait for, so if the run time is less than the total calculated time, don't stop the program yet
       // totalProgramTime() and last_run_time are unsigned, so they must be recast as signed values to avoid rolling the result if last_runt_time is longer
-      if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) {
+      if (Motors::planType() != SMS && ((long)totalProgramTime() - (long)last_run_time) > 0) { 
           
           ready_to_stop = false;
 
@@ -104,13 +115,14 @@ void cycleCamera() {
             // If not running a ping-pong move, activate the camera trigger to stop the video recording
             if (!pingPongMode() && Motors::planType() == CONT_VID)
                 Camera.expose();
-            // If ping pong mode is active and this is a continuous video shot, reverse direction and start the program again
-            if (pingPongMode()) {               
+            // If ping pong mode is active reverse direction and start the program again
+            if (pingPongMode()) {                
                 ping_pong_shots += camera_fired;
                 ping_pong_time += run_time;
-                stopProgram();
+                stopProgram(true);
+                toggleReversePass();
                 reverseStartStop();
-                ping_pong_flag = true;
+                ping_pong_flag = true;                
                 startProgram();
             }
             // Otherwise, just stop the program

@@ -130,7 +130,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]            = "OMAXISVX";       // Serial API name
-const int SERIAL_VERSION            = 72;               // Serial API version
+const int SERIAL_VERSION            = 73;               // Serial API version
 byte node                           = MOCOBUS;          // default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]                  = "DEFAULT   ";     // default device name, exactly 9 characters + null terminator
 int device_address                  = 3;                // NMX address (default = 3)
@@ -228,7 +228,7 @@ const unsigned int MOT_DEFAULT_MAX_STEP         = 5000;         // Default maxim
 const unsigned int MOT_DEFAULT_MAX_SLIDE_SPD    = 5000;         // Default maximum slider motor speed in steps / sec
 const unsigned int MOT_DEFAULT_MAX_ROTARY_SPD   = 3000;         // Default maximum rotary motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL              = 15000.0;      // Default motor accel/decel rate for non-program continuous moves
-const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction                             // Number of motors possibly attached to controller
+const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction
 
 // plan move types
 #define SMS             0       // Shoot-move-shoot mode
@@ -288,7 +288,7 @@ bool            program_complete    = false;            // program completion fl
 
 
 
-void stopProgram(uint8_t force_clear = true);   // Predefine this function to declare the default argument
+void stopProgram(bool prep_new_pingpong_pass = false);   // Predefine this function to declare the default argument
 
 extern void df_setup();
 extern void df_loop();
@@ -691,17 +691,16 @@ void pauseProgram() {
 }
 
 
-void stopProgram(uint8_t force_clear) {
+void stopProgram(bool prep_new_pingpong_pass) {
 
     // stop/clear program
     stopAllMotors();
-    if( force_clear == true ) {
-        run_time     = 0;
-        camera_fired = 0;
-        for( int i = 0; i < MOTOR_COUNT; i++){
-            //resets the program move
-            motor[i].resetProgramMove();
-        }
+    
+    run_time     = 0;
+    camera_fired = 0;
+    for( int i = 0; i < MOTOR_COUNT; i++){
+        //resets the program move
+        motor[i].resetProgramMove();
     }
     
     running = false;
@@ -713,8 +712,14 @@ void stopProgram(uint8_t force_clear) {
 
     // Set the proper intervalometer LED status
     setIntervalometerIndicator();
-}
 
+    // If the program was on a ping-pong mode reverse pass,
+    // reset all the parameters to their forward settings
+    if (!prep_new_pingpong_pass && isReversePass()) {
+        clearReversePass();
+        reverseStartStop();
+    }
+}
 
 void startProgram() {
   // start program
