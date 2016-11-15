@@ -96,7 +96,7 @@ void USBControllerUI::init(void)
 
   isShotRunning = false;
 
-  Camera.exposureFocus(false);
+  Camera.exposureFocus(true);
   Camera.enable = true;
 
   uiState = USBCONTROLLERUI_STATE_Setting;
