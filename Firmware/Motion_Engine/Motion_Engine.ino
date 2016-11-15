@@ -1073,10 +1073,12 @@ uint8_t checkMotorAttach() {
         int current = analogRead(CURRENT_PIN);
         // Convert the value to current in millamps
         float amps = (float)current / 1023 * 5;
-        // This is the threshold in amps above which a motor will register as being detected;
-        const float THRESHOLD = 0.15;
-        // If the draw is greater than <THRESHOLD> amps, then a motor is connected to the enabled channel
-        if (amps > THRESHOLD)
+        // This is the power threshold in watts above which a motor will register as being detected
+        const float THRESHOLD_PWR = 1.8;
+        // Need to adjust the current threhold based upon the input voltage: I = P / V
+        float threshold_cur = THRESHOLD_PWR / getVoltage();
+        // If the draw is greater than current threshold, then a motor is connected to the enabled channel
+        if (amps > threshold_cur)
             attached |= (1 << i);
         // Put the motor back to sleep so it doesn't interfere with reading of the next motor
         motor[i].sleep(true);
@@ -1094,6 +1096,11 @@ uint8_t checkMotorAttach() {
 
     // The bits of the attached byte indicate each motor's attached status
     return(attached);
+}
+
+float getVoltage() {
+    int voltage = analogRead(VOLTAGE_PIN);
+    return ( (float)voltage / 1023 * 25 );
 }
 
 /*
