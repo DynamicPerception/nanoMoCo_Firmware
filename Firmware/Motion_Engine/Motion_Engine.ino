@@ -887,7 +887,7 @@ uint8_t programPercent() {
 
         unsigned long current_move;
 
-        current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadIn();
+        current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
 
         // Update the longest move if necessary
         if (current_move > longest_move)
