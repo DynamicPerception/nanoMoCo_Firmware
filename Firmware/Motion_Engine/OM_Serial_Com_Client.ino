@@ -815,11 +815,10 @@ void serMain(byte command, byte* input_serial_buffer) {
     //Command 107 reads voltage in
     case 107:
     {
-                int voltage = analogRead(VOLTAGE_PIN);
-                float floatVolts = ( (float)voltage / 1023 * 25 );
-                unsigned long converted = (unsigned long)( floatVolts * FLOAT_TO_FIXED );
+                float float_volts = getVoltage();
+                unsigned long converted = (unsigned long)( float_volts * FLOAT_TO_FIXED );
                 msg = "Supply voltage: ";
-                debugMessage(GEN, command, MSG, floatVolts);
+                debugMessage(GEN, command, MSG, float_volts);
                 response(true, converted);
                 break;
     }

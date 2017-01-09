@@ -130,7 +130,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]            = "OMAXISVX";       // Serial API name
-const int SERIAL_VERSION            = 74;               // Serial API version
+const int SERIAL_VERSION            = 76;               // Serial API version
 byte node                           = MOCOBUS;          // default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]                  = "DEFAULT   ";     // default device name, exactly 9 characters + null terminator
 int device_address                  = 3;                // NMX address (default = 3)
@@ -887,7 +887,7 @@ uint8_t programPercent() {
 
         unsigned long current_move;
 
-        current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadIn();
+        current_move = motor[i].planLeadIn() + motor[i].planTravelLength() + motor[i].planLeadOut();
 
         // Update the longest move if necessary
         if (current_move > longest_move)
@@ -1073,10 +1073,12 @@ uint8_t checkMotorAttach() {
         int current = analogRead(CURRENT_PIN);
         // Convert the value to current in millamps
         float amps = (float)current / 1023 * 5;
-        // This is the threshold in amps above which a motor will register as being detected;
-        const float THRESHOLD = 0.15;
-        // If the draw is greater than <THRESHOLD> amps, then a motor is connected to the enabled channel
-        if (amps > THRESHOLD)
+        // This is the power threshold in watts above which a motor will register as being detected
+        const float THRESHOLD_PWR = 1.8;
+        // Need to adjust the current threhold based upon the input voltage: I = P / V
+        float threshold_cur = THRESHOLD_PWR / getVoltage();
+        // If the draw is greater than current threshold, then a motor is connected to the enabled channel
+        if (amps > threshold_cur)
             attached |= (1 << i);
         // Put the motor back to sleep so it doesn't interfere with reading of the next motor
         motor[i].sleep(true);
@@ -1094,6 +1096,11 @@ uint8_t checkMotorAttach() {
 
     // The bits of the attached byte indicate each motor's attached status
     return(attached);
+}
+
+float getVoltage() {
+    int voltage = analogRead(VOLTAGE_PIN);
+    return ( (float)voltage / 1023 * 25 );
 }
 
 /*
