@@ -383,10 +383,13 @@ void setup() {
     // Start USB serial communications
     USBSerial.begin(19200);
     delay(100);
-  
-    // Start Bluetooth communications
-    altSerial.begin(9600);
-    debug.functln("setup() - Done setting things up!");
+
+	// Start Bluetooth communications
+	altSerial.begin(9600);
+	//setDebugOutput(8);
+	//debug.setUSB(true);
+	debug.functln("setup() - Done setting things up!");
+
   
     // Set controller I/O pin modes
     pinMode(DEBUG_PIN, OUTPUT);
