@@ -1218,9 +1218,9 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     case 7:
     {
               unsigned int in_val = Node.ntoui(input_serial_buffer);
-              thisMotor.maxSpeed(in_val);
-              msg = "Setting max speed: ";
-              debugMessage(subaddr, command, MSG, in_val);
+              unsigned int new_speed = thisMotor.maxSpeed(in_val);
+              msg = "New max speed: ";
+			  debugMessage(subaddr, command, MSG, new_speed);
               eepromWriteMaxSpd();
               response(true);
               break;
@@ -1325,8 +1325,8 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     {
                float in_val = Node.ntof(input_serial_buffer);
                msg = "Setting acceleration: ";
-               debugMessage(subaddr, command, MSG, in_val);
-               thisMotor.contAccel(in_val);
+			   float new_accel = thisMotor.contAccel(in_val);
+			   debugMessage(subaddr, command, MSG, new_accel);               
                eepromWriteAccel();
                response(true);
                break;
