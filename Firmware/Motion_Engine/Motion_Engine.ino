@@ -130,7 +130,7 @@ uint8_t ee_load_startStop = false;
 #define USB 3
 
 const char SERIAL_TYPE[]            = "OMAXISVX";       // Serial API name
-const int SERIAL_VERSION            = 78;               // Serial API version
+const int SERIAL_VERSION            = 101;               // Serial API version
 byte node                           = MOCOBUS;          // default node to use (MoCo Serial = 1; AltSoftSerial (BLE) = 2; USBSerial = 3)
 byte device_name[]                  = "DEFAULT   ";     // default device name, exactly 9 characters + null terminator
 int device_address                  = 3;                // NMX address (default = 3)
@@ -224,9 +224,9 @@ boolean       keep_camera_alive = false;
 typedef OMMotorFunctions Motors;
 
 // Deafult motor settings
-const unsigned int MOT_DEFAULT_MAX_STEP         = 5000;         // Default maximum controller step rate output
-const unsigned int MOT_DEFAULT_MAX_SLIDE_SPD    = 5000;         // Default maximum slider motor speed in steps / sec
-const unsigned int MOT_DEFAULT_MAX_ROTARY_SPD   = 3000;         // Default maximum rotary motor speed in steps / sec
+const unsigned int MOT_DEFAULT_MAX_STEP         = 10000;         // Default maximum controller step rate output
+const unsigned int MOT_DEFAULT_MAX_SLIDE_SPD    = 10000;         // Default maximum slider motor speed in steps / sec
+const unsigned int MOT_DEFAULT_MAX_ROTARY_SPD   = 10000;         // Default maximum rotary motor speed in steps / sec
 const float MOT_DEFAULT_CONT_ACCEL              = 15000.0;      // Default motor accel/decel rate for non-program continuous moves
 const unsigned int MOT_DEFAULT_BACKLASH         = 0;            // Default number of backlash steps to take up when reversing direction
 
@@ -343,9 +343,9 @@ OMMoCoNode   Node = OMMoCoNode(&Serial, device_address, SERIAL_VERSION, (char*)S
 OMComHandler ComMgr = OMComHandler();                                                               // Communications handler object
 OMCamera     Camera = OMCamera();                                                                   // Camera object
 OMMotorFunctions motor[MOTOR_COUNT] = {                                                             // Motor object
-    OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG),
-    OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG),
-    OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG) };
+    OMMotorFunctions(OM_MOT1_DSTEP, OM_MOT1_DDIR, OM_MOT1_DSLP, OM_MOT1_DMS1, OM_MOT1_DMS2, OM_MOT1_DMS3, OM_MOT1_STPREG, OM_MOT1_STPFLAG, 0),
+    OMMotorFunctions(OM_MOT2_DSTEP, OM_MOT2_DDIR, OM_MOT2_DSLP, OM_MOT2_DMS1, OM_MOT2_DMS2, OM_MOT2_DMS3, OM_MOT2_STPREG, OM_MOT2_STPFLAG, 1),
+    OMMotorFunctions(OM_MOT3_DSTEP, OM_MOT3_DDIR, OM_MOT3_DSLP, OM_MOT3_DMS1, OM_MOT3_DMS2, OM_MOT3_DMS3, OM_MOT3_STPREG, OM_MOT3_STPFLAG, 2) };
 
 OMState      Engine = OMState(7);           // State engine object with 7 possible states. See state declarations below.
 

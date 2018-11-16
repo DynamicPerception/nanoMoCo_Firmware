@@ -1158,7 +1158,10 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
     //Command 2 set the sleep mode of the motor
     case 2:
     {
-              motorSleep(( subaddr - 1 ), input_serial_buffer[0]);
+			  // For the NMX version using the Trinamic motor driver, sleep mode has
+			  // been coopted into a toggle for "stealth mode"
+			  bool sleep_mode = input_serial_buffer[0];
+			  motorSleep((subaddr - 1), sleep_mode);
               msg = "Setting sleep: ";
               debugMessage(subaddr, command, MSG, motorSleep(subaddr - 1));
               response(true);
@@ -1205,12 +1208,29 @@ void serMotor(byte subaddr, byte command, byte* input_serial_buffer) {
               // set motor microstep (1,2,4,8,16)
               byte in_val = input_serial_buffer[0];
               thisMotor.ms(in_val);
+			  // USBSerial.print("Attempting to set val: ");
+			  // USBSerial.println(in_val);
               OMEEPROM::write(EE_MS_0 + ( subaddr - 1 ) * EE_MOTOR_MEMORY_SPACE, in_val);
               if (( subaddr - 1 ) < USBCONTROLLERUI_NMOTORS)
                   USBCtrlrUI.SetMotorMS(subaddr - 1, in_val);
               msg = "Setting microsteps: ";
-              debugMessage(subaddr, command, MSG, in_val);
+              debugMessage(subaddr, command, MSG, in_val);			  
               response(true);
+			  // This is a hacky way to do this, but "sleep" now represents
+			  // "stealth" mode in the app interface. It doesn't seem to work
+			  // with 1/4th stepping, though, so we need to override the stealth
+			  // mode if it's enabled when switching to that microstep setting.
+			  // the "stealth(bool)" function toggles the actual digital pin, but
+			  // not the "sleep" flag, which can be used to remember whether we
+			  // want stealth mode on when we switch back to a different microstep
+			  // setting--thus, when switching to a MS value other than 4, set the
+			  // stealth mode to whatever the sleep flag is currently set as.
+			  if (in_val <= 4) {
+				  thisMotor.stealth(false);
+			  }
+			  else {
+				  thisMotor.stealth(thisMotor.sleep());
+			  }
               break;
     }
 
